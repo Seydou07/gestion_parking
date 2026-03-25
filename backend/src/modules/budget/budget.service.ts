@@ -2,10 +2,14 @@ import { Injectable, NotFoundException, BadRequestException } from '@nestjs/comm
 import { PrismaService } from 'src/prisma/prisma.service';
 import { AllocateBudgetDto } from './dto/allocate-budget.dto';
 import { SupplyGlobalBudgetDto } from './dto/supply-global-budget.dto';
+import { HistoryService } from '../history/history.service';
 
 @Injectable()
 export class BudgetService {
-  constructor(private prisma: PrismaService) {}
+  constructor(
+    private prisma: PrismaService,
+    private historyService: HistoryService
+  ) {}
 
   async allocate(dto: AllocateBudgetDto) {
     const vehicle = await this.prisma.vehicle.findUnique({
@@ -69,6 +73,13 @@ export class BudgetService {
         });
     }
 
+    // Log activity
+    await this.historyService.log(
+      'ALLOCATION',
+      'FINANCE',
+      `Allocation de ${dto.montant} FCFA au véhicule ${vehicle.immatriculation} (${dto.type})`
+    );
+
     return allocation;
   }
 
@@ -96,7 +107,7 @@ export class BudgetService {
       'FUEL_BON': 'Bons d\'Essence'
     };
 
-    return this.prisma.globalBudgetActivity.create({
+    const result = await this.prisma.globalBudgetActivity.create({
       data: {
         field: dto.field,
         amount: dto.amount,
@@ -104,6 +115,14 @@ export class BudgetService {
         type: 'REPLENISHMENT'
       }
     });
+
+    await this.historyService.log(
+      'REPLENISHMENT',
+      'FINANCE',
+      `Réapprovisionnement de ${dto.amount} FCFA pour ${fieldLabels[dto.field]}`
+    );
+
+    return result;
   }
 
   async initializeGlobalBudget(dto: SupplyGlobalBudgetDto) {
@@ -128,7 +147,7 @@ export class BudgetService {
       'FUEL_BON': 'Bons d\'Essence'
     };
 
-    return this.prisma.globalBudgetActivity.create({
+    const result = await this.prisma.globalBudgetActivity.create({
       data: {
         field: dto.field,
         amount: dto.amount,
@@ -136,6 +155,14 @@ export class BudgetService {
         type: 'INITIAL_DEFINITION'
       }
     });
+
+    await this.historyService.log(
+      'INITIAL_CONFIG',
+      'FINANCE',
+      `Configuration initiale de ${dto.amount} FCFA pour ${fieldLabels[dto.field]}`
+    );
+
+    return result;
   }
 
   async getGlobalHistory() {

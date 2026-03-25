@@ -1,6 +1,6 @@
 {
   "/vehicles/page": "app/vehicles/page.js",
   "/budget/page": "app/budget/page.js",
-  "/history/page": "app/history/page.js",
-  "/dashboard/page": "app/dashboard/page.js"
+  "/dashboard/page": "app/dashboard/page.js",
+  "/history/page": "app/history/page.js"
 }

@@ -10,6 +10,7 @@ import {
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { AlertTriangle, Trash2 } from "lucide-react";
+import { cn } from "@/lib/utils";
 
 interface ConfirmModalProps {
     open: boolean;
@@ -40,20 +41,17 @@ export function ConfirmModal({
     return (
         <Dialog open={open} onOpenChange={onOpenChange}>
             <DialogContent className="sm:max-w-[400px] rounded-3xl p-0 overflow-hidden border-none shadow-2xl animate-in fade-in zoom-in-95 duration-200">
-                <DialogHeader className="p-6 bg-slate-50 dark:bg-slate-900 border-b border-slate-100 dark:border-slate-800">
-                    <div className="flex items-center gap-4">
-                        <div className={`p-3 rounded-2xl ${
-                            variant === 'danger' ? 'bg-red-100 text-red-600' : 
-                            variant === 'warning' ? 'bg-amber-100 text-amber-600' : 
-                            'bg-fleet-blue/10 text-fleet-blue'
-                        }`}>
-                            {variant === 'danger' ? <Trash2 className="w-5 h-5" /> : <AlertTriangle className="w-5 h-5" />}
-                        </div>
-                        <DialogTitle className="text-lg font-black tracking-tight text-slate-900 dark:text-white">
-                            {title}
-                        </DialogTitle>
-                    </div>
-                </DialogHeader>
+                <div className={cn(
+                    "shrink-0 px-6 py-4 text-white flex items-center justify-between sticky top-0 z-50",
+                    variant === 'danger' ? 'bg-red-500' : 
+                    variant === 'warning' ? 'bg-amber-500' : 
+                    'bg-fleet-blue'
+                )}>
+                    <h2 className="text-lg font-black tracking-tight flex items-center gap-2">
+                        {variant === 'danger' ? <Trash2 className="w-5 h-5" /> : <AlertTriangle className="w-5 h-5" />}
+                        {title}
+                    </h2>
+                </div>
                 
                 <div className="p-6">
                     <DialogDescription className="text-sm font-medium text-slate-500 dark:text-slate-400 leading-relaxed">

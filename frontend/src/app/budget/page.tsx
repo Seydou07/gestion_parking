@@ -29,6 +29,9 @@ import { GlobalBudgetActivity } from "@/types/api";
 import { cn } from "@/lib/utils";
 import GlobalBudgetSupplyModal from "@/components/budget/GlobalBudgetSupplyModal";
 import AnnualBudgetConfigModal from "@/components/budget/AnnualBudgetConfigModal";
+import { HistoryDetailsModal } from "@/components/history/HistoryDetailsModal";
+
+const ITEMS_PER_PAGE = 5;
 
 export default function BudgetPage() {
     const [settings, setSettings] = useState<any>(null);
@@ -40,6 +43,11 @@ export default function BudgetPage() {
     const [isSupplyModalOpen, setIsSupplyModalOpen] = useState(false);
     const [isConfigModalOpen, setIsConfigModalOpen] = useState(false);
     const [supplyType, setSupplyType] = useState<'MAINTENANCE' | 'FUEL_CARD' | 'FUEL_BON'>('MAINTENANCE');
+
+    // Pagination & Details states
+    const [currentPage, setCurrentPage] = useState(1);
+    const [selectedActivity, setSelectedActivity] = useState<any>(null);
+    const [isDetailsOpen, setIsDetailsOpen] = useState(false);
 
     useEffect(() => {
         fetchData();
@@ -103,6 +111,25 @@ export default function BudgetPage() {
         .reduce((acc, a) => acc + a.amount, 0);
 
     const grandTotal = totalFuelBudget + totalMaintenanceBudget + totalMaintenanceAlloue;
+
+    const totalPages = Math.ceil(history.length / ITEMS_PER_PAGE);
+    const paginatedHistory = history.slice(
+        (currentPage - 1) * ITEMS_PER_PAGE,
+        currentPage * ITEMS_PER_PAGE
+    );
+
+    const handleOpenDetails = (activity: any) => {
+        // Adapt GlobalBudgetActivity to HistoryLog structure for the modal
+        const log = {
+            id: activity.id,
+            action: activity.type,
+            module: activity.field,
+            description: activity.description,
+            createdAt: activity.date,
+        };
+        setSelectedActivity(log);
+        setIsDetailsOpen(true);
+    };
 
     return (
         <div className="space-y-8 pb-10 animate-in fade-in slide-in-from-bottom-4 duration-700">
@@ -246,10 +273,14 @@ export default function BudgetPage() {
                         </div>
                     </div>
 
-                    <div className="space-y-4 max-h-[500px] overflow-y-auto pr-2 custom-scrollbar">
-                        {history.length > 0 ? (
-                            history.map((activity) => (
-                                <div key={activity.id} className="group p-4 rounded-[20px] bg-white dark:bg-slate-800 border border-slate-100 dark:border-slate-700 hover:bg-fleet-blue/5 hover:border-fleet-blue/20 transition-all duration-300">
+                    <div className="space-y-4">
+                        {paginatedHistory.length > 0 ? (
+                            paginatedHistory.map((activity) => (
+                                <div 
+                                    key={activity.id} 
+                                    className="group p-4 rounded-[20px] bg-white dark:bg-slate-800 border border-slate-100 dark:border-slate-700 hover:bg-fleet-blue/5 hover:border-fleet-blue/20 transition-all duration-300 cursor-pointer"
+                                    onClick={() => handleOpenDetails(activity)}
+                                >
                                     <div className="flex items-center gap-4">
                                         <div className={cn(
                                             "w-12 h-12 rounded-xl flex items-center justify-center border transition-all duration-300",
@@ -296,6 +327,31 @@ export default function BudgetPage() {
                             </div>
                         )}
                     </div>
+
+                    {/* Pagination UI */}
+                    {totalPages > 1 && (
+                        <div className="mt-8 pt-6 border-t border-slate-100 dark:border-slate-800 flex items-center justify-between">
+                            <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">
+                                Page {currentPage} sur {totalPages}
+                            </p>
+                            <div className="flex gap-2">
+                                <button 
+                                    onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))}
+                                    disabled={currentPage === 1}
+                                    className="px-4 py-2 rounded-xl bg-slate-50 dark:bg-slate-800 text-slate-400 text-[10px] font-black uppercase tracking-widest disabled:opacity-30 hover:bg-slate-100 transition-all border border-slate-100"
+                                >
+                                    Prec.
+                                </button>
+                                <button 
+                                    onClick={() => setCurrentPage(prev => Math.min(totalPages, prev + 1))}
+                                    disabled={currentPage === totalPages}
+                                    className="px-4 py-2 rounded-xl bg-slate-50 dark:bg-slate-800 text-slate-400 text-[10px] font-black uppercase tracking-widest disabled:opacity-30 hover:bg-slate-100 transition-all border border-slate-100"
+                                >
+                                    Suiv.
+                                </button>
+                            </div>
+                        </div>
+                    )}
                 </div>
 
                 {/* Status Column */}
@@ -360,6 +416,12 @@ export default function BudgetPage() {
                 onClose={() => setIsConfigModalOpen(false)}
                 onSuccess={fetchData}
                 currentSettings={settings}
+            />
+
+            <HistoryDetailsModal 
+                log={selectedActivity}
+                open={isDetailsOpen}
+                onOpenChange={setIsDetailsOpen}
             />
 
             <Toaster position="top-right" richColors />

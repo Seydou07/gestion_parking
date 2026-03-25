@@ -9,8 +9,11 @@ import {
     CreditCard, 
     Ticket,
     Info,
-    AlertTriangle
+    AlertTriangle,
+    CheckCircle2
 } from "lucide-react";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
+import { Button } from '@/components/ui/button';
 import { api } from "@/lib/api";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
@@ -77,116 +80,98 @@ export default function AnnualBudgetConfigModal({ isOpen, onClose, onSuccess, cu
     if (!isOpen) return null;
 
     return (
-        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-md animate-in fade-in duration-300">
-            <div className="bg-white dark:bg-slate-900 w-full max-w-2xl rounded-[40px] shadow-2xl border border-slate-100 dark:border-slate-800 overflow-hidden animate-in zoom-in-95 duration-300">
-                {/* Header */}
-                <div className="relative p-8 pb-0 flex items-center justify-between">
-                    <div className="flex items-center gap-4">
-                        <div className="w-14 h-14 bg-fleet-blue/10 rounded-2xl flex items-center justify-center border border-fleet-blue/20">
-                            <Landmark className="w-7 h-7 text-fleet-blue" />
-                        </div>
-                        <div>
-                            <h2 className="text-2xl font-black text-slate-800 dark:text-white tracking-tight">Configuration Annuelle</h2>
-                            <p className="text-slate-500 text-xs font-bold uppercase tracking-widest mt-0.5">Définition des enveloppes globales {new Date().getFullYear()}</p>
-                        </div>
-                    </div>
-                    <button 
-                        onClick={onClose}
-                        className="p-3 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-2xl text-slate-400 dark:text-slate-500 transition-colors"
-                    >
-                        <X className="w-6 h-6" />
-                    </button>
+        <Dialog open={isOpen} onOpenChange={onClose}>
+            <DialogContent className="max-w-2xl max-h-[90vh] p-0 border-none rounded-2xl shadow-xl bg-white dark:bg-slate-950 flex flex-col overflow-hidden">
+                <div className="shrink-0 px-6 py-4 bg-fleet-blue text-white flex items-center justify-between sticky top-0 z-50">
+                    <h2 className="text-xl font-black tracking-tight flex items-center gap-2">
+                        <Landmark className="w-5 h-5" />
+                        Configuration Annuelle {new Date().getFullYear()}
+                    </h2>
                 </div>
 
-                <form onSubmit={handleSubmit} className="p-8 space-y-8">
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                        {/* Maintenance */}
-                        <div className="space-y-2 p-6 rounded-3xl bg-slate-50 dark:bg-slate-800/50 border border-slate-100 dark:border-slate-700/50">
-                            <div className="flex items-center gap-2 mb-4">
-                                <Database className="w-4 h-4 text-emerald-500" />
-                                <label className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">Maintenance & Pièces</label>
+                <form onSubmit={handleSubmit} className="flex-1 flex flex-col overflow-hidden">
+                    <div className="flex-1 overflow-y-auto no-scrollbar p-8 space-y-8">
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                            {/* Maintenance */}
+                            <div className="space-y-2 p-6 rounded-3xl bg-slate-50 dark:bg-slate-800/50 border border-slate-100 dark:border-slate-700/50">
+                                <div className="flex items-center gap-2 mb-4">
+                                    <Database className="w-4 h-4 text-emerald-500" />
+                                    <label className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">Maintenance & Pièces</label>
+                                </div>
+                                <div className="relative">
+                                    <input 
+                                        type="number" 
+                                        value={budgets.MAINTENANCE}
+                                        onChange={(e) => setBudgets({...budgets, MAINTENANCE: parseFloat(e.target.value)})}
+                                        className="w-full bg-white dark:bg-slate-900 border-2 border-transparent focus:border-fleet-blue rounded-2xl py-4 px-6 text-lg font-black outline-none transition-all shadow-sm"
+                                        placeholder="0"
+                                        required
+                                    />
+                                    <div className="absolute right-6 top-1/2 -translate-y-1/2 text-xs font-black text-slate-400">FCFA</div>
+                                </div>
                             </div>
-                            <div className="relative">
-                                <input 
-                                    type="number" 
-                                    value={budgets.MAINTENANCE}
-                                    onChange={(e) => setBudgets({...budgets, MAINTENANCE: parseFloat(e.target.value)})}
-                                    className="w-full bg-white dark:bg-slate-900 border-2 border-transparent focus:border-fleet-blue rounded-2xl py-4 px-6 text-lg font-black outline-none transition-all shadow-sm"
-                                    placeholder="0"
-                                    required
-                                />
-                                <div className="absolute right-6 top-1/2 -translate-y-1/2 text-xs font-black text-slate-400">FCFA</div>
+
+                            {/* Fuel Cards */}
+                            <div className="space-y-2 p-6 rounded-3xl bg-slate-50 dark:bg-slate-800/50 border border-slate-100 dark:border-slate-700/50">
+                                <div className="flex items-center gap-2 mb-4">
+                                    <CreditCard className="w-4 h-4 text-blue-500" />
+                                    <label className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">Cartes Carburant</label>
+                                </div>
+                                <div className="relative">
+                                    <input 
+                                        type="number" 
+                                        value={budgets.FUEL_CARD}
+                                        onChange={(e) => setBudgets({...budgets, FUEL_CARD: parseFloat(e.target.value)})}
+                                        className="w-full bg-white dark:bg-slate-900 border-2 border-transparent focus:border-fleet-blue rounded-2xl py-4 px-6 text-lg font-black outline-none transition-all shadow-sm"
+                                        placeholder="0"
+                                        required
+                                    />
+                                    <div className="absolute right-6 top-1/2 -translate-y-1/2 text-xs font-black text-slate-400">FCFA</div>
+                                </div>
+                            </div>
+
+                            {/* Fuel Vouchers */}
+                            <div className="space-y-2 p-6 rounded-3xl bg-slate-50 dark:bg-slate-800/50 border border-slate-100 dark:border-slate-700/50 md:col-span-2">
+                                <div className="flex items-center gap-2 mb-4">
+                                    <Ticket className="w-4 h-4 text-amber-500" />
+                                    <label className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">Bons d'Essence</label>
+                                </div>
+                                <div className="relative">
+                                    <input 
+                                        type="number" 
+                                        value={budgets.FUEL_BON}
+                                        onChange={(e) => setBudgets({...budgets, FUEL_BON: parseFloat(e.target.value)})}
+                                        className="w-full bg-white dark:bg-slate-900 border-2 border-transparent focus:border-fleet-blue rounded-2xl py-4 px-6 text-lg font-black outline-none transition-all shadow-sm"
+                                        placeholder="0"
+                                        required
+                                    />
+                                    <div className="absolute right-6 top-1/2 -translate-y-1/2 text-xs font-black text-slate-400">FCFA</div>
+                                </div>
                             </div>
                         </div>
 
-                        {/* Fuel Cards */}
-                        <div className="space-y-2 p-6 rounded-3xl bg-slate-50 dark:bg-slate-800/50 border border-slate-100 dark:border-slate-700/50">
-                            <div className="flex items-center gap-2 mb-4">
-                                <CreditCard className="w-4 h-4 text-blue-500" />
-                                <label className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">Cartes Carburant</label>
-                            </div>
-                            <div className="relative">
-                                <input 
-                                    type="number" 
-                                    value={budgets.FUEL_CARD}
-                                    onChange={(e) => setBudgets({...budgets, FUEL_CARD: parseFloat(e.target.value)})}
-                                    className="w-full bg-white dark:bg-slate-900 border-2 border-transparent focus:border-fleet-blue rounded-2xl py-4 px-6 text-lg font-black outline-none transition-all shadow-sm"
-                                    placeholder="0"
-                                    required
-                                />
-                                <div className="absolute right-6 top-1/2 -translate-y-1/2 text-xs font-black text-slate-400">FCFA</div>
-                            </div>
-                        </div>
-
-                        {/* Fuel Vouchers */}
-                        <div className="space-y-2 p-6 rounded-3xl bg-slate-50 dark:bg-slate-800/50 border border-slate-100 dark:border-slate-700/50 md:col-span-2">
-                            <div className="flex items-center gap-2 mb-4">
-                                <Ticket className="w-4 h-4 text-amber-500" />
-                                <label className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">Bons d'Essence</label>
-                            </div>
-                            <div className="relative">
-                                <input 
-                                    type="number" 
-                                    value={budgets.FUEL_BON}
-                                    onChange={(e) => setBudgets({...budgets, FUEL_BON: parseFloat(e.target.value)})}
-                                    className="w-full bg-white dark:bg-slate-900 border-2 border-transparent focus:border-fleet-blue rounded-2xl py-4 px-6 text-lg font-black outline-none transition-all shadow-sm"
-                                    placeholder="0"
-                                    required
-                                />
-                                <div className="absolute right-6 top-1/2 -translate-y-1/2 text-xs font-black text-slate-400">FCFA</div>
+                        <div className="p-6 bg-blue-50 dark:bg-blue-900/10 border border-blue-100 dark:border-blue-900/20 rounded-[30px] flex gap-4">
+                            <AlertTriangle className="w-6 h-6 text-blue-500 shrink-0 mt-1" />
+                            <div>
+                                <p className="text-xs font-black text-blue-800 dark:text-blue-300 uppercase tracking-widest mb-1">Impact sur la validation</p>
+                                <p className="text-[11px] font-bold text-blue-700/70 dark:text-blue-400/70 leading-relaxed">
+                                    La modification des enveloppes annuelles impactera directement la validation des seuils lors de l'allocation des budgets véhicules.
+                                </p>
                             </div>
                         </div>
                     </div>
 
-                    <div className="p-6 bg-blue-50 dark:bg-blue-900/10 border border-blue-100 dark:border-blue-900/20 rounded-[30px] flex gap-4">
-                        <AlertTriangle className="w-6 h-6 text-blue-500 shrink-0 mt-1" />
-                        <div>
-                            <p className="text-xs font-black text-blue-800 dark:text-blue-300 uppercase tracking-widest mb-1">Impact sur la validation</p>
-                            <p className="text-[11px] font-bold text-blue-700/70 dark:text-blue-400/70 leading-relaxed">
-                                La modification des enveloppes annuelles impactera directement la validation des seuils lors de l'allocation des budgets véhicules. Cette action sera enregistrée comme une "Définition Initiale" dans l'historique financier.
-                            </p>
-                        </div>
-                    </div>
-
-                    <div className="flex gap-4 pt-4">
-                        <button 
-                            type="button"
-                            onClick={onClose}
-                            className="flex-1 py-4 bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 rounded-2xl font-black uppercase tracking-widest hover:bg-slate-200 transition-all active:scale-[0.98]"
-                        >
-                            Annuler
-                        </button>
-                        <button 
-                            type="submit"
-                            disabled={loading}
-                            className="flex-[2] py-4 bg-slate-900 dark:bg-fleet-blue text-white rounded-2xl font-black uppercase tracking-widest hover:shadow-2xl hover:shadow-fleet-blue/20 transition-all active:scale-[0.98] flex items-center justify-center gap-3 disabled:opacity-50"
-                        >
-                            <Save className={cn("w-5 h-5", loading && "animate-spin")} />
-                            {loading ? "Enregistrement..." : "Appliquer la Configuration"}
-                        </button>
-                    </div>
+                    <DialogFooter className="shrink-0 p-4 bg-white dark:bg-slate-900 border-t border-slate-100 dark:border-slate-800 flex items-center justify-end gap-3 px-6">
+                        <Button type="button" variant="outline" className="h-10 rounded-xl px-6 font-bold text-slate-500 border-slate-200 text-[11px] uppercase tracking-widest" onClick={onClose}>
+                            ANNULER
+                        </Button>
+                        <Button type="submit" disabled={loading} className="h-10 rounded-xl px-10 font-bold bg-fleet-blue hover:bg-fleet-blue-dark shadow-lg shadow-fleet-blue/20 text-[11px] text-white uppercase tracking-widest flex items-center gap-2">
+                            {loading ? <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" /> : <Save className="w-4 h-4" />}
+                            {loading ? "Calcul..." : "Appliquer la Configuration"}
+                        </Button>
+                    </DialogFooter>
                 </form>
-            </div>
-        </div>
+            </DialogContent>
+        </Dialog>
     );
 }

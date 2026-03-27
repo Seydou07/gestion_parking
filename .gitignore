@@ -14,7 +14,7 @@ node_modules/
 dist/
 dist-ssr/
 .next/
-**/ .next/
+**/.next/
 out/
 build/
 

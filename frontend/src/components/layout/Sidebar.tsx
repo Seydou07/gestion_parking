@@ -44,8 +44,8 @@ const Sidebar = ({ isOpen }: SidebarProps) => {
 
     return (
         <aside className={cn(
-            "h-screen flex-shrink-0 bg-white dark:bg-slate-900 border-r border-slate-200 dark:border-slate-800 flex flex-col shadow-sm z-50 transition-all duration-300 overflow-hidden",
-            isOpen ? "w-72" : "w-20"
+            "fixed inset-y-0 left-0 lg:relative h-screen flex-shrink-0 bg-white dark:bg-slate-900 border-r border-slate-200 dark:border-slate-800 flex flex-col shadow-sm z-50 transition-all duration-300 overflow-hidden",
+            isOpen ? "w-72 translate-x-0" : "w-20 lg:w-20 -translate-x-full lg:translate-x-0"
         )}>
             {/* Brand Logo Header */}
             <div className={cn(

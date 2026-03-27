@@ -80,7 +80,7 @@ export default function FuelPage() {
         {
             key: 'fournisseur', header: 'Fournisseur', render: (c: typeof cards[0]) => (
                 <div className="flex items-center gap-3">
-                    <div className="w-8 h-8 rounded-full bg-slate-50 dark:bg-slate-800 flex items-center justify-center border border-slate-200 dark:border-slate-700 shadow-sm">
+                    <div className="hidden sm:flex w-8 h-8 rounded-full bg-slate-50 dark:bg-slate-800 items-center justify-center border border-slate-200 dark:border-slate-700 shadow-sm">
                         <Fuel className="w-4 h-4 text-slate-500" />
                     </div>
                     <span className="font-black text-slate-900 dark:text-white tracking-tight">{c.fournisseur || 'N/A'}</span>
@@ -88,48 +88,38 @@ export default function FuelPage() {
             )
         },
         {
-            key: 'numero', header: 'Numéro & Affectation', render: (c: typeof cards[0]) => (
+            key: 'numero', header: 'Numéro', render: (c: typeof cards[0]) => (
                 <div>
                     <span className="font-black text-slate-900 dark:text-white uppercase flex items-center gap-2">
                         {c.numero}
                         {c.statut === 'ACTIVE' && <span className="w-2 h-2 rounded-full bg-emerald-500"></span>}
                         {c.statut === 'EN_MISSION' && <span className="w-2 h-2 rounded-full bg-amber-500"></span>}
-                        {c.statut === 'INACTIVE' && <span className="w-2 h-2 rounded-full bg-slate-400"></span>}
-                        {c.statut === 'EXPIREE' && <span className="w-2 h-2 rounded-full bg-rose-500"></span>}
                     </span>
-                    <span className="text-xs text-slate-500 font-bold">
-                        {c.statut === 'EN_MISSION' ? '📍 En cours de mission' : (c.notes || 'Carte Carburant')}
+                    <span className="hidden sm:block text-[10px] text-slate-500 font-bold uppercase">
+                        {c.statut === 'EN_MISSION' ? '📍 En mission' : 'Carte'}
                     </span>
                 </div>
             )
         },
         {
             key: 'solde',
-            header: 'Solde Actuel',
+            header: 'Solde',
             render: (c: typeof cards[0]) => (
                 <div>
-                    <p className="font-black text-lg text-emerald-600">
+                    <p className="font-black text-emerald-600">
                         {formatSmartCurrency(c.solde || 0)}
-                    </p>
-                    <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">
-                        Solde Actuel
                     </p>
                 </div>
             )
         },
         {
-            key: 'type', header: 'Type', render: (c: typeof cards[0]) => (
-                <span className="font-bold text-slate-700 dark:text-slate-300 bg-slate-100 dark:bg-slate-800 px-3 py-1.5 rounded-lg text-xs tracking-wide">Standard</span>
-            )
-        },
-        {
-            key: 'validite', header: 'Validité', render: (c: typeof cards[0]) => {
+            key: 'validite', header: 'Expiration', className: "hidden md:table-cell", render: (c: typeof cards[0]) => {
                 const isExpired = c.dateExpiration ? new Date(c.dateExpiration) <= new Date() : false;
                 return (
                     <div>
                         <p className="font-bold text-slate-700 dark:text-slate-300 mb-1">{c.dateExpiration ? formatDate(c.dateExpiration) : 'Illimitée'}</p>
                         {c.dateExpiration && (
-                            <span className={cn("text-[9px] font-black uppercase px-2 py-0.5 rounded-full shadow-sm", isExpired ? "bg-rose-100 text-rose-600" : "bg-emerald-100 text-emerald-600")}>
+                            <span className={cn("text-[8px] font-black uppercase px-2 py-0.5 rounded-full shadow-sm", isExpired ? "bg-rose-100 text-rose-600" : "bg-emerald-100 text-emerald-600")}>
                                 {isExpired ? 'Expirée' : 'Valide'}
                             </span>
                         )}
@@ -138,13 +128,12 @@ export default function FuelPage() {
             }
         },
         {
-            key: 'actions', header: 'Action', render: (c: FuelCard) => (
-                <div className="flex gap-2">
+            key: 'actions', header: 'Actions', className: "text-right", render: (c: FuelCard) => (
+                <div className="flex justify-end gap-1">
                     <Button 
                         size="sm" 
                         variant="ghost" 
-                        className="text-slate-500 hover:bg-slate-50 dark:hover:bg-slate-800 h-8 w-8 p-0"
-                        title="Voir la fiche"
+                        className="h-8 w-8 p-0"
                         onClick={() => {
                             setSelectedCard(c);
                             setIsDetailModalOpen(true);
@@ -155,13 +144,12 @@ export default function FuelPage() {
                     <Button 
                         size="sm" 
                         variant="outline" 
-                        className="text-fleet-blue hover:bg-fleet-blue hover:text-white border-fleet-blue/30 gap-1 font-bold transition-all h-8 px-2"
+                        className="hidden sm:flex text-fleet-blue border-fleet-blue/30 h-8 px-2 font-bold text-[10px] uppercase"
                         onClick={() => {
                             setSelectedCard(c);
                             setIsRechargeModalOpen(true);
                         }}
                     >
-                        <PlusCircle className="w-3.5 h-3.5" />
                         Recharger
                     </Button>
                 </div>
@@ -172,19 +160,19 @@ export default function FuelPage() {
     // --- Colonnes pour l'onglet Bons ---
     const filteredVouchers = vouchers.filter(v => v.numero.toLowerCase().includes(searchTerm.toLowerCase()));
     const voucherColumns = [
-        { key: 'numero', header: 'Numéro du Bon', render: (v: typeof vouchers[0]) => <span className="font-bold text-slate-800 dark:text-slate-200">{v.numero}</span> },
+        { key: 'numero', header: 'N° Bon', render: (v: typeof vouchers[0]) => <span className="font-bold text-slate-800 dark:text-slate-200">{v.numero}</span> },
         {
             key: 'valeur',
-            header: 'Valeur Faciale',
+            header: 'Valeur',
             render: (v: typeof vouchers[0]) => <span className="font-black text-amber-600">{formatSmartCurrency(v.valeur)}</span>
         },
-        { key: 'dateEmission', header: "Date d'émission", render: (v: typeof mockFuelVouchers[0]) => <span className="text-sm text-slate-500">{formatDate(v.dateEmission)}</span> },
+        { key: 'dateEmission', header: "Émis le", className: "hidden sm:table-cell", render: (v: typeof mockFuelVouchers[0]) => <span className="text-sm text-slate-500">{formatDate(v.dateEmission)}</span> },
         {
             key: 'statut',
             header: 'Statut',
             render: (v: typeof mockFuelVouchers[0]) => (
                 <span className={cn(
-                    "px-3 py-1 text-[10px] font-black uppercase tracking-widest flex items-center w-max rounded-md",
+                    "px-2 py-1 text-[9px] font-black uppercase tracking-widest flex items-center w-max rounded-md",
                     v.statut === 'DISPONIBLE' ? 'bg-emerald-100 text-emerald-700' : 'bg-slate-100 text-slate-500'
                 )}>
                     {v.statut}
@@ -197,37 +185,39 @@ export default function FuelPage() {
     const traceColumns = [
         {
             key: 'date',
-            header: 'Achevé le',
+            header: 'Date',
+            className: "hidden sm:table-cell",
             render: (t: typeof fuelTraces[0]) => (
                 <div className="flex items-center gap-2 text-slate-500">
-                    <Clock className="w-3 h-3" />
                     <span className="text-sm font-bold">{formatDate(t.date)}</span>
                 </div>
             )
         },
         {
             key: 'mission',
-            header: 'Lié à la Mission',
+            header: 'Mission',
             render: (t: typeof fuelTraces[0]) => (
                 <div>
-                    <p className="font-black text-slate-800 dark:text-slate-200">{t.destination}</p>
-                    <p className="text-[10px] font-bold uppercase text-slate-400">Mission #{t.missionId}</p>
+                    <p className="font-black text-slate-800 dark:text-slate-200 uppercase">{t.destination}</p>
+                    <p className="hidden md:block text-[10px] font-bold uppercase text-slate-400">#{t.missionId}</p>
                 </div>
             )
         },
         {
             key: 'ressource',
-            header: 'Véhicule & Chauffeur',
+            header: 'Ressources',
+            className: "hidden md:table-cell",
             render: (t: typeof fuelTraces[0]) => (
                 <div>
                     <p className="font-bold text-fleet-blue">{t.vehicule}</p>
-                    <p className="text-xs text-slate-500 uppercase">{t.chauffeur}</p>
+                    <p className="hidden lg:block text-[10px] text-slate-500 uppercase">{t.chauffeur}</p>
                 </div>
             )
         },
         {
             key: 'methode',
-            header: 'Moyen de paiement',
+            header: 'Dotation',
+            className: "hidden lg:table-cell",
             render: (t: typeof fuelTraces[0]) => (
                 <div>
                     <span className={cn(
@@ -236,21 +226,20 @@ export default function FuelPage() {
                     )}>
                         {t.methode}
                     </span>
-                    <p className="text-xs font-bold text-slate-500 mt-1">{t.identifiant}</p>
                 </div>
             )
         },
         {
             key: 'consommation',
-            header: 'Coût / Rendement',
+            header: 'Coût',
+            className: "text-right",
             render: (t: typeof fuelTraces[0]) => (
                 <div className="text-right">
-                    <p className="font-black text-lg text-rose-600 flex items-center justify-end gap-1">
-                        <ArrowDownRight className="w-4 h-4" />
+                    <p className="font-black text-rose-600">
                         {formatSmartCurrency(t.montantGoutte)}
                     </p>
-                    <p className="text-[10px] uppercase font-bold text-slate-400 tracking-widest">
-                        pour {formatSmartNumber(t.kmParcourus)} km ({formatSmartNumber(t.kmParcourus > 0 ? Math.round(t.montantGoutte / t.kmParcourus) : 0)} FCFA/km)
+                    <p className="hidden md:block text-[9px] uppercase font-bold text-slate-400">
+                        {formatSmartNumber(t.kmParcourus)} km
                     </p>
                 </div>
             )

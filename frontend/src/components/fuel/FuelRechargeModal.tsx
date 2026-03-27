@@ -65,8 +65,8 @@ export function FuelRechargeModal({ open, onOpenChange, card, onSuccess }: FuelR
                                 <p className="text-xl font-black text-slate-900 dark:text-white">{formatSmartCurrency(card.solde || 0)}</p>
                             </div>
                             <div className="text-right">
-                                <p className="text-[10px] font-black uppercase text-slate-400 tracking-widest mb-1">Plafond</p>
-                                <p className="text-sm font-bold text-slate-500">{formatSmartCurrency(card.plafond || 0)}</p>
+                                <p className="text-[10px] font-black uppercase text-slate-400 tracking-widest mb-1">Budget Initial</p>
+                                <p className="text-sm font-bold text-slate-500">{formatSmartCurrency(card.soldeInitial || 0)}</p>
                             </div>
                         </div>
 

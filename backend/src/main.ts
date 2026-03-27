@@ -7,11 +7,27 @@ async function bootstrap() {
     const app = await NestFactory.create(AppModule);
 
     // CORS
+    const frontendUrl = process.env.FRONTEND_URL;
+    const allowedOrigins: (string | RegExp)[] = [
+        /http:\/\/localhost:\d+/,
+    ];
+
+    if (frontendUrl) {
+        // Handle comma-separated list of URLs and trailing slashes
+        const origins = frontendUrl.split(',').map(url => url.trim());
+        origins.forEach(url => {
+            const cleanUrl = url.replace(/\/$/, '');
+            // Allow both exact match and match with trailing slash
+            allowedOrigins.push(new RegExp(`^${cleanUrl.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}/?$`));
+        });
+    }
+
     app.enableCors({
-        origin: [/http:\/\/localhost:\d+/], // Allow any local port
+        origin: allowedOrigins,
         methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE'],
         credentials: true,
     });
+
 
     // Global validation pipe
     app.useGlobalPipes(

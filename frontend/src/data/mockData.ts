@@ -63,9 +63,9 @@ export const mockVehicles: Vehicle[] = [
 ];
 
 export const mockFuelCards: FuelCard[] = [
-    { id: 1, numero: 'X892-1243-9821', fournisseur: 'TOTAL', description: 'Direction Générale', solde: 1450000, soldeInitial: 1500000, dateExpiration: '2025-12-31', plafond: 500000, statut: 'ACTIVE' },
-    { id: 2, numero: 'B451-8761-0023', fournisseur: 'SHELL', description: 'Pool Véhicules Utilitaires', solde: 50000, soldeInitial: 100000, dateExpiration: '2024-06-30', plafond: 200000, statut: 'ACTIVE' },
-    { id: 3, numero: 'L909-6612-4412', fournisseur: 'ORYX', description: 'Mission Régionale Bobo', solde: 0, soldeInitial: 300000, dateExpiration: '2023-12-31', plafond: 300000, statut: 'INACTIVE' }
+    { id: 1, numero: 'X892-1243-9821', fournisseur: 'TOTAL', description: 'Direction Générale', solde: 1450000, soldeInitial: 1500000, dateExpiration: '2025-12-31', statut: 'ACTIVE' },
+    { id: 2, numero: 'B451-8761-0023', fournisseur: 'SHELL', description: 'Pool Véhicules Utilitaires', solde: 50000, soldeInitial: 100000, dateExpiration: '2024-06-30', statut: 'ACTIVE' },
+    { id: 3, numero: 'L909-6612-4412', fournisseur: 'ORYX', description: 'Mission Régionale Bobo', solde: 0, soldeInitial: 300000, dateExpiration: '2023-12-31', statut: 'INACTIVE' }
 ];
 export const mockFuelVouchers: FuelVoucher[] = [
     { id: 1, numero: "BON-SONA-8812", valeur: 50000, dateEmission: "2026-03-01", statut: 'UTILISE' },

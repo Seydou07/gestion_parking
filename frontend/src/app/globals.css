@@ -3,6 +3,7 @@
 @tailwind utilities;
 
 :root {
+  --sidebar-width: 288px;
   --foreground-rgb: 30, 41, 59;
   --background-start-rgb: 255, 255, 255;
   --background-end-rgb: 248, 250, 252;

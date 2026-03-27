@@ -8,6 +8,12 @@ const inter = Inter({ subsets: ["latin"] });
 export const metadata: Metadata = {
     title: "FleetGuardian - Gestion de Flotte Automobile",
     description: "Application professionnelle de gestion de flotte intelligente",
+    manifest: "/manifest.json",
+    appleWebApp: {
+        capable: true,
+        statusBarStyle: "default",
+        title: "Fleet Guardian",
+    },
     icons: {
         icon: '/logo.png',
     }

@@ -47,14 +47,14 @@ export default function DriversPage() {
             header: 'Chauffeur',
             render: (c: Driver) => (
                 <div className="flex items-center gap-4">
-                    <div className="w-10 h-10 rounded-full bg-fleet-blue/10 flex items-center justify-center border border-fleet-blue/20">
+                    <div className="hidden sm:flex w-10 h-10 rounded-full bg-fleet-blue/10 items-center justify-center border border-fleet-blue/20">
                         <span className="text-sm font-black text-fleet-blue">
                             {c.prenom[0]}{c.nom[0]}
                         </span>
                     </div>
                     <div>
-                        <p className="font-bold text-slate-900 dark:text-white uppercase">{c.nom} <span className="capitalize font-medium text-slate-600 dark:text-slate-300">{c.prenom}</span></p>
-                        <p className="text-xs text-slate-400 font-medium">{c.email || 'Aucun email'}</p>
+                        <p className="font-bold text-slate-900 dark:text-white uppercase">{c.nom} <span className="hidden sm:inline capitalize font-medium text-slate-600 dark:text-slate-300">{c.prenom}</span></p>
+                        <p className="hidden md:block text-xs text-slate-400 font-medium">{c.email || 'Aucun email'}</p>
                     </div>
                 </div>
             ),
@@ -62,6 +62,7 @@ export default function DriversPage() {
         {
             key: 'telephone',
             header: 'Téléphone',
+            className: "hidden sm:table-cell",
             render: (c: Driver) => (
                 <span className="font-bold text-slate-700 dark:text-slate-300">{c.telephone}</span>
             )
@@ -69,6 +70,7 @@ export default function DriversPage() {
         {
             key: 'permisNumero',
             header: 'N° Permis',
+            className: "hidden md:table-cell",
             render: (c: Driver) => (
                 <span className="font-mono text-xs font-bold px-2 py-1 bg-slate-100 dark:bg-slate-800 rounded text-slate-600 dark:text-slate-300">
                     {c.permisNumero}

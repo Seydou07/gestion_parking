@@ -35,7 +35,7 @@ export default function DashboardPage() {
             missionsEnCours: vehicles.filter(v => v.statut === 'EN_MISSION').length,
             enPanne: vehicles.filter(v => v.statut === 'HORS_SERVICE').length,
             chauffeursActifs: drivers.filter(d => d.statut === 'EN_MISSION').length,
-            totalDepenses: maintenances.reduce((acc, m) => acc + m.cout, 0),
+            totalDepenses: maintenances.reduce((acc, m) => acc + (m.montant || 0), 0),
             alertesCritiques: alerts.filter(a => !a.lue).length
         };
 

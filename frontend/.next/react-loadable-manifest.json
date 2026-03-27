@@ -1,18 +1,1 @@
-{
-  "app\\drivers\\page.tsx -> @/lib/api": {
-    "id": "app\\drivers\\page.tsx -> @/lib/api",
-    "files": []
-  },
-  "app\\missions\\page.tsx -> @/lib/api": {
-    "id": "app\\missions\\page.tsx -> @/lib/api",
-    "files": []
-  },
-  "app\\vehicles\\page.tsx -> @/lib/api": {
-    "id": "app\\vehicles\\page.tsx -> @/lib/api",
-    "files": []
-  },
-  "components\\fuel\\FuelRechargeModal.tsx -> @/lib/api": {
-    "id": "components\\fuel\\FuelRechargeModal.tsx -> @/lib/api",
-    "files": []
-  }
-}
+{}

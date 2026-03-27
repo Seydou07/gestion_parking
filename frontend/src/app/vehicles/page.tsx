@@ -54,18 +54,20 @@ export default function Vehicules() {
             render: (v: Vehicle) => (
                 <div>
                     <p className="font-bold text-slate-800">{v.marque} {v.modele}</p>
-                    <p className="text-xs text-slate-400 font-medium">Année {v.annee}</p>
+                    <p className="hidden sm:block text-xs text-slate-400 font-medium">Année {v.annee}</p>
                 </div>
             ),
         },
         {
             key: 'kilometrage',
             header: 'Kilométrage',
+            className: "hidden md:table-cell",
             render: (v: Vehicle) => <span className="font-bold">{v.kilometrage.toLocaleString('fr-FR')} km</span>,
         },
         {
             key: 'statut',
             header: 'État',
+            className: "hidden sm:table-cell",
             render: (v: Vehicle) => {
                 const status = statusConfig[v.statut];
                 return (
@@ -83,6 +85,7 @@ export default function Vehicules() {
         {
             key: 'typeCarburant',
             header: 'Carburant',
+            className: "hidden lg:table-cell",
             render: (v: Vehicle) => (
                 <div className="flex items-center gap-2">
                     <span className="text-xs font-bold text-slate-600 dark:text-slate-400">{v.typeCarburant}</span>
@@ -200,7 +203,7 @@ export default function Vehicules() {
 
     return (
         <div className="space-y-8 animate-fade-in pb-10">            {/* Stats Cards Row */}
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+            <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
                 <StatCard title="Disponibles" value={vehicles.filter(v => v.statut === 'DISPONIBLE').length} exactValue={vehicles.filter(v => v.statut === 'DISPONIBLE').length} variant="success" isCurrency={false} />
                 <StatCard title="En mission" value={vehicles.filter(v => v.statut === 'EN_MISSION').length} exactValue={vehicles.filter(v => v.statut === 'EN_MISSION').length} variant="info" isCurrency={false} />
                 <StatCard title="En maintenance" value={vehicles.filter(v => v.statut === 'EN_MAINTENANCE').length} exactValue={vehicles.filter(v => v.statut === 'EN_MAINTENANCE').length} variant="warning" isCurrency={false} />

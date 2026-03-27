@@ -42,9 +42,7 @@ export default function MissionsPage() {
         m.destination.toLowerCase().includes(searchTerm.toLowerCase()) ||
         m.vehicule?.immatriculation.toLowerCase().includes(searchTerm.toLowerCase()) ||
         m.chauffeur?.nom.toLowerCase().includes(searchTerm.toLowerCase())
-    );
-
-    const columns = [
+    );    const columns = [
         {
             key: 'destination',
             header: 'Ordre de Mission',
@@ -53,7 +51,11 @@ export default function MissionsPage() {
                     <p className="font-black text-slate-900 dark:text-white uppercase tracking-tight">{m.destination}</p>
                     <div className="flex items-center gap-2 mt-1">
                         <span className="text-[10px] font-bold text-slate-500 bg-slate-100 dark:bg-slate-800 px-2 py-0.5 rounded uppercase">
-                            Du {formatDate(m.dateDepart)} au {formatDate(m.dateRetour)}
+                            {formatDate(m.dateDepart)}
+                        </span>
+                        <span className="hidden md:inline text-[10px] text-slate-300">→</span>
+                        <span className="hidden md:inline text-[10px] font-bold text-slate-500 bg-slate-100 dark:bg-slate-800 px-2 py-0.5 rounded uppercase">
+                            {formatDate(m.dateRetour)}
                         </span>
                     </div>
                 </div>
@@ -61,33 +63,37 @@ export default function MissionsPage() {
         },
         {
             key: 'vehicule',
-            header: 'Véhicule & Dotation',
+            header: 'Véhicule',
+            className: "hidden sm:table-cell",
             render: (m: Mission) => {
                 const voucher = fuelVouchers.find(v => v.id === m.bonCarburantId);
                 return (
                     <div>
                         <p className="font-bold text-fleet-blue">{m.vehicule?.immatriculation}</p>
-                        {m.typeCarburantDotation === 'BON' && voucher ? (
-                            <p className="text-[10px] font-black uppercase text-amber-600 mt-1 flex items-center gap-1">
-                                {voucher.numero} ({voucher.valeur.toLocaleString('fr-FR')} FCFA)
-                            </p>
-                        ) : m.typeCarburantDotation === 'CARTE' ? (
-                            <p className="text-[10px] font-black uppercase text-amber-600 mt-1 flex items-center gap-1">
-                                Carte Carburant
-                            </p>
-                        ) : (
-                            <p className="text-[10px] text-slate-400 mt-1">Aucune dotation</p>
-                        )}
+                        <div className="hidden lg:block">
+                            {m.typeCarburantDotation === 'BON' && voucher ? (
+                                <p className="text-[10px] font-black uppercase text-amber-600 mt-1 flex items-center gap-1">
+                                    {voucher.numero} ({voucher.valeur.toLocaleString('fr-FR')} FCFA)
+                                </p>
+                            ) : m.typeCarburantDotation === 'CARTE' ? (
+                                <p className="text-[10px] font-black uppercase text-amber-600 mt-1 flex items-center gap-1">
+                                    Carte Carburant
+                                </p>
+                            ) : (
+                                <p className="text-[10px] text-slate-400 mt-1">Aucune dotation</p>
+                            )}
+                        </div>
                     </div>
                 );
             },
         },
         {
             key: 'chauffeur',
-            header: 'Chauffeur Responsable',
+            header: 'Chauffeur',
+            className: "hidden md:table-cell",
             render: (m: Mission) => (
                 <div>
-                    <p className="font-bold text-slate-700 dark:text-slate-300 uppercase">{m.chauffeur?.nom} <span className="capitalize text-slate-500">{m.chauffeur?.prenom}</span></p>
+                    <p className="font-bold text-slate-700 dark:text-slate-300 uppercase">{m.chauffeur?.nom} <span className="hidden lg:inline capitalize text-slate-500">{m.chauffeur?.prenom}</span></p>
                 </div>
             ),
         },
@@ -106,21 +112,23 @@ export default function MissionsPage() {
         {
             key: 'actions_metier',
             header: 'Actions',
+            className: "text-right",
             render: (m: Mission) => (
-                <div className="flex items-center gap-2">
-                    {m.statut === 'PLANIFIEE' && (
-                        <Button size="sm" onClick={(e) => { e.stopPropagation(); handleOpenCheckOut(m); }} className="bg-slate-900 text-white hover:bg-slate-800 font-bold tracking-widest uppercase text-[10px] h-8 shadow-md">
-                            Check-out
-                        </Button>
-                    )}
-                    {m.statut === 'EN_COURS' && (
-                        <Button size="sm" onClick={(e) => { e.stopPropagation(); handleOpenCheckIn(m); }} className="bg-emerald-500 hover:bg-emerald-600 text-white font-black tracking-widest uppercase text-[10px] h-8 shadow-md">
-                            Check-in
-                        </Button>
-                    )}
+                <div className="flex items-center justify-end gap-2">
+                    <div className="hidden sm:flex gap-2">
+                        {m.statut === 'PLANIFIEE' && (
+                            <Button size="sm" onClick={(e) => { e.stopPropagation(); handleOpenCheckOut(m); }} className="bg-slate-900 text-white hover:bg-slate-800 font-bold tracking-widest uppercase text-[10px] h-8 shadow-md px-3">
+                                Out
+                            </Button>
+                        )}
+                        {m.statut === 'EN_COURS' && (
+                            <Button size="sm" onClick={(e) => { e.stopPropagation(); handleOpenCheckIn(m); }} className="bg-emerald-500 hover:bg-emerald-600 text-white font-black tracking-widest uppercase text-[10px] h-8 shadow-md px-3">
+                                In
+                            </Button>
+                        )}
+                    </div>
 
-                    {/* Bouton Détail avec l'icône seule */}
-                    <Button size="icon" variant="ghost" onClick={(e) => { e.stopPropagation(); handleOpenDetail(m); }} className="h-8 w-8 rounded-full ml-auto hover:bg-slate-100 dark:hover:bg-slate-800">
+                    <Button size="icon" variant="ghost" onClick={(e) => { e.stopPropagation(); handleOpenDetail(m); }} className="h-8 w-8 rounded-full hover:bg-slate-100 dark:hover:bg-slate-800">
                         <Eye className="w-4 h-4 text-slate-500" />
                     </Button>
                 </div>
@@ -242,7 +250,7 @@ export default function MissionsPage() {
 
     return (
         <div className="space-y-8 animate-fade-in pb-10">            {/* KPI Cards */}
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+            <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
                 {[
                     { label: 'En Cours (Sur route)', count: missions.filter(m => m.statut === 'EN_COURS').length, border: 'border-fleet-blue', bg: 'bg-fleet-blue/5 text-fleet-blue' },
                     { label: 'Planifiées', count: missions.filter(m => m.statut === 'PLANIFIEE').length, border: 'border-slate-300', bg: 'bg-slate-100 dark:bg-slate-800 text-slate-600' },

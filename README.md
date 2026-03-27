@@ -2,7 +2,9 @@
 
 ## Configuration de Production (Railway)
 
-Voici les variables d'environnement configurées pour le Backend sur Railway :
+- **Backend URL** : `https://gestionparking-production.up.railway.app`
+- **Port cible (Target Port)** : `3001`
+- **Variables d'environnement** :
 
 - `JWT_SECRET` : `${{gestion-flot2.1()}}`
 - `JWT_EXPIRATION` : `24h`

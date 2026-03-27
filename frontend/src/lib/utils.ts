@@ -6,7 +6,10 @@ export function cn(...inputs: ClassValue[]) {
 }
 
 export function formatDate(date: string | Date) {
-    return new Date(date).toLocaleDateString('fr-FR', {
+    if (!date) return 'N/A';
+    const d = new Date(date);
+    if (isNaN(d.getTime())) return 'N/A';
+    return d.toLocaleDateString('fr-FR', {
         day: '2-digit',
         month: 'long',
         year: 'numeric'
@@ -29,6 +32,7 @@ export function formatCompactNumber(number: number) {
 }
 
 export function formatSmartNumber(value: number) {
+    if (value === null || value === undefined || isNaN(value)) return '0';
     if (value >= 100000) {
         return formatCompactNumber(value);
     }
@@ -36,5 +40,6 @@ export function formatSmartNumber(value: number) {
 }
 
 export function formatSmartCurrency(amount: number) {
+    if (amount === null || amount === undefined || isNaN(amount)) return '0 FCFA';
     return formatSmartNumber(amount) + ' FCFA';
 }

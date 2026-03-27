@@ -95,10 +95,13 @@ export function BudgetAllocationModal({ open, onOpenChange, vehicle, onSuccess }
         <Dialog open={open} onOpenChange={onOpenChange}>
             <DialogContent className="sm:max-w-[450px] p-0 border-none rounded-2xl shadow-xl bg-white dark:bg-slate-950 flex flex-col overflow-hidden">
                 <div className="shrink-0 px-6 py-4 bg-fleet-blue text-white flex items-center justify-between sticky top-0 z-50">
-                    <h2 className="text-xl font-black tracking-tight flex items-center gap-2">
+                    <DialogTitle className="text-xl font-black tracking-tight flex items-center gap-2">
                         <Landmark className="w-5 h-5" />
                         Allocation Budget
-                    </h2>
+                    </DialogTitle>
+                    <DialogDescription className="sr-only">
+                        Formulaire d'allocation de budget pour le véhicule {vehicle.immatriculation}
+                    </DialogDescription>
                 </div>
 
                 <form onSubmit={handleSubmit} className="p-6 space-y-5 bg-white dark:bg-slate-900">
@@ -149,12 +152,12 @@ export function BudgetAllocationModal({ open, onOpenChange, vehicle, onSuccess }
                     </div>
 
                     <DialogFooter className="shrink-0 p-4 bg-white dark:bg-slate-900 border-t border-slate-100 dark:border-slate-800 flex items-center justify-end gap-3 px-6">
-                        <Button type="button" variant="outline" onClick={() => onOpenChange(false)} className="h-10 flex-1 rounded-xl font-bold text-slate-500 border-slate-200 text-[11px] uppercase tracking-widest">
-                            Annuler
+                        <Button type="button" variant="outline" onClick={() => onOpenChange(false)} className="h-9 rounded-xl px-6 font-bold text-slate-500 border-slate-200 text-[11px] uppercase tracking-wide">
+                            ANNULER
                         </Button>
-                        <Button type="submit" disabled={loading} className="h-10 flex-[2] rounded-xl font-bold bg-fleet-blue hover:bg-fleet-blue-dark shadow-lg shadow-fleet-blue/20 text-[11px] text-white uppercase tracking-widest flex items-center gap-2">
+                        <Button type="submit" disabled={loading} className="h-9 rounded-xl px-10 font-bold bg-fleet-blue hover:bg-fleet-blue-dark shadow-lg shadow-fleet-blue/20 text-[11px] text-white uppercase tracking-wide flex items-center gap-2">
                             {loading && <Loader2 className="w-4 h-4 animate-spin" />}
-                            Confirmer l'Allocation
+                            CONFIRMER L'ALLOCATION
                         </Button>
                     </DialogFooter>
                 </form>

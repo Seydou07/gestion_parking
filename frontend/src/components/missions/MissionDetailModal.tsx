@@ -1,6 +1,7 @@
 "use client";
 
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
+import { VisuallyHidden } from '@radix-ui/react-visually-hidden';
 import { Button } from '@/components/ui/button';
 import { Mission } from '@/types/api';
 import { mockFuelCards, mockFuelVouchers } from '@/data/mockData';
@@ -23,12 +24,15 @@ export function MissionDetailModal({ open, onOpenChange, mission }: MissionDetai
         <Dialog open={open} onOpenChange={onOpenChange}>
             <DialogContent className="max-w-4xl max-h-[90vh] p-0 border-none rounded-2xl shadow-xl bg-slate-50 dark:bg-slate-950 flex flex-col overflow-hidden">
                 <div className="shrink-0 px-6 py-4 bg-fleet-blue text-white flex items-center justify-between sticky top-0 z-50">
-                    <div className="flex items-center gap-3">
-                        <h2 className="text-xl font-black tracking-tight">Détails de la Mission</h2>
+                    <DialogTitle className="flex items-center gap-3">
+                        <span className="text-xl font-black tracking-tight">Détails de la Mission</span>
                         <span className={`text-[10px] font-black px-2 py-0.5 rounded-full uppercase tracking-widest bg-white/20 text-white mr-8`}>
                             {mission.statut}
                         </span>
-                    </div>
+                    </DialogTitle>
+                    <DialogDescription className="sr-only">
+                        Vue détaillée des informations de la mission sélectionnée.
+                    </DialogDescription>
                     <div className="text-[10px] font-bold opacity-70 tracking-widest uppercase">
                         ID: #{mission.id.toString().padStart(4, '0')}
                     </div>
@@ -45,7 +49,7 @@ export function MissionDetailModal({ open, onOpenChange, mission }: MissionDetai
                         <div className="flex items-center gap-2">
                             <Calendar className="w-4 h-4 text-slate-400" />
                             <span className="text-xs font-bold text-slate-600">
-                                {formatDate(mission.dateDebut)} - {formatDate(mission.dateFin)}
+                                {formatDate(mission.dateDepart)} - {formatDate(mission.dateRetour)}
                             </span>
                         </div>
                         <div className="h-4 w-px bg-slate-200 ml-auto"></div>
@@ -127,23 +131,61 @@ export function MissionDetailModal({ open, onOpenChange, mission }: MissionDetai
                                     </div>
                                 </div>
 
-                                <div className="space-y-2">
-                                    {mission.lettreMissionUrl && (
-                                        <div className="flex items-center justify-between p-2 bg-white dark:bg-slate-800 rounded-lg border border-amber-200/50">
-                                            <div className="flex items-center gap-2">
-                                                <FileText className="w-4 h-4 text-fleet-blue" />
-                                                <span className="text-[10px] font-black uppercase text-slate-700">Lettre de Mission</span>
+                                <div className="space-y-3">
+                                    {mission.lettreMission && (
+                                        <div className="group relative overflow-hidden bg-white dark:bg-slate-800 rounded-xl border border-amber-200/50 p-3 hover:border-fleet-blue transition-all">
+                                            <div className="flex items-center justify-between">
+                                                <div className="flex items-center gap-3">
+                                                    <div className="p-2 bg-fleet-blue/10 text-fleet-blue rounded-lg">
+                                                        <FileText className="w-4 h-4" />
+                                                    </div>
+                                                    <div>
+                                                        <p className="text-[10px] font-black uppercase text-slate-400">Lettre de Mission</p>
+                                                        <p className="text-xs font-bold truncate max-w-[150px]">{mission.lettreMission}</p>
+                                                    </div>
+                                                </div>
+                                                <div className="flex items-center gap-1">
+                                                    <Button 
+                                                        variant="ghost" 
+                                                        size="sm" 
+                                                        className="h-8 text-[10px] font-black uppercase text-fleet-blue hover:bg-fleet-blue/5"
+                                                        onClick={() => window.open(`https://api.placeholder.com/600/800?text=${mission.lettreMission}`, '_blank')}
+                                                    >
+                                                        VOIR
+                                                    </Button>
+                                                    <Button variant="ghost" size="sm" className="h-8 w-8 p-0 text-slate-400">
+                                                        <Download className="w-3.5 h-3.5" />
+                                                    </Button>
+                                                </div>
                                             </div>
-                                            <Button variant="ghost" size="sm" className="h-7 w-7 p-0 text-fleet-blue"><Download className="w-3.5 h-3.5" /></Button>
                                         </div>
                                     )}
                                     {mission.ticketCarburantUrl && (
-                                        <div className="flex items-center justify-between p-2 bg-white dark:bg-slate-800 rounded-lg border border-amber-200/50">
-                                            <div className="flex items-center gap-2">
-                                                <FileText className="w-4 h-4 text-emerald-600" />
-                                                <span className="text-[10px] font-black uppercase text-slate-700">Ticket Carburant</span>
+                                        <div className="group relative overflow-hidden bg-white dark:bg-slate-800 rounded-xl border border-emerald-200/50 p-3 hover:border-emerald-500 transition-all">
+                                            <div className="flex items-center justify-between">
+                                                <div className="flex items-center gap-3">
+                                                    <div className="p-2 bg-emerald-500/10 text-emerald-600 rounded-lg">
+                                                        <FileText className="w-4 h-4" />
+                                                    </div>
+                                                    <div>
+                                                        <p className="text-[10px] font-black uppercase text-slate-400">Ticket Carburant</p>
+                                                        <p className="text-xs font-bold truncate max-w-[150px]">Justificatif de dotation</p>
+                                                    </div>
+                                                </div>
+                                                <div className="flex items-center gap-1">
+                                                    <Button 
+                                                        variant="ghost" 
+                                                        size="sm" 
+                                                        className="h-8 text-[10px] font-black uppercase text-emerald-600 hover:bg-emerald-50"
+                                                        onClick={() => window.open(`https://api.placeholder.com/600/400?text=Ticket+Carburant`, '_blank')}
+                                                    >
+                                                        VOIR
+                                                    </Button>
+                                                    <Button variant="ghost" size="sm" className="h-8 w-8 p-0 text-slate-400">
+                                                        <Download className="w-3.5 h-3.5" />
+                                                    </Button>
+                                                </div>
                                             </div>
-                                            <Button variant="ghost" size="sm" className="h-7 w-7 p-0 text-emerald-600"><Download className="w-3.5 h-3.5" /></Button>
                                         </div>
                                     )}
                                 </div>
@@ -155,17 +197,17 @@ export function MissionDetailModal({ open, onOpenChange, mission }: MissionDetai
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                 <div className="p-4 bg-slate-100/50 dark:bg-slate-900 rounded-xl border-l-2 border-fleet-blue">
                                     <p className="text-[9px] font-black text-slate-500 uppercase tracking-[0.2em] mb-2">Check-out (Départ)</p>
-                                    <p className="font-black text-xl text-slate-900 dark:text-white mb-2">{formatSmartNumber(mission.kilometrageDepart || 0)} <span className="text-[10px] text-slate-400">KM</span></p>
+                                    <p className="font-black text-xl text-slate-900 dark:text-white mb-2">{formatSmartNumber(mission.kmDepart || 0)} <span className="text-[10px] text-slate-400">KM</span></p>
                                     <div className="text-[10px] font-medium text-slate-500 bg-white/50 dark:bg-slate-800/50 p-2 rounded-lg italic">
                                         "{mission.observationDepart || 'Aucune observation'}"
                                     </div>
                                 </div>
                                 <div className="p-4 bg-slate-100/50 dark:bg-slate-900 rounded-xl border-l-2 border-emerald-500">
                                     <p className="text-[9px] font-black text-slate-500 uppercase tracking-[0.2em] mb-2">Check-in (Retour)</p>
-                                    <p className="font-black text-xl text-slate-900 dark:text-white mb-2">{formatSmartNumber(mission.kilometrageRetour || 0)} <span className="text-[10px] text-slate-400">KM</span></p>
+                                    <p className="font-black text-xl text-slate-900 dark:text-white mb-2">{formatSmartNumber(mission.kmRetour || 0)} <span className="text-[10px] text-slate-400">KM</span></p>
                                         <div className="text-[10px] font-medium text-slate-500 bg-white/50 dark:bg-slate-800/50 p-2 rounded-lg italic text-right">
                                             <div className="text-emerald-600 font-black mb-1">
-                                                +{formatSmartNumber((mission.kilometrageRetour || 0) - (mission.kilometrageDepart || 0))} KM PARCOURUS
+                                                +{formatSmartNumber((mission.kmRetour || 0) - (mission.kmDepart || 0))} KM PARCOURUS
                                             </div>
                                             "{mission.observationRetour || 'Aucune observation'}"
                                         </div>

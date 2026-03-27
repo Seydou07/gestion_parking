@@ -1,21 +1,29 @@
-import { IsNotEmpty, IsString, IsNumber, IsDateString, IsOptional, IsInt } from 'class-validator';
+import { IsNotEmpty, IsString, IsNumber, IsOptional, IsInt, IsDate, Min } from 'class-validator';
+import { Type } from 'class-transformer';
 
 export class CreateFuelVoucherDto {
     @IsString()
-    @IsNotEmpty()
-    numero: string;
+    @IsOptional()
+    numero?: string;
+
+    @IsInt()
+    @IsOptional()
+    @Min(1)
+    quantite?: number;
 
     @IsNumber()
     @IsNotEmpty()
     valeur: number;
 
-    @IsDateString()
+    @Type(() => Date)
+    @IsDate()
     @IsNotEmpty()
-    dateEmission: string;
+    dateEmission: Date;
 
-    @IsDateString()
+    @Type(() => Date)
+    @IsDate()
     @IsOptional()
-    dateExpiration?: string;
+    dateExpiration?: Date;
 
     @IsInt()
     @IsOptional()

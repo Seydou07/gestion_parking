@@ -1,6 +1,6 @@
 "use client";
 
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Maintenance, Vehicle } from '@/types/api';
 import { useVehicles } from '@/hooks/useFleetStore';
@@ -25,13 +25,12 @@ import {
 import { formatCurrency, formatDate, formatSmartCurrency, formatSmartNumber } from '@/lib/utils';
 import { cn } from '@/lib/utils';
 
-const typeConfig = {
+const typeConfig: Record<string, { label: string, className: string }> = {
     vidange: { label: 'Vidange', className: 'bg-blue-50 text-blue-600 border-blue-100' },
-    revision: { label: 'Révision', className: 'bg-amber-50 text-amber-600 border-amber-100' },
     reparation: { label: 'Réparation', className: 'bg-rose-50 text-rose-600 border-rose-100' },
-    controle_technique: { label: 'Contrôle technique', className: 'bg-emerald-50 text-emerald-600 border-emerald-100' },
-    pneumatiques: { label: 'Pneumatiques', className: 'bg-slate-50 text-slate-600 border-slate-100' },
-    freins: { label: 'Freins', className: 'bg-orange-50 text-orange-600 border-orange-100' },
+    panne: { label: 'Panne', className: 'bg-red-50 text-red-600 border-red-100' },
+    visite_technique: { label: 'Visite Technique', className: 'bg-emerald-50 text-emerald-600 border-emerald-100' },
+    assurance: { label: 'Assurance', className: 'bg-purple-50 text-purple-600 border-purple-100' },
     autre: { label: 'Autre', className: 'bg-slate-50 text-slate-600 border-slate-100' },
 };
 
@@ -55,16 +54,21 @@ export function MaintenanceDetailModal({
     if (!maintenance) return null;
 
     const vehicle = vehicles.find(v => v.id === maintenance.vehiculeId);
-    const type = typeConfig[maintenance.type] || typeConfig.autre;
+    const typeKey = maintenance.type.toLowerCase() as keyof typeof typeConfig;
+    const type = typeConfig[typeKey] || typeConfig.autre;
+    const isImmobilise = maintenance.statut === 'EN_COURS' || maintenance.statut === 'EN_ATTENTE';
 
     return (
         <Dialog open={open} onOpenChange={onOpenChange}>
             <DialogContent className="max-w-3xl max-h-[90vh] p-0 border-none rounded-2xl shadow-xl bg-slate-50 dark:bg-slate-950 flex flex-col overflow-hidden">
                 <div className="shrink-0 px-6 py-4 bg-fleet-blue text-white flex items-center justify-between sticky top-0 z-50">
-                    <h2 className="text-xl font-black tracking-tight flex items-center gap-2">
+                    <DialogTitle className="text-xl font-black tracking-tight flex items-center gap-2">
                         <Wrench className="w-5 h-5 text-white/80" />
                         Rapport d'Intervention
-                    </h2>
+                    </DialogTitle>
+                    <DialogDescription className="sr-only">
+                        Détails de l'intervention de maintenance pour le véhicule {vehicle?.immatriculation}
+                    </DialogDescription>
                     
                     <div className="flex gap-2 mr-8">
                          <button className="p-1.5 bg-white/10 hover:bg-white/20 rounded-lg transition-colors backdrop-blur-md">
@@ -83,21 +87,21 @@ export function MaintenanceDetailModal({
                                 <div className="p-2 rounded-xl bg-fleet-blue/10 text-fleet-blue"><Calendar className="w-4 h-4" /></div>
                                 <div>
                                     <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest">Date</p>
-                                    <p className="text-xs font-bold">{formatDate(maintenance.date)}</p>
+                                    <p className="text-xs font-bold">{formatDate(maintenance.dateDebut)}</p>
                                 </div>
                             </div>
                             <div className="flex items-center gap-2.5">
                                 <div className="p-2 rounded-xl bg-amber-500/10 text-amber-600"><Gauge className="w-4 h-4" /></div>
                                 <div>
-                                    <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest">Kilométrage</p>
-                                    <p className="text-xs font-bold">{formatSmartNumber(maintenance.kilometrage)} KM</p>
+                                    <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest">Type Interv.</p>
+                                    <p className="text-xs font-bold capitalize">{type.label}</p>
                                 </div>
                             </div>
                             <div className="flex items-center gap-2.5">
                                 <div className="p-2 rounded-xl bg-emerald-500/10 text-emerald-600"><Building className="w-4 h-4" /></div>
                                 <div>
-                                    <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest">Type</p>
-                                    <p className="text-xs font-bold capitalize">{type.label}</p>
+                                    <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest">Statut</p>
+                                    <p className="text-xs font-bold capitalize">{maintenance.statut}</p>
                                 </div>
                             </div>
                             <div className="ml-auto flex items-center gap-2.5">
@@ -118,13 +122,15 @@ export function MaintenanceDetailModal({
                                 <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">{vehicle?.marque} {vehicle?.modele}</p>
                                 <div className="mt-4 w-full pt-4 border-t border-slate-50 dark:border-slate-800 flex justify-between px-2">
                                     <div className="text-left">
-                                        <p className="text-[8px] font-bold text-slate-300 uppercase">Statut</p>
-                                        <p className="text-[10px] font-bold text-emerald-500">CONFORME</p>
+                                        <p className="text-[8px] font-bold text-slate-300 uppercase">Immobilisé</p>
+                                        <p className={cn("text-[10px] font-bold", isImmobilise ? "text-rose-500" : "text-slate-400")}>
+                                            {isImmobilise ? "OUI" : "NON"}
+                                        </p>
                                     </div>
                                     <div className="text-right">
-                                        <p className="text-[8px] font-bold text-slate-300 uppercase">Immobilisé</p>
-                                        <p className={cn("text-[10px] font-bold", maintenance.vehiculeAuGarage ? "text-rose-500" : "text-slate-400")}>
-                                            {maintenance.vehiculeAuGarage ? "OUI" : "NON"}
+                                        <p className="text-[8px] font-bold text-slate-300 uppercase">État Facturation</p>
+                                        <p className={cn("text-[10px] font-bold", maintenance.statut === 'TERMINEE' ? "text-emerald-500" : "text-amber-500")}>
+                                            {maintenance.statut === 'TERMINEE' ? "TRAITÉE" : "PENDING"}
                                         </p>
                                     </div>
                                 </div>
@@ -142,15 +148,6 @@ export function MaintenanceDetailModal({
                                             <p className="text-sm font-bold text-slate-900 dark:text-white capitalize">{maintenance.garage || 'Non spécifié'}</p>
                                         </div>
                                     </div>
-                                    {maintenance.garageTelephone && (
-                                        <div className="flex items-start gap-3">
-                                            <div className="p-1.5 rounded-lg bg-fleet-blue/10 text-fleet-blue"><Phone className="w-3.5 h-3.5" /></div>
-                                            <div>
-                                                <p className="text-[10px] font-black text-slate-500">Contact</p>
-                                                <p className="text-sm font-bold text-slate-900 dark:text-white">{maintenance.garageTelephone}</p>
-                                            </div>
-                                        </div>
-                                    )}
                                 </div>
                             </div>
                         </div>
@@ -161,53 +158,36 @@ export function MaintenanceDetailModal({
                             <div className="p-6 bg-white dark:bg-slate-900 rounded-3xl shadow-sm border border-slate-100 dark:border-slate-800 space-y-6">
                                 <div className="flex gap-3 items-start">
                                     <div className="p-2.5 bg-slate-50 dark:bg-slate-800 rounded-xl"><FileText className="w-5 h-5 text-slate-400" /></div>
-                                    <p className="text-xs font-medium leading-relaxed text-slate-600 dark:text-slate-400 pt-1">{maintenance.description}</p>
+                                    <p className="text-xs font-medium leading-relaxed text-slate-600 dark:text-slate-400 pt-1">{maintenance.description || 'Aucune description détaillée communiquée.'}</p>
                                 </div>
 
-                                {/* Fluides if oil change */}
-                                {maintenance.huileType && (
-                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                                        <div className="p-3 bg-blue-50/50 dark:bg-blue-900/10 rounded-xl border border-blue-100 dark:border-blue-900/20 flex items-center gap-3">
-                                            <div className="p-2.5 bg-white dark:bg-slate-900 rounded-xl shadow-sm"><Droplets className="w-4 h-4 text-blue-500" /></div>
-                                            <div>
-                                                <p className="text-[9px] font-black text-blue-400 uppercase">Huile Moteur</p>
-                                                <p className="text-xs font-bold text-blue-900 dark:text-blue-100">
-                                                    {maintenance.huileType} 
-                                                    {((maintenance as any).huileLitrage || maintenance.huileQuantite) && ` • ${(maintenance as any).huileLitrage || maintenance.huileQuantite}L`}
-                                                    {(maintenance as any).nombreBidons > 0 && ` (${(maintenance as any).nombreBidons} bidons)`}
-                                                </p>
-                                            </div>
-                                        </div>
-                                        <div className="p-3 bg-emerald-50/50 dark:bg-emerald-900/10 rounded-xl border border-emerald-100 dark:border-emerald-900/20 flex items-center gap-3">
-                                            <div className="p-2.5 bg-white dark:bg-slate-900 rounded-xl shadow-sm"><CheckCircle2 className="w-4 h-4 text-emerald-500" /></div>
-                                            <div>
-                                                <p className="text-[9px] font-black text-emerald-400 uppercase">Filtres</p>
-                                                <p className="text-[8px] font-bold text-emerald-800 dark:text-emerald-200 uppercase tracking-tighter mt-0.5">
-                                                    {maintenance.filtreHuileChange && "HUILE • "}
-                                                    {maintenance.filtreAirChange && "AIR • "}
-                                                    {maintenance.filtreHabitacleChange && "HABITACLE"}
-                                                </p>
-                                            </div>
-                                        </div>
-                                    </div>
-                                )}
-
                                 {/* Pièces Détachées */}
-                                {maintenance.piecesChangees && maintenance.piecesChangees.length > 0 && (
+                                {maintenance.items && maintenance.items.length > 0 && (
                                     <div className="space-y-3">
-                                        <p className="text-[9px] font-black text-slate-300 uppercase tracking-widest pl-1">Pièces remplacées</p>
+                                        <p className="text-[9px] font-black text-slate-300 uppercase tracking-widest pl-1">Pièces et Services</p>
                                         <div className="space-y-1.5">
-                                            {maintenance.piecesChangees.map((p, i) => (
+                                            {maintenance.items.map((p, i) => (
                                                 <div key={i} className="flex items-center justify-between px-3 py-2 bg-slate-50 dark:bg-slate-800/50 rounded-xl border border-transparent hover:border-fleet-blue/10 transition-colors">
                                                     <div className="flex items-center gap-3">
                                                         <Package className="w-3.5 h-3.5 text-slate-300" />
-                                                        <p className="text-xs font-bold text-slate-700 dark:text-slate-300 capitalize">{p.nom}</p>
+                                                        <p className="text-xs font-bold text-slate-700 dark:text-slate-300 capitalize">{p.nom} (x{p.quantite})</p>
                                                     </div>
                                                     <div className="text-right">
-                                                        <p className="text-[10px] font-bold text-fleet-blue">{formatSmartCurrency(p.prix * p.quantite)}</p>
+                                                        <p className="text-[10px] font-bold text-fleet-blue">{formatSmartCurrency(p.total)}</p>
                                                     </div>
                                                 </div>
                                             ))}
+                                            {maintenance.mainDoeuvre && maintenance.mainDoeuvre > 0 ? (
+                                                <div className="flex items-center justify-between px-3 py-2 bg-slate-50 dark:bg-slate-800/50 rounded-xl border border-transparent hover:border-fleet-blue/10 transition-colors">
+                                                    <div className="flex items-center gap-3">
+                                                        <Wrench className="w-3.5 h-3.5 text-slate-300" />
+                                                        <p className="text-xs font-bold text-slate-700 dark:text-slate-300 capitalize">Main d'œuvre</p>
+                                                    </div>
+                                                    <div className="text-right">
+                                                        <p className="text-[10px] font-bold text-fleet-blue">{formatSmartCurrency(maintenance.mainDoeuvre)}</p>
+                                                    </div>
+                                                </div>
+                                            ) : null}
                                         </div>
                                     </div>
                                 )}
@@ -215,23 +195,10 @@ export function MaintenanceDetailModal({
                         </div>
 
                         {/* Recap & Costs */}
-                        <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                             <div className="p-4 bg-slate-900 rounded-2xl text-white">
-                                <p className="text-[8px] font-bold text-white/30 uppercase tracking-widest mb-1">COÛT TOTAL</p>
-                                <p className="text-xl font-black">{formatSmartCurrency(maintenance.cout)}</p>
-                            </div>
-                            {maintenance.prochaineMaintenance && (
-                                <div className="p-4 bg-amber-500 rounded-2xl text-white">
-                                    <p className="text-[8px] font-black text-white/30 uppercase tracking-widest mb-2">PROCHAINE ÉCHÉANCE</p>
-                                    <p className="text-xl font-black">{formatSmartNumber(maintenance.prochaineMaintenance)} KM</p>
-                                </div>
-                            )}
-                            <div className="p-4 bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 rounded-2xl">
-                                <p className="text-[8px] font-black text-slate-300 uppercase tracking-widest mb-2">TEMPS PASSÉ</p>
-                                <div className="flex items-center gap-2">
-                                    <Clock className="w-4 h-4 text-slate-300" />
-                                    <p className="text-xl font-black text-slate-900 dark:text-white">{maintenance.heuresTravail || '0'} H</p>
-                                </div>
+                                <p className="text-[8px] font-bold text-white/30 uppercase tracking-widest mb-1">COÛT TOTAL MENTIONNÉ</p>
+                                <p className="text-xl font-black">{formatSmartCurrency(maintenance.montant || 0)}</p>
                             </div>
                         </div>
 
@@ -251,7 +218,7 @@ export function MaintenanceDetailModal({
                     <Button variant="outline" onClick={() => onOpenChange(false)} className="h-9 rounded-xl px-6 font-bold text-slate-500 border-slate-200 text-[11px]">
                         FERMER
                     </Button>
-                    {maintenance.vehiculeAuGarage && onMarquerRetour && (
+                    {isImmobilise && onMarquerRetour && (
                         <Button onClick={() => onMarquerRetour(maintenance)} className="h-9 rounded-xl px-6 font-bold bg-emerald-500 hover:bg-emerald-600 shadow-lg shadow-emerald-500/20 text-[11px] text-white">
                             <CheckCircle2 className="w-3.5 h-3.5 mr-1.5" /> MARQUER RETOUR
                         </Button>

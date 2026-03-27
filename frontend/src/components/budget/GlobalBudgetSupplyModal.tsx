@@ -10,7 +10,7 @@ import {
     Info,
     Wallet
 } from "lucide-react";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { cn } from "@/lib/utils";
 import { api } from "@/lib/api";
@@ -76,10 +76,13 @@ export default function GlobalBudgetSupplyModal({ isOpen, onClose, onSuccess, ty
         <Dialog open={isOpen} onOpenChange={onClose}>
             <DialogContent className="max-w-md max-h-[90vh] p-0 border-none rounded-2xl shadow-xl bg-white dark:bg-slate-950 flex flex-col overflow-hidden">
                 <div className="shrink-0 px-6 py-4 bg-fleet-blue text-white flex items-center justify-between sticky top-0 z-50">
-                    <h2 className="text-xl font-black tracking-tight flex items-center gap-2">
+                    <DialogTitle className="text-xl font-black tracking-tight flex items-center gap-2">
                         <Wallet className="w-5 h-5" />
                         Approvisionnement
-                    </h2>
+                    </DialogTitle>
+                    <DialogDescription className="sr-only">
+                        Ajouter des fonds au budget global {type.toLowerCase()}.
+                    </DialogDescription>
                 </div>
 
                 <form onSubmit={handleSubmit} className="flex-1 flex flex-col overflow-hidden">

@@ -63,9 +63,9 @@ export const mockVehicles: Vehicle[] = [
 ];
 
 export const mockFuelCards: FuelCard[] = [
-    { id: 1, numero: 'X892-1243-9821', fournisseur: 'TOTAL', affectation: 'Direction Générale', soldeActuel: 1450000, dateExpiration: '2025-12-31', plafondMensuel: 500000, statut: 'ACTIF', typeCarburant: 'ESSENCE' },
-    { id: 2, numero: 'B451-8761-0023', fournisseur: 'SHELL', affectation: 'Pool Véhicules Utilitaires', soldeActuel: 50000, dateExpiration: '2024-06-30', plafondMensuel: 200000, statut: 'ACTIF', typeCarburant: 'DIESEL' },
-    { id: 3, numero: 'L909-6612-4412', fournisseur: 'ORYX', affectation: 'Mission Régionale Bobo', soldeActuel: 0, dateExpiration: '2023-12-31', plafondMensuel: 300000, statut: 'BLOQUEE', typeCarburant: 'DIESEL' }
+    { id: 1, numero: 'X892-1243-9821', fournisseur: 'TOTAL', description: 'Direction Générale', solde: 1450000, soldeInitial: 1500000, dateExpiration: '2025-12-31', plafond: 500000, statut: 'ACTIVE' },
+    { id: 2, numero: 'B451-8761-0023', fournisseur: 'SHELL', description: 'Pool Véhicules Utilitaires', solde: 50000, soldeInitial: 100000, dateExpiration: '2024-06-30', plafond: 200000, statut: 'ACTIVE' },
+    { id: 3, numero: 'L909-6612-4412', fournisseur: 'ORYX', description: 'Mission Régionale Bobo', solde: 0, soldeInitial: 300000, dateExpiration: '2023-12-31', plafond: 300000, statut: 'INACTIVE' }
 ];
 export const mockFuelVouchers: FuelVoucher[] = [
     { id: 1, numero: "BON-SONA-8812", valeur: 50000, dateEmission: "2026-03-01", statut: 'UTILISE' },
@@ -79,14 +79,14 @@ export const mockMissions: Mission[] = [
         vehiculeId: 2,
         chauffeurId: 1,
         destination: "Bobo-Dioulasso",
-        dateDebut: "2026-03-10",
-        dateFin: "2026-03-25",
+        dateDepart: "2026-03-10",
+        dateRetour: "2026-03-25",
         statut: "EN_COURS",
-        kilometrageDepart: 88000,
+        kmDepart: 88000,
         observationDepart: "Véhicule propre, pleins faits. RAS.",
         typeCarburantDotation: "BON",
         bonCarburantId: 1,
-        lettreMissionUrl: "lettre-001.pdf",
+        lettreMission: "lettre-001.pdf",
         vehicule: mockVehicles[1],
         chauffeur: {
             id: 1, nom: "Ouedraogo", prenom: "Lamine", telephone: "+226 70 12 34 56", email: "l@fleet.com", statut: "EN_MISSION", permisNumero: "B-2015", permisExpiration: "2028-05-12"
@@ -97,11 +97,11 @@ export const mockMissions: Mission[] = [
         vehiculeId: 1,
         chauffeurId: 2,
         destination: "Koudougou",
-        dateDebut: "2026-02-05",
-        dateFin: "2026-02-08",
+        dateDepart: "2026-02-05",
+        dateRetour: "2026-02-08",
         statut: "TERMINEE",
-        kilometrageDepart: 44500,
-        kilometrageRetour: 45000,
+        kmDepart: 44500,
+        kmRetour: 45000,
         observationDepart: "RAS",
         observationRetour: "Pare-brise légèrement fissuré par un caillou.",
         vehicule: mockVehicles[0],
@@ -114,8 +114,8 @@ export const mockMissions: Mission[] = [
         vehiculeId: 3,
         chauffeurId: 3,
         destination: "Banfora",
-        dateDebut: "2026-04-01",
-        dateFin: "2026-04-10",
+        dateDepart: "2026-04-01",
+        dateRetour: "2026-04-10",
         statut: "PLANIFIEE",
         vehicule: mockVehicles[2],
         chauffeur: {

@@ -2,14 +2,17 @@
 
 import { useState } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
+import { VisuallyHidden } from '@radix-ui/react-visually-hidden';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Mission, Vehicle, Driver, FuelCard, FuelVoucher } from '@/types/api';
-import { formatSmartCurrency } from '@/lib/utils';
-import { Map, Calendar, Car, Fuel, FileUp, Search, AlertTriangle } from 'lucide-react';
+import { formatSmartCurrency, cn } from '@/lib/utils';
+import { Map, Calendar, Car, Fuel, FileUp, Search, AlertTriangle, Check, ChevronsUpDown, CreditCard, Ticket } from 'lucide-react';
 import { ConfirmModal } from '@/components/ui/confirm-modal';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { Command, CommandInput, CommandList, CommandEmpty, CommandGroup, CommandItem } from '@/components/ui/command';
 
 interface MissionCreateModalProps {
     open: boolean;
@@ -24,32 +27,82 @@ interface MissionCreateModalProps {
 export function MissionCreateModal({ open, onOpenChange, vehicles, drivers, fuelCards, fuelVouchers, onSubmit }: MissionCreateModalProps) {
     const [formData, setFormData] = useState<Partial<Mission>>({
         destination: '',
-        dateDebut: '',
-        dateFin: '',
+        dateDepart: '',
+        dateRetour: '',
         vehiculeId: undefined,
         chauffeurId: undefined,
         typeCarburantDotation: 'AUCUNE',
         bonCarburantId: undefined,
         carteCarburantId: undefined,
-        lettreMissionUrl: '',
+        lettreMission: '',
         statut: 'PLANIFIEE'
     });
 
     const [vehicleSearch, setVehicleSearch] = useState('');
     const [driverSearch, setDriverSearch] = useState('');
+    const [cardSearch, setCardSearch] = useState('');
+    const [voucherSearch, setVoucherSearch] = useState('');
+    
+    const [vehicleOpen, setVehicleOpen] = useState(false);
+    const [driverOpen, setDriverOpen] = useState(false);
+    const [cardOpen, setCardOpen] = useState(false);
+    const [voucherOpen, setVoucherOpen] = useState(false);
     
     // Safety Alert State
     const [safetyModalOpen, setSafetyModalOpen] = useState(false);
     const [potentialVehicleId, setPotentialVehicleId] = useState<number | null>(null);
     const [safetyMessage, setSafetyMessage] = useState('');
 
-    const availableVehicles = vehicles
-        .filter(v => v.statut === 'DISPONIBLE')
-        .filter(v => v.immatriculation.toLowerCase().includes(vehicleSearch.toLowerCase()) || v.marque.toLowerCase().includes(vehicleSearch.toLowerCase()));
+    const availableVehicles = vehicles.filter(v => v.statut === 'DISPONIBLE');
+    const unavailableVehicles = vehicles.filter(v => v.statut !== 'DISPONIBLE');
 
-    const availableDrivers = drivers
+    const filteredVehicles = vehicles
+        .filter(v => v.immatriculation.toLowerCase().includes(vehicleSearch.toLowerCase()) || v.marque.toLowerCase().includes(vehicleSearch.toLowerCase()));
+    
+    // Limit to 5 if no search
+    const displayedVehicles = vehicleSearch === '' ? availableVehicles.slice(0, 5) : filteredVehicles.filter(v => v.statut === 'DISPONIBLE');
+    const displayedUnavailable = vehicleSearch === '' ? [] : filteredVehicles.filter(v => v.statut !== 'DISPONIBLE');
+    
+    const getVehicleWarning = (v: Vehicle) => {
+        const today = new Date();
+        const warnings: string[] = [];
+        if (v.assuranceExpiration && new Date(v.assuranceExpiration) < today) warnings.push('Assurance expirée');
+        if (v.prochainControle && new Date(v.prochainControle) < today) warnings.push('Visite expirée');
+        return warnings;
+    };
+    
+    const statusLabels: Record<string, string> = {
+        EN_MISSION: '🚗 En mission',
+        EN_MAINTENANCE: '🔧 Au garage',
+        HORS_SERVICE: '⛔ Hors service',
+    };
+
+    const availableDrivers = drivers.filter(d => d.statut === 'DISPONIBLE');
+
+    const filteredDrivers = drivers
         .filter(d => d.statut === 'DISPONIBLE')
         .filter(d => d.nom.toLowerCase().includes(driverSearch.toLowerCase()) || d.prenom.toLowerCase().includes(driverSearch.toLowerCase()));
+
+    // Limit to 5 if no search
+    const displayedDrivers = driverSearch === '' ? availableDrivers.slice(0, 5) : filteredDrivers;
+
+    const filteredCards = fuelCards
+        .filter(c => c.statut === 'ACTIVE')
+        .filter(c => 
+            c.numero.toLowerCase().includes(cardSearch.toLowerCase()) || 
+            (c.description || '').toLowerCase().includes(cardSearch.toLowerCase()) || 
+            (c.fournisseur || '').toLowerCase().includes(cardSearch.toLowerCase())
+        );
+
+    // Limit to 5 if no search
+    const displayedCards = cardSearch === '' ? filteredCards.slice(0, 5) : filteredCards;
+
+    const filteredVouchers = fuelVouchers
+        .filter(v => v.statut === 'DISPONIBLE')
+        .filter(v => v.numero.toLowerCase().includes(voucherSearch.toLowerCase()));
+
+    // Limit to 5 if no search
+    const displayedVouchers = voucherSearch === '' ? filteredVouchers.slice(0, 5) : filteredVouchers;
 
     const handleSubmit = (e: React.FormEvent) => {
         e.preventDefault();
@@ -97,7 +150,7 @@ export function MissionCreateModal({ open, onOpenChange, vehicles, drivers, fuel
     const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
         // Simulation d'upload
         if (e.target.files && e.target.files.length > 0) {
-            updateField('lettreMissionUrl', e.target.files[0].name);
+            updateField('lettreMission', e.target.files[0].name);
         }
     };
 
@@ -105,10 +158,13 @@ export function MissionCreateModal({ open, onOpenChange, vehicles, drivers, fuel
         <Dialog open={open} onOpenChange={onOpenChange}>
             <DialogContent className="max-w-3xl max-h-[90vh] p-0 border-none rounded-2xl shadow-xl bg-slate-50 dark:bg-slate-950 flex flex-col overflow-hidden">
                 <div className="shrink-0 px-6 py-4 bg-fleet-blue text-white flex items-center justify-between sticky top-0 z-50">
-                    <h2 className="text-xl font-black tracking-tight flex items-center gap-2">
+                    <DialogTitle className="text-xl font-black tracking-tight flex items-center gap-2">
                         <Map className="w-5 h-5 text-white/80" />
                         Nouvelle Mission
-                    </h2>
+                    </DialogTitle>
+                    <DialogDescription className="sr-only">
+                        Formulaire pour planifier une nouvelle mission.
+                    </DialogDescription>
                 </div>
 
                 <form onSubmit={handleSubmit} className="flex-1 flex flex-col overflow-hidden">
@@ -125,10 +181,10 @@ export function MissionCreateModal({ open, onOpenChange, vehicles, drivers, fuel
                                 </div>
                             </div>
                             <div>
-                                <input type="file" id="lettreMission" className="hidden" accept=".pdf,image/*" onChange={handleFileUpload} required />
+                                <input type="file" id="lettreMission" name="lettreMission" className="hidden" accept=".pdf,image/*" onChange={handleFileUpload} />
                                 <label htmlFor="lettreMission" className="cursor-pointer inline-flex items-center justify-center rounded-xl text-[10px] font-black uppercase tracking-widest ring-offset-background transition-colors focus-visible:outline-none bg-white text-slate-900 shadow-sm border border-slate-200 h-9 px-4 hover:bg-slate-50">
-                                    {formData.lettreMissionUrl ? (
-                                        <span className="truncate max-w-[150px]">{formData.lettreMissionUrl}</span>
+                                    {formData.lettreMission ? (
+                                        <span className="truncate max-w-[150px]">{formData.lettreMission}</span>
                                     ) : "TÉLÉVERSER"}
                                 </label>
                             </div>
@@ -158,8 +214,8 @@ export function MissionCreateModal({ open, onOpenChange, vehicles, drivers, fuel
                                         <Input
                                             type="date"
                                             required
-                                            value={formData.dateDebut}
-                                            onChange={(e) => updateField('dateDebut', e.target.value)}
+                                            value={formData.dateDepart}
+                                            onChange={(e) => updateField('dateDepart', e.target.value)}
                                             className="h-9 pl-9 pr-4 rounded-xl border-slate-200 focus:border-fleet-blue font-bold text-xs"
                                         />
                                     </div>
@@ -171,8 +227,8 @@ export function MissionCreateModal({ open, onOpenChange, vehicles, drivers, fuel
                                         <Input
                                             type="date"
                                             required
-                                            value={formData.dateFin}
-                                            onChange={(e) => updateField('dateFin', e.target.value)}
+                                            value={formData.dateRetour}
+                                            onChange={(e) => updateField('dateRetour', e.target.value)}
                                             className="h-9 pl-9 pr-4 rounded-xl border-slate-200 focus:border-fleet-blue font-bold text-xs"
                                         />
                                     </div>
@@ -189,57 +245,146 @@ export function MissionCreateModal({ open, onOpenChange, vehicles, drivers, fuel
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                 <div className="space-y-1.5">
                                     <Label className="text-[10px] font-black uppercase text-slate-400 ml-1">Véhicule *</Label>
-                                    <Select required value={formData.vehiculeId?.toString()} onValueChange={(v) => handleVehicleSelect(Number(v))}>
-                                        <SelectTrigger className="h-9 rounded-xl border-slate-200 font-bold text-xs">
-                                            <SelectValue placeholder="Choisir un véhicule" />
-                                        </SelectTrigger>
-                                        <SelectContent>
-                                            <div className="p-2 sticky top-0 bg-white dark:bg-slate-950 z-10 border-b">
-                                                <div className="relative">
-                                                    <Search className="w-3.5 h-3.5 absolute left-2 top-1/2 -translate-y-1/2 text-slate-400" />
-                                                    <Input
-                                                        placeholder="Filtrer..."
-                                                        className="h-8 pl-8 text-[10px] rounded-lg border-slate-100"
-                                                        value={vehicleSearch}
-                                                        onChange={(e) => setVehicleSearch(e.target.value)}
-                                                        onKeyDown={(e) => e.stopPropagation()}
-                                                    />
-                                                </div>
-                                            </div>
-                                            {availableVehicles.map(v => (
-                                                <SelectItem key={v.id} value={v.id.toString()} className="text-xs font-bold uppercase">
-                                                    {v.immatriculation} - {v.marque}
-                                                </SelectItem>
-                                            ))}
-                                        </SelectContent>
-                                    </Select>
+                                    <Popover open={vehicleOpen} onOpenChange={setVehicleOpen}>
+                                        <PopoverTrigger asChild>
+                                            <Button
+                                                variant="outline"
+                                                role="combobox"
+                                                aria-expanded={vehicleOpen}
+                                                className="w-full h-9 justify-between rounded-xl border-slate-200 font-bold text-xs"
+                                            >
+                                                {formData.vehiculeId
+                                                    ? vehicles.find((v) => v.id === formData.vehiculeId)?.immatriculation
+                                                    : "Choisir un véhicule"}
+                                                <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                                            </Button>
+                                        </PopoverTrigger>
+                                        <PopoverContent className="w-full p-0 max-w-[400px]" align="start">
+                                            <Command shouldFilter={false}>
+                                                <CommandInput 
+                                                    placeholder="Rechercher un véhicule..." 
+                                                    value={vehicleSearch}
+                                                    onValueChange={setVehicleSearch}
+                                                />
+                                                <CommandList className="no-scrollbar">
+                                                    <CommandEmpty>Aucun véhicule trouvé.</CommandEmpty>
+                                                    <CommandGroup heading="Véhicules Disponibles">
+                                                        {displayedVehicles.map((v) => {
+                                                            const warnings = getVehicleWarning(v);
+                                                            return (
+                                                                <CommandItem
+                                                                    key={v.id}
+                                                                    value={v.id.toString()}
+                                                                    onSelect={() => {
+                                                                        handleVehicleSelect(v.id);
+                                                                        setVehicleOpen(false);
+                                                                        setVehicleSearch('');
+                                                                    }}
+                                                                    className="flex items-center justify-between p-3"
+                                                                >
+                                                                    <div className="flex items-center gap-3">
+                                                                        <div className="p-2 bg-slate-100 rounded-lg">
+                                                                            <Car className="w-4 h-4 text-slate-600" />
+                                                                        </div>
+                                                                        <div className="flex flex-col">
+                                                                            <span className="font-black text-xs uppercase">{v.immatriculation} - {v.marque}</span>
+                                                                            {warnings.length > 0 && (
+                                                                                <span className="text-[8px] text-amber-600 font-black">⚠ {warnings.join(', ')}</span>
+                                                                            )}
+                                                                        </div>
+                                                                    </div>
+                                                                    <Check
+                                                                        className={cn(
+                                                                            "h-4 w-4 text-fleet-blue",
+                                                                            formData.vehiculeId === v.id ? "opacity-100" : "opacity-0"
+                                                                        )}
+                                                                    />
+                                                                </CommandItem>
+                                                            );
+                                                        })}
+                                                    </CommandGroup>
+                                                    {displayedUnavailable.length > 0 && (
+                                                        <CommandGroup heading="Indisponibles">
+                                                            {displayedUnavailable.map((v) => (
+                                                                <CommandItem key={v.id} disabled className="opacity-40 p-3">
+                                                                    <div className="flex items-center gap-3">
+                                                                        <div className="p-2 bg-slate-100 rounded-lg">
+                                                                            <Car className="w-4 h-4 text-slate-400" />
+                                                                        </div>
+                                                                        <div className="flex flex-col">
+                                                                            <span className="font-black text-xs uppercase">{v.immatriculation} - {v.marque}</span>
+                                                                            <span className="text-[9px] text-slate-400 font-bold uppercase">{statusLabels[v.statut] || v.statut}</span>
+                                                                        </div>
+                                                                    </div>
+                                                                </CommandItem>
+                                                            ))}
+                                                        </CommandGroup>
+                                                    )}
+                                                </CommandList>
+                                            </Command>
+                                        </PopoverContent>
+                                    </Popover>
                                 </div>
                                 <div className="space-y-1.5">
                                     <Label className="text-[10px] font-black uppercase text-slate-400 ml-1">Chauffeur *</Label>
-                                    <Select required value={formData.chauffeurId?.toString()} onValueChange={(v) => updateField('chauffeurId', Number(v))}>
-                                        <SelectTrigger className="h-9 rounded-xl border-slate-200 font-bold text-xs">
-                                            <SelectValue placeholder="Choisir un chauffeur" />
-                                        </SelectTrigger>
-                                        <SelectContent>
-                                            <div className="p-2 sticky top-0 bg-white dark:bg-slate-950 z-10 border-b">
-                                                <div className="relative">
-                                                    <Search className="w-3.5 h-3.5 absolute left-2 top-1/2 -translate-y-1/2 text-slate-400" />
-                                                    <Input
-                                                        placeholder="Filtrer..."
-                                                        className="h-8 pl-8 text-[10px] rounded-lg border-slate-100"
-                                                        value={driverSearch}
-                                                        onChange={(e) => setDriverSearch(e.target.value)}
-                                                        onKeyDown={(e) => e.stopPropagation()}
-                                                    />
-                                                </div>
-                                            </div>
-                                            {availableDrivers.map(d => (
-                                                <SelectItem key={d.id} value={d.id.toString()} className="text-xs font-bold uppercase">
-                                                    {d.prenom} {d.nom}
-                                                </SelectItem>
-                                            ))}
-                                        </SelectContent>
-                                    </Select>
+                                    <Popover open={driverOpen} onOpenChange={setDriverOpen}>
+                                        <PopoverTrigger asChild>
+                                            <Button
+                                                variant="outline"
+                                                role="combobox"
+                                                aria-expanded={driverOpen}
+                                                className="w-full h-9 justify-between rounded-xl border-slate-200 font-bold text-xs"
+                                            >
+                                                {formData.chauffeurId
+                                                    ? drivers.find((d) => d.id === formData.chauffeurId)?.nom
+                                                    : "Choisir un chauffeur"}
+                                                <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                                            </Button>
+                                        </PopoverTrigger>
+                                        <PopoverContent className="w-full p-0 max-w-[400px]" align="start">
+                                            <Command shouldFilter={false}>
+                                                <CommandInput 
+                                                    placeholder="Rechercher un chauffeur..." 
+                                                    value={driverSearch}
+                                                    onValueChange={setDriverSearch}
+                                                />
+                                                <CommandList className="no-scrollbar">
+                                                    <CommandEmpty>Aucun chauffeur trouvé.</CommandEmpty>
+                                                    <CommandGroup heading="Chauffeurs Disponibles">
+                                                        {displayedDrivers.map((d) => (
+                                                            <CommandItem
+                                                                key={d.id}
+                                                                value={d.id.toString()}
+                                                                onSelect={() => {
+                                                                    updateField('chauffeurId', d.id);
+                                                                    setDriverOpen(false);
+                                                                    setDriverSearch('');
+                                                                }}
+                                                                className="flex items-center justify-between p-3"
+                                                            >
+                                                                <div className="flex items-center gap-3">
+                                                                    <div className="p-2 bg-slate-100 rounded-lg">
+                                                                        <div className="w-4 h-4 text-slate-600 bg-slate-200 rounded-full flex items-center justify-center text-[8px] font-black uppercase">
+                                                                            {d.nom[0]}{d.prenom[0]}
+                                                                        </div>
+                                                                    </div>
+                                                                    <div className="flex flex-col">
+                                                                        <span className="font-black text-xs uppercase">{d.prenom} {d.nom}</span>
+                                                                    </div>
+                                                                </div>
+                                                                <Check
+                                                                    className={cn(
+                                                                        "h-4 w-4 text-fleet-blue",
+                                                                        formData.chauffeurId === d.id ? "opacity-100" : "opacity-0"
+                                                                    )}
+                                                                />
+                                                            </CommandItem>
+                                                        ))}
+                                                    </CommandGroup>
+                                                </CommandList>
+                                            </Command>
+                                        </PopoverContent>
+                                    </Popover>
                                 </div>
 
                                 {/* Dotation Carburant */}
@@ -275,36 +420,139 @@ export function MissionCreateModal({ open, onOpenChange, vehicles, drivers, fuel
                                         {formData.typeCarburantDotation === 'BON' && (
                                             <div className="space-y-1.5 animate-in fade-in slide-in-from-top-2 duration-300">
                                                 <Label className="text-[10px] font-black uppercase text-amber-600/70 ml-1">Sélectionner le Bon d'Essence *</Label>
-                                                <Select required value={formData.bonCarburantId?.toString()} onValueChange={(v) => updateField('bonCarburantId', Number(v))}>
-                                                    <SelectTrigger className="h-9 rounded-xl border-amber-100 bg-amber-50/30 font-bold text-xs text-amber-900">
-                                                        <SelectValue placeholder="Liste des bons disponibles" />
-                                                    </SelectTrigger>
-                                                    <SelectContent>
-                                                        {fuelVouchers.filter(v => v.statut === 'DISPONIBLE').map(v => (
-                                                            <SelectItem key={v.id} value={v.id.toString()} className="text-xs font-bold uppercase">
-                                                                {v.numero} - {formatSmartCurrency(v.valeur)}
-                                                            </SelectItem>
-                                                        ))}
-                                                    </SelectContent>
-                                                </Select>
+                                                <Popover open={voucherOpen} onOpenChange={setVoucherOpen}>
+                                                    <PopoverTrigger asChild>
+                                                        <Button
+                                                            variant="outline"
+                                                            role="combobox"
+                                                            aria-expanded={voucherOpen}
+                                                            className="w-full h-10 justify-between rounded-xl border-amber-100 bg-amber-50/30 font-bold text-xs text-amber-900 hover:bg-amber-100/50"
+                                                        >
+                                                            {formData.bonCarburantId
+                                                                ? `№ ${fuelVouchers.find((v) => v.id === formData.bonCarburantId)?.numero}`
+                                                                : "Choisir un bon..."}
+                                                            <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                                                        </Button>
+                                                    </PopoverTrigger>
+                                                    <PopoverContent className="w-full p-0 max-w-[400px]" align="start">
+                                                        <Command shouldFilter={false}>
+                                                            <CommandInput 
+                                                                placeholder="Rechercher un bon (Numéro)..." 
+                                                                value={voucherSearch}
+                                                                onValueChange={setVoucherSearch}
+                                                            />
+                                                            <CommandList className="no-scrollbar">
+                                                                <CommandEmpty>Aucun bon trouvé.</CommandEmpty>
+                                                                <CommandGroup heading={voucherSearch === '' ? "Bons disponibles (Aperçu)" : "Résultats de recherche"}>
+                                                                    {displayedVouchers.map((v) => (
+                                                                        <CommandItem
+                                                                            key={v.id}
+                                                                            value={v.id.toString()}
+                                                                            onSelect={() => {
+                                                                                updateField('bonCarburantId', v.id);
+                                                                                setVoucherOpen(false);
+                                                                                setVoucherSearch('');
+                                                                            }}
+                                                                            className="flex items-center justify-between p-3"
+                                                                        >
+                                                                            <div className="flex items-center gap-3">
+                                                                                <div className="p-2 bg-amber-100 rounded-lg">
+                                                                                    <Ticket className="w-4 h-4 text-amber-600" />
+                                                                                </div>
+                                                                                <div className="flex flex-col">
+                                                                                    <span className="font-black text-xs">№ {v.numero}</span>
+                                                                                    <span className="text-[10px] text-amber-600 font-bold">{formatSmartCurrency(v.valeur)}</span>
+                                                                                </div>
+                                                                            </div>
+                                                                            <Check
+                                                                                className={cn(
+                                                                                    "h-4 w-4 text-amber-600",
+                                                                                    formData.bonCarburantId === v.id ? "opacity-100" : "opacity-0"
+                                                                                )}
+                                                                            />
+                                                                        </CommandItem>
+                                                                    ))}
+                                                                </CommandGroup>
+                                                                {voucherSearch === '' && filteredVouchers.length > 5 && (
+                                                                    <div className="p-2 text-center border-t">
+                                                                        <p className="text-[9px] font-bold text-slate-400 uppercase italic">Recherchez pour voir plus de bons</p>
+                                                                    </div>
+                                                                )}
+                                                            </CommandList>
+                                                        </Command>
+                                                    </PopoverContent>
+                                                </Popover>
                                             </div>
                                         )}
 
                                         {formData.typeCarburantDotation === 'CARTE' && (
                                             <div className="space-y-1.5 animate-in fade-in slide-in-from-top-2 duration-300">
                                                 <Label className="text-[10px] font-black uppercase text-amber-600/70 ml-1">Sélectionner la Carte Carburant *</Label>
-                                                <Select required value={formData.carteCarburantId?.toString()} onValueChange={(v) => updateField('carteCarburantId', Number(v))}>
-                                                    <SelectTrigger className="h-9 rounded-xl border-amber-100 bg-amber-50/30 font-bold text-xs text-amber-900">
-                                                        <SelectValue placeholder="Liste des cartes configurées" />
-                                                    </SelectTrigger>
-                                                    <SelectContent>
-                                                        {fuelCards.map(c => (
-                                                            <SelectItem key={c.id} value={c.id.toString()} className="text-xs font-bold uppercase">
-                                                                {c.numero} - {c.description}
-                                                            </SelectItem>
-                                                        ))}
-                                                    </SelectContent>
-                                                </Select>
+                                                <Popover open={cardOpen} onOpenChange={setCardOpen}>
+                                                    <PopoverTrigger asChild>
+                                                        <Button
+                                                            variant="outline"
+                                                            role="combobox"
+                                                            aria-expanded={cardOpen}
+                                                            className="w-full h-10 justify-between rounded-xl border-amber-100 bg-amber-50/30 font-bold text-xs text-amber-900 hover:bg-amber-100/50"
+                                                        >
+                                                            {formData.carteCarburantId
+                                                                ? fuelCards.find((c) => c.id === formData.carteCarburantId)?.numero
+                                                                : "Choisir une carte..."}
+                                                            <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                                                        </Button>
+                                                    </PopoverTrigger>
+                                                    <PopoverContent className="w-full p-0 max-w-[400px]" align="start">
+                                                        <Command shouldFilter={false}>
+                                                            <CommandInput 
+                                                                placeholder="Rechercher une carte (Numéro, Fournisseur)..." 
+                                                                value={cardSearch}
+                                                                onValueChange={setCardSearch}
+                                                            />
+                                                            <CommandList className="no-scrollbar">
+                                                                <CommandEmpty>Aucune carte trouvée.</CommandEmpty>
+                                                                <CommandGroup heading={cardSearch === '' ? "Cartes actives (Aperçu)" : "Résultats de recherche"}>
+                                                                    {displayedCards.map((c) => (
+                                                                        <CommandItem
+                                                                            key={c.id}
+                                                                            value={c.id.toString()}
+                                                                            onSelect={() => {
+                                                                                updateField('carteCarburantId', c.id);
+                                                                                setCardOpen(false);
+                                                                                setCardSearch('');
+                                                                            }}
+                                                                            className="flex items-center justify-between p-3"
+                                                                        >
+                                                                            <div className="flex items-center gap-3">
+                                                                                <div className="p-2 bg-blue-100 rounded-lg">
+                                                                                    <CreditCard className="w-4 h-4 text-blue-600" />
+                                                                                </div>
+                                                                                <div className="flex flex-col">
+                                                                                    <div className="flex items-center gap-2">
+                                                                                        <span className="font-black text-xs">{c.numero}</span>
+                                                                                        <span className="text-[8px] bg-slate-100 px-1 py-0.5 rounded text-slate-500 font-bold uppercase">{c.fournisseur}</span>
+                                                                                    </div>
+                                                                                    <span className="text-[10px] text-emerald-600 font-bold">{formatSmartCurrency(c.solde)}</span>
+                                                                                </div>
+                                                                            </div>
+                                                                            <Check
+                                                                                className={cn(
+                                                                                    "h-4 w-4 text-blue-600",
+                                                                                    formData.carteCarburantId === c.id ? "opacity-100" : "opacity-0"
+                                                                                )}
+                                                                            />
+                                                                        </CommandItem>
+                                                                    ))}
+                                                                </CommandGroup>
+                                                                {cardSearch === '' && filteredCards.length > 5 && (
+                                                                    <div className="p-2 text-center border-t">
+                                                                        <p className="text-[9px] font-bold text-slate-400 uppercase italic">Recherchez pour voir plus de cartes</p>
+                                                                    </div>
+                                                                )}
+                                                            </CommandList>
+                                                        </Command>
+                                                    </PopoverContent>
+                                                </Popover>
                                             </div>
                                         )}
 

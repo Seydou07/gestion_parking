@@ -24,30 +24,48 @@ export class MissionsService {
             throw new BadRequestException('Le chauffeur n\'est pas disponible');
         }
 
+        const status = createMissionDto.statut || MissionStatus.PLANIFIEE;
+
         return this.prisma.$transaction(async (tx) => {
             const mission = await tx.mission.create({
                 data: {
                     ...createMissionDto,
-                    statut: MissionStatus.EN_COURS,
+                    dateDepart: new Date(createMissionDto.dateDepart),
+                    dateRetour: createMissionDto.dateRetour ? new Date(createMissionDto.dateRetour) : null,
+                    statut: status,
                 },
             });
 
-            // Automatic status update
-            await tx.vehicle.update({
-                where: { id: createMissionDto.vehiculeId },
-                data: { statut: VehicleStatus.EN_MISSION },
-            });
+            // Only update vehicle/driver status if mission starts immediately
+            if (status === MissionStatus.EN_COURS) {
+                await tx.vehicle.update({
+                    where: { id: createMissionDto.vehiculeId },
+                    data: { statut: VehicleStatus.EN_MISSION },
+                });
 
-            await tx.driver.update({
-                where: { id: createMissionDto.chauffeurId },
-                data: { statut: DriverStatus.EN_MISSION },
-            });
+                await tx.driver.update({
+                    where: { id: createMissionDto.chauffeurId },
+                    data: { statut: DriverStatus.EN_MISSION },
+                });
 
-            await this.historyService.log(
-                'DÉPART MISSION',
-                'MISSION',
-                `Départ en mission pour ${mission.destination} (Chauffeur: ${driver.nom}, Véhicule: ${vehicle.immatriculation})`
-            );
+                await this.historyService.log(
+                    'DÉPART MISSION',
+                    'MISSION',
+                    `Départ immédiat en mission pour ${mission.destination} (Chauffeur: ${driver.nom}, Véhicule: ${vehicle.immatriculation})`,
+                    undefined,
+                    mission.id,
+                    'MISSION'
+                );
+            } else {
+                await this.historyService.log(
+                    'PLANIFICATION MISSION',
+                    'MISSION',
+                    `Mission planifiée pour ${mission.destination} (Chauffeur: ${driver.nom}, Véhicule: ${vehicle.immatriculation})`,
+                    undefined,
+                    mission.id,
+                    'MISSION'
+                );
+            }
 
             return mission;
         });
@@ -78,8 +96,30 @@ export class MissionsService {
         return this.prisma.$transaction(async (tx) => {
             const mission = await tx.mission.update({
                 where: { id },
-                data: updateMissionDto,
+                data: {
+                    ...updateMissionDto,
+                    dateRetour: updateMissionDto.dateRetour ? new Date(updateMissionDto.dateRetour) : undefined,
+                },
             });
+
+            // Transition from PLANIFIEE to EN_COURS (Check-out)
+            if (currentMission.statut === MissionStatus.PLANIFIEE && updateMissionDto.statut === MissionStatus.EN_COURS) {
+                await tx.vehicle.update({
+                    where: { id: currentMission.vehiculeId },
+                    data: { statut: VehicleStatus.EN_MISSION },
+                });
+
+                await tx.driver.update({
+                    where: { id: currentMission.chauffeurId },
+                    data: { statut: DriverStatus.EN_MISSION },
+                });
+
+                await this.historyService.log(
+                    'DÉPART MISSION',
+                    'MISSION',
+                    `Départ en mission pour ${mission.destination} (Chauffeur: ${currentMission.chauffeur.nom}, Véhicule: ${currentMission.vehicule.immatriculation})`
+                );
+            }
 
             // If mission is completed or cancelled, release vehicle and driver
             if (
@@ -99,10 +139,35 @@ export class MissionsService {
                     data: { statut: DriverStatus.DISPONIBLE },
                 });
 
+                // Deduct from fuel card if mission is completed
+                const fuelAmount = updateMissionDto.montantCarburantUtilise ?? currentMission.montantCarburantUtilise ?? 0;
+                if (updateMissionDto.statut === MissionStatus.TERMINEE && 
+                    currentMission.typeCarburantDotation === 'CARTE' && 
+                    currentMission.carteCarburantId && 
+                    fuelAmount > 0) {
+                    
+                    await tx.fuelCard.update({
+                        where: { id: currentMission.carteCarburantId },
+                        data: { solde: { decrement: fuelAmount } }
+                    });
+
+                    await this.historyService.log(
+                        'DÉBIT CARBURANT',
+                        'CARBURANT',
+                        `Débit de ${fuelAmount} FCFA sur la carte #${currentMission.carteCarburantId} (Mission #${id})`,
+                        undefined,
+                        currentMission.carteCarburantId,
+                        'FUEL_CARD'
+                    );
+                }
+
                 await this.historyService.log(
                     updateMissionDto.statut === MissionStatus.TERMINEE ? 'RETOUR MISSION' : 'ANNULATION MISSION',
                     'MISSION',
-                    `Mission #${mission.id} pour ${mission.destination} marquée comme ${mission.statut.toLowerCase()}`
+                    `Mission #${mission.id} pour ${mission.destination} marquée comme ${mission.statut.toLowerCase()}`,
+                    undefined,
+                    mission.id,
+                    'MISSION'
                 );
             }
 

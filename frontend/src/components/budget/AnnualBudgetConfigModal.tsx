@@ -12,7 +12,7 @@ import {
     AlertTriangle,
     CheckCircle2
 } from "lucide-react";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { api } from "@/lib/api";
 import { toast } from "sonner";
@@ -83,10 +83,13 @@ export default function AnnualBudgetConfigModal({ isOpen, onClose, onSuccess, cu
         <Dialog open={isOpen} onOpenChange={onClose}>
             <DialogContent className="max-w-2xl max-h-[90vh] p-0 border-none rounded-2xl shadow-xl bg-white dark:bg-slate-950 flex flex-col overflow-hidden">
                 <div className="shrink-0 px-6 py-4 bg-fleet-blue text-white flex items-center justify-between sticky top-0 z-50">
-                    <h2 className="text-xl font-black tracking-tight flex items-center gap-2">
+                    <DialogTitle className="text-xl font-black tracking-tight flex items-center gap-2">
                         <Landmark className="w-5 h-5" />
                         Configuration Annuelle {new Date().getFullYear()}
-                    </h2>
+                    </DialogTitle>
+                    <DialogDescription className="sr-only">
+                        Configuration des budgets globaux pour la maintenance, les cartes carburant et les bons d'essence.
+                    </DialogDescription>
                 </div>
 
                 <form onSubmit={handleSubmit} className="flex-1 flex flex-col overflow-hidden">

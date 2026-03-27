@@ -39,18 +39,22 @@ export const api = {
             body: JSON.stringify({ amount }) 
         }),
         createCard: (data: any) => request('/fuel/cards', { method: 'POST', body: JSON.stringify(data) }),
+        updateCard: (id: number, data: any) => request(`/fuel/cards/${id}`, { method: 'PATCH', body: JSON.stringify(data) }),
         getVouchers: () => request('/fuel/vouchers'),
         createVoucher: (data: any) => request('/fuel/vouchers', { method: 'POST', body: JSON.stringify(data) }),
         getRecords: () => request('/fuel/records'),
+        getVehicleConsumption: (vehicleId: number) => request(`/fuel/stats/vehicle/${vehicleId}`),
     },
     maintenance: {
         getAll: () => request('/maintenance'),
+        getOne: (id: number) => request(`/maintenance/${id}`),
         create: (data: any) => request('/maintenance', { method: 'POST', body: JSON.stringify(data) }),
         update: (id: number, data: any) => request(`/maintenance/${id}`, { method: 'PATCH', body: JSON.stringify(data) }),
         delete: (id: number) => request(`/maintenance/${id}`, { method: 'DELETE' }),
     },
     missions: {
         getAll: () => request('/missions'),
+        getOne: (id: number) => request(`/missions/${id}`),
         create: (data: any) => request('/missions', { method: 'POST', body: JSON.stringify(data) }),
         update: (id: number, data: any) => request(`/missions/${id}`, { method: 'PATCH', body: JSON.stringify(data) }),
     },
@@ -69,6 +73,8 @@ export const api = {
     stats: {
         getDashboard: () => request('/stats/dashboard'),
         getMonthlyExpenses: (year: number) => request(`/stats/monthly-expenses?year=${year}`),
+        getVehicleAnalytics: (vehicleId: number, year?: number) => 
+            request(`/stats/vehicle/${vehicleId}${year ? `?year=${year}` : ''}`),
     },
     history: {
         getAll: () => request('/history'),

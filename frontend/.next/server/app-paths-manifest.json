@@ -1,6 +1,11 @@
 {
   "/vehicles/page": "app/vehicles/page.js",
   "/budget/page": "app/budget/page.js",
-  "/dashboard/page": "app/dashboard/page.js",
-  "/history/page": "app/history/page.js"
+  "/missions/page": "app/missions/page.js",
+  "/drivers/page": "app/drivers/page.js",
+  "/fuel/page": "app/fuel/page.js",
+  "/maintenance/page": "app/maintenance/page.js",
+  "/history/page": "app/history/page.js",
+  "/users/page": "app/users/page.js",
+  "/dashboard/page": "app/dashboard/page.js"
 }

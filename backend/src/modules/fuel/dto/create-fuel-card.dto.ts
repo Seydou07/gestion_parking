@@ -1,9 +1,16 @@
-import { IsNotEmpty, IsString, IsNumber, IsDateString, IsOptional } from 'class-validator';
+import { IsNotEmpty, IsString, IsNumber, IsOptional, IsEnum, IsDate, IsInt, Min } from 'class-validator';
+import { FuelCardStatus } from '@prisma/client';
+import { Type } from 'class-transformer';
 
 export class CreateFuelCardDto {
     @IsString()
-    @IsNotEmpty()
-    numero: string;
+    @IsOptional()
+    numero?: string;
+
+    @IsInt()
+    @IsOptional()
+    @Min(1)
+    quantite?: number;
 
     @IsNumber()
     @IsNotEmpty()
@@ -15,13 +22,22 @@ export class CreateFuelCardDto {
 
     @IsNumber()
     @IsOptional()
-    plafond?: number;
+    prixLitre?: number;
 
-    @IsDateString()
+    @Type(() => Date)
+    @IsDate()
     @IsNotEmpty()
-    dateExpiration: string;
+    dateExpiration: Date;
 
     @IsString()
     @IsOptional()
     fournisseur?: string;
+
+    @IsEnum(FuelCardStatus)
+    @IsOptional()
+    statut?: FuelCardStatus;
+
+    @IsString()
+    @IsOptional()
+    notes?: string;
 }

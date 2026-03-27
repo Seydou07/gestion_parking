@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
+import { VisuallyHidden } from '@radix-ui/react-visually-hidden';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -16,7 +17,7 @@ interface MissionCheckOutModalProps {
 }
 
 export function MissionCheckOutModal({ open, onOpenChange, mission, onSubmit }: MissionCheckOutModalProps) {
-    const [kmDepart, setKmDepart] = useState<number | ''>(mission?.vehicule?.kilometrage || '');
+    const [kmDepart, setKmDepart] = useState<number | ''>(mission?.kmDepart || mission?.vehicule?.kilometrage || '');
     const [observation, setObservation] = useState('Véhicule en bon état visuel et fonctionnel. RAS.');
 
     if (!mission) return null;
@@ -33,15 +34,13 @@ export function MissionCheckOutModal({ open, onOpenChange, mission, onSubmit }: 
         <Dialog open={open} onOpenChange={onOpenChange}>
             <DialogContent className="max-w-xl max-h-[90vh] p-0 border-none rounded-2xl shadow-xl bg-slate-50 dark:bg-slate-950 flex flex-col overflow-hidden">
                 <div className="shrink-0 px-6 py-4 bg-fleet-blue text-white flex items-center justify-between sticky top-0 z-50">
-                    <div className="flex items-center gap-3">
-                        <h2 className="text-xl font-black tracking-tight flex items-center gap-2">
-                             <LogOut className="w-5 h-5 text-white/90" />
-                             Départ en Mission
-                        </h2>
-                        <span className="text-[10px] font-black px-2 py-0.5 rounded-full uppercase tracking-widest bg-white/20 text-white mr-8">
-                            CHECK-OUT
-                        </span>
-                    </div>
+                    <DialogTitle className="text-xl font-black tracking-tight flex items-center gap-2">
+                         <LogOut className="w-5 h-5" />
+                         Départ en Mission (Check-Out)
+                    </DialogTitle>
+                    <DialogDescription className="sr-only">
+                        Enregistrement du départ pour la mission.
+                    </DialogDescription>
                 </div>
 
                 <form onSubmit={handleSubmit} className="flex-1 flex flex-col overflow-hidden">
@@ -88,27 +87,14 @@ export function MissionCheckOutModal({ open, onOpenChange, mission, onSubmit }: 
 
                     </div>
 
-                    <DialogFooter className="shrink-0 p-4 bg-white dark:bg-slate-900 border-t border-slate-100 dark:border-slate-800 flex flex-col gap-3 px-6">
-                        <div className="flex justify-end text-[9px] text-slate-400 font-medium italic">
-                            En validant, vous autorisez officiellement le départ de cette mission.
-                        </div>
-                        <div className="flex gap-3 justify-end">
-                            <Button
-                                type="button"
-                                variant="outline"
-                                className="h-9 rounded-xl px-6 font-bold text-slate-500 border-slate-200 text-[11px]"
-                                onClick={() => onOpenChange(false)}
-                            >
-                                ANNULER
-                            </Button>
-                            <Button
-                                type="submit"
-                                className="h-9 rounded-xl px-10 font-bold bg-fleet-blue hover:bg-fleet-blue-dark shadow-lg shadow-fleet-blue/20 text-[11px] text-white uppercase flex items-center gap-2"
-                            >
-                                VALIDER LE DÉPART
-                                <LogOut className="w-3.5 h-3.5" />
-                            </Button>
-                        </div>
+                    <DialogFooter className="shrink-0 p-4 bg-white dark:bg-slate-900 border-t border-slate-100 dark:border-slate-800 flex items-center justify-end gap-3 px-6">
+                        <Button type="button" variant="outline" className="h-9 rounded-xl px-6 font-bold text-slate-500 border-slate-200 text-[11px]" onClick={() => onOpenChange(false)}>
+                            ANNULER
+                        </Button>
+                        <Button type="submit" className="h-9 rounded-xl px-10 font-bold bg-fleet-blue hover:bg-fleet-blue-dark shadow-lg shadow-fleet-blue/20 text-[11px] text-white uppercase flex items-center gap-2">
+                            VALIDER LE DÉPART
+                            <LogOut className="w-3.5 h-3.5" />
+                        </Button>
                     </DialogFooter>
                 </form>
             </DialogContent>

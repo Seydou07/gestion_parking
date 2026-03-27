@@ -47,10 +47,10 @@ export function ConfirmModal({
                     variant === 'warning' ? 'bg-amber-500' : 
                     'bg-fleet-blue'
                 )}>
-                    <h2 className="text-lg font-black tracking-tight flex items-center gap-2">
+                    <DialogTitle className="text-lg font-black tracking-tight flex items-center gap-2 text-white border-0 p-0 m-0">
                         {variant === 'danger' ? <Trash2 className="w-5 h-5" /> : <AlertTriangle className="w-5 h-5" />}
                         {title}
-                    </h2>
+                    </DialogTitle>
                 </div>
                 
                 <div className="p-6">

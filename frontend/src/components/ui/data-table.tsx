@@ -1,6 +1,7 @@
 import * as React from "react";
-import { Eye, Edit2, Trash2, ChevronRight } from "lucide-react";
+import { Eye, Edit2, Trash2, ChevronRight, Inbox } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { Pagination } from "./pagination";
 
 interface Column<T> {
     key: string;
@@ -17,6 +18,8 @@ interface DataTableProps<T> {
     onDelete?: (item: T) => void;
     emptyMessage?: string;
     rowClassName?: (item: T) => string;
+    showPagination?: boolean;
+    initialPageSize?: number;
 }
 
 export function DataTable<T>({
@@ -28,9 +31,26 @@ export function DataTable<T>({
     onDelete,
     emptyMessage = "Aucune donnée trouvée",
     rowClassName,
+    showPagination = true,
+    initialPageSize = 10,
 }: DataTableProps<T>) {
+    const [currentPage, setCurrentPage] = React.useState(1);
+    const [pageSize, setPageSize] = React.useState(initialPageSize);
+
+    // Reset to first page when data changes (e.g., after filtering)
+    React.useEffect(() => {
+        setCurrentPage(1);
+    }, [data.length]);
+
+    const totalPages = Math.ceil(data.length / pageSize);
+    const startIndex = (currentPage - 1) * pageSize;
+    const paginatedData = showPagination 
+        ? data.slice(startIndex, startIndex + pageSize)
+        : data;
+
     return (
-        <div className="w-full overflow-x-auto">
+        <div className="w-full">
+            <div className="w-full overflow-x-auto">
             <table className="w-full border-collapse">
                 <thead>
                     <tr className="border-b border-slate-100 dark:border-slate-800">
@@ -50,8 +70,8 @@ export function DataTable<T>({
                     </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-50 dark:divide-slate-800/50">
-                    {data.length > 0 ? (
-                        data.map((item) => (
+                    {paginatedData.length > 0 ? (
+                        paginatedData.map((item) => (
                             <tr
                                 key={keyExtractor(item)}
                                 className={cn(
@@ -103,14 +123,36 @@ export function DataTable<T>({
                         <tr>
                             <td
                                 colSpan={columns.length + (onView || onEdit || onDelete ? 1 : 0)}
-                                className="px-6 py-12 text-center text-slate-400 italic"
+                                className="px-6 py-20 text-center"
                             >
-                                {emptyMessage}
+                                <div className="flex flex-col items-center justify-center gap-3">
+                                    <div className="w-12 h-12 rounded-full bg-slate-50 dark:bg-slate-800/50 flex items-center justify-center">
+                                        <Inbox className="w-6 h-6 text-slate-300" />
+                                    </div>
+                                    <p className="text-sm font-bold text-slate-400 italic">
+                                        {emptyMessage}
+                                    </p>
+                                </div>
                             </td>
                         </tr>
                     )}
                 </tbody>
             </table>
+            </div>
+
+            {showPagination && data.length > 0 && (
+                <Pagination
+                    currentPage={currentPage}
+                    totalPages={totalPages}
+                    pageSize={pageSize}
+                    totalItems={data.length}
+                    onPageChange={setCurrentPage}
+                    onPageSizeChange={(size) => {
+                        setPageSize(size);
+                        setCurrentPage(1);
+                    }}
+                />
+            )}
         </div>
     );
 }

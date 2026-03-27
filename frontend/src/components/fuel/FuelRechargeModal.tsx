@@ -8,6 +8,8 @@ import { Label } from '@/components/ui/label';
 import { FuelCard } from '@/types/api';
 import { formatSmartCurrency } from '@/lib/utils';
 import { Coins } from 'lucide-react';
+import { VisuallyHidden } from '@radix-ui/react-visually-hidden';
+import { DialogDescription } from '@/components/ui/dialog';
 
 interface FuelRechargeModalProps {
     open: boolean;
@@ -49,9 +51,9 @@ export function FuelRechargeModal({ open, onOpenChange, card, onSuccess }: FuelR
                     </div>
                     <DialogHeader>
                         <DialogTitle className="text-2xl font-black uppercase tracking-tight text-white mb-2">Recharger la Carte</DialogTitle>
-                        <p className="text-emerald-50 text-xs font-bold uppercase tracking-widest opacity-80">
+                        <DialogDescription className="text-emerald-50 text-xs font-bold uppercase tracking-widest opacity-80">
                             Carte N° {card.numero} — {card.fournisseur}
-                        </p>
+                        </DialogDescription>
                     </DialogHeader>
                 </div>
 
@@ -60,11 +62,11 @@ export function FuelRechargeModal({ open, onOpenChange, card, onSuccess }: FuelR
                         <div className="p-4 rounded-xl bg-slate-50 dark:bg-slate-800/50 border border-slate-100 dark:border-slate-800 flex justify-between items-center">
                             <div>
                                 <p className="text-[10px] font-black uppercase text-slate-400 tracking-widest mb-1">Solde Actuel</p>
-                                <p className="text-xl font-black text-slate-900 dark:text-white">{formatSmartCurrency(card.soldeActuel || 0)}</p>
+                                <p className="text-xl font-black text-slate-900 dark:text-white">{formatSmartCurrency(card.solde || 0)}</p>
                             </div>
                             <div className="text-right">
                                 <p className="text-[10px] font-black uppercase text-slate-400 tracking-widest mb-1">Plafond</p>
-                                <p className="text-sm font-bold text-slate-500">{formatSmartCurrency(card.plafondMensuel || 0)}</p>
+                                <p className="text-sm font-bold text-slate-500">{formatSmartCurrency(card.plafond || 0)}</p>
                             </div>
                         </div>
 

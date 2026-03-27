@@ -1,7 +1,7 @@
 "use client";
 
 import { usePathname } from "next/navigation";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Sidebar from "./Sidebar";
 import Header from "./Header";
 
@@ -9,9 +9,15 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
     const pathname = usePathname();
     const isLoginPage = pathname === "/login";
     const [isSidebarOpen, setIsSidebarOpen] = useState(true);
+    
+    useEffect(() => {
+        const width = isSidebarOpen ? '288px' : '80px';
+        document.documentElement.style.setProperty('--sidebar-width', width);
+    }, [isSidebarOpen]);
 
     // Si on est sur la page de connexion, on ne charge PAS la sidebar ni le conteneur du dashboard
     if (isLoginPage) {
+        document.documentElement.style.setProperty('--sidebar-width', '0px');
         return <main className="w-full h-full">{children}</main>;
     }
 

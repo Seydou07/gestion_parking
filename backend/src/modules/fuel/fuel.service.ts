@@ -73,16 +73,69 @@ export class FuelService {
 
     // --- Fuel Cards ---
     async createCard(dto: CreateFuelCardDto) {
-        return this.prisma.fuelCard.create({ data: dto });
+        const qty = dto.quantite || 1;
+        const litresEstimes = dto.prixLitre && dto.prixLitre > 0 
+            ? Math.round((dto.soldeInitial / dto.prixLitre) * 100) / 100 
+            : null;
+        
+        if (qty > 1) {
+            return this.prisma.$transaction(async (tx) => {
+                const cards: any[] = [];
+                for (let i = 0; i < qty; i++) {
+                    const { quantite, ...data } = dto;
+                    const card = await tx.fuelCard.create({
+                        data: {
+                            ...data,
+                            litresEstimes,
+                            numero: data.numero ? `${data.numero}-${i + 1}` : `CARD-${Date.now()}-${i + 1}`
+                        }
+                    });
+                    cards.push(card);
+                }
+                return cards;
+            });
+        }
+        
+        const { quantite, ...createData } = dto;
+        return this.prisma.fuelCard.create({ data: { ...createData, litresEstimes } as any });
     }
 
     async findAllCards() {
         return this.prisma.fuelCard.findMany();
     }
 
+    async updateCard(id: number, dto: any) {
+        const card = await this.prisma.fuelCard.findUnique({ where: { id } });
+        if (!card) throw new NotFoundException('Carte introuvable');
+        
+        return this.prisma.fuelCard.update({
+            where: { id },
+            data: dto,
+        });
+    }
+
     // --- Fuel Vouchers ---
     async createVoucher(dto: CreateFuelVoucherDto) {
-        return this.prisma.fuelVoucher.create({ data: dto });
+        const qty = dto.quantite || 1;
+
+        if (qty > 1) {
+            return this.prisma.$transaction(async (tx) => {
+                const vouchers: any[] = [];
+                for (let i = 0; i < qty; i++) {
+                    const { quantite, ...data } = dto;
+                    const voucher = await tx.fuelVoucher.create({
+                        data: {
+                            ...data,
+                            numero: data.numero ? `${data.numero}-${i + 1}` : `BON-${Math.floor(data.valeur)}-${Date.now()}-${i + 1}`
+                        }
+                    });
+                    vouchers.push(voucher);
+                }
+                return vouchers;
+            });
+        }
+
+        return this.prisma.fuelVoucher.create({ data: dto as any });
     }
 
     async findAllVouchers() {
@@ -120,6 +173,66 @@ export class FuelService {
         return {
             totalMontant: totalSpent._sum.montant || 0,
             totalQuantite: totalLiters._sum.quantite || 0,
+        };
+    }
+
+    // --- Per-Vehicle Consumption Analytics ---
+    async getVehicleConsumption(vehicleId: number) {
+        const vehicle = await this.prisma.vehicle.findUnique({ where: { id: vehicleId } });
+        if (!vehicle) throw new NotFoundException('Véhicule introuvable');
+
+        const records = await this.prisma.fuelRecord.findMany({
+            where: { vehiculeId: vehicleId },
+            orderBy: { date: 'asc' },
+        });
+
+        // Monthly breakdown
+        const monthlyMap: Record<string, { litres: number; montant: number; count: number; avgPrixLitre: number; prixLitreSum: number }> = {};
+        for (const r of records) {
+            const key = `${r.date.getFullYear()}-${String(r.date.getMonth() + 1).padStart(2, '0')}`;
+            if (!monthlyMap[key]) monthlyMap[key] = { litres: 0, montant: 0, count: 0, avgPrixLitre: 0, prixLitreSum: 0 };
+            monthlyMap[key].litres += r.quantite;
+            monthlyMap[key].montant += r.montant;
+            monthlyMap[key].count += 1;
+            if (r.prixLitre) monthlyMap[key].prixLitreSum += r.prixLitre;
+        }
+
+        const monthly = Object.entries(monthlyMap).map(([mois, data]) => ({
+            mois,
+            litres: Math.round(data.litres * 100) / 100,
+            montant: Math.round(data.montant),
+            pleins: data.count,
+            prixLitreMoyen: data.prixLitreSum > 0 ? Math.round((data.prixLitreSum / data.count) * 10) / 10 : null,
+        }));
+
+        // Consumption per km (between consecutive fills)
+        const fillDetails = records.map((r, i) => {
+            const kmDelta = i > 0 ? r.kilometrage - records[i - 1].kilometrage : null;
+            return {
+                date: r.date,
+                litres: r.quantite,
+                montant: r.montant,
+                prixLitre: r.prixLitre || (r.quantite > 0 ? Math.round((r.montant / r.quantite) * 10) / 10 : null),
+                kilometrage: r.kilometrage,
+                kmParcourus: kmDelta,
+                litresAux100: kmDelta && kmDelta > 0 ? Math.round((r.quantite / kmDelta) * 1000) / 10 : null,
+                station: r.station,
+            };
+        });
+
+        const totalLitres = records.reduce((s, r) => s + r.quantite, 0);
+        const totalMontant = records.reduce((s, r) => s + r.montant, 0);
+
+        return {
+            vehicule: { id: vehicle.id, immatriculation: vehicle.immatriculation, marque: vehicle.marque, modele: vehicle.modele },
+            resume: {
+                totalPleins: records.length,
+                totalLitres: Math.round(totalLitres * 100) / 100,
+                totalMontant: Math.round(totalMontant),
+                prixLitreMoyen: totalLitres > 0 ? Math.round((totalMontant / totalLitres) * 10) / 10 : null,
+            },
+            monthly,
+            details: fillDetails,
         };
     }
 }

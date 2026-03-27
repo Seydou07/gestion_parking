@@ -24,9 +24,9 @@ type HistoryLog = {
     id: number;
     action: string;
     module: string;
-    description: string;
+    details?: string;
     createdAt: string;
-    user?: { nom: string; prenom: string };
+    utilisateur?: { nom: string; prenom: string };
 };
 
 const CATEGORIES = [
@@ -79,8 +79,8 @@ export default function HistoryPage() {
 
     const filteredLogs = logs.filter(log => {
         const matchesFilter = filter === 'ALL' || log.module === filter;
-        const matchesSearch = log.description.toLowerCase().includes(search.toLowerCase()) || 
-                             log.action.toLowerCase().includes(search.toLowerCase());
+        const matchesSearch = (log.details || "").toLowerCase().includes(search.toLowerCase()) || 
+                             (log.action || "").toLowerCase().includes(search.toLowerCase());
         return matchesFilter && matchesSearch;
     });
 
@@ -187,15 +187,15 @@ export default function HistoryPage() {
                                                 <span className="text-[10px] font-bold text-slate-400">{formatDate(log.createdAt)}</span>
                                             </div>
                                             
-                                            <p className="text-sm text-slate-700 dark:text-slate-200 font-bold leading-relaxed">{log.description}</p>
+                                            <p className="text-sm text-slate-700 dark:text-slate-200 font-bold leading-relaxed">{log.details || "Action effectuée"}</p>
 
                                             <div className="mt-4 pt-4 border-t border-slate-50 dark:border-slate-800 flex items-center justify-between font-bold">
                                                 <div className="flex items-center gap-2">
                                                     <div className="w-6 h-6 rounded-lg bg-slate-100 dark:bg-slate-800 flex items-center justify-center text-[10px] font-black text-fleet-blue">
-                                                        {log.user ? `${log.user.prenom[0]}${log.user.nom[0]}` : "AD"}
+                                                        {log.utilisateur ? `${log.utilisateur.prenom?.[0] || ""}${log.utilisateur.nom?.[0] || ""}` : "AD"}
                                                     </div>
                                                     <span className="text-[10px] font-bold text-slate-500">
-                                                        Exécuté par <span className="text-slate-900 dark:text-white">{log.user ? `${log.user.prenom} ${log.user.nom}` : "Administrateur"}</span>
+                                                        Exécuté par <span className="text-slate-900 dark:text-white">{log.utilisateur ? `${log.utilisateur.prenom || ""} ${log.utilisateur.nom || ""}` : "Administrateur"}</span>
                                                     </span>
                                                 </div>
                                                 <button className="text-[10px] font-black text-fleet-blue opacity-50 group-hover/card:opacity-100 group-hover/card:translate-x-1 transition-all">VOIR DÉTAILS →</button>

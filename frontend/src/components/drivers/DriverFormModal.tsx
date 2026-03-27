@@ -63,10 +63,13 @@ export function DriverFormModal({ open, onOpenChange, onSubmit, initialData, mod
         <Dialog open={open} onOpenChange={onOpenChange}>
             <DialogContent className="max-w-2xl max-h-[90vh] p-0 border-none rounded-2xl shadow-xl bg-white dark:bg-slate-950 flex flex-col overflow-hidden">
                 <div className="shrink-0 px-6 py-4 bg-fleet-blue text-white flex items-center justify-between sticky top-0 z-50">
-                    <h2 className="text-xl font-black tracking-tight flex items-center gap-2">
+                    <DialogTitle className="text-xl font-black tracking-tight flex items-center gap-2">
                         <UserCircle className="w-5 h-5" />
                         {mode === 'create' ? 'Nouveau Chauffeur' : 'Modifier Chauffeur'}
-                    </h2>
+                    </DialogTitle>
+                    <DialogDescription className="sr-only">
+                        Formulaire pour {mode === 'create' ? 'ajouter' : 'modifier'} un chauffeur dans le système.
+                    </DialogDescription>
                 </div>
 
                 <form onSubmit={handleSubmit} className="flex-1 flex flex-col overflow-hidden">

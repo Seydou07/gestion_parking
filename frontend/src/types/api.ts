@@ -98,18 +98,20 @@ export interface Mission {
     vehiculeId: number;
     chauffeurId: number;
     destination: string;
-    dateDebut: string;
-    dateFin: string;
+    dateDepart: string;
+    dateRetour: string;
     statut: MissionStatus;
     vehicule?: Vehicle;
     chauffeur?: Driver;
-    kilometrageDepart?: number;
-    kilometrageRetour?: number;
+    kilometrageDepart?: number; // Deprecated: use kmDepart
+    kilometrageRetour?: number; // Deprecated: use kmRetour
+    kmDepart?: number;
+    kmRetour?: number;
     observationDepart?: string;
     observationRetour?: string;
 
     // Nouveaux champs pour dotation carburant et fichiers
-    lettreMissionUrl?: string;
+    lettreMission?: string;
     typeCarburantDotation?: 'CARTE' | 'BON' | 'AUCUNE';
     carteCarburantId?: number;
     bonCarburantId?: number; // Reférence au bon d'essence physiquement attribué
@@ -117,7 +119,7 @@ export interface Mission {
     ticketCarburantUrl?: string; // Upload du ticket de caisse
 }
 
-export type FuelCardStatus = 'ACTIVE' | 'INACTIVE' | 'EXPIREE';
+export type FuelCardStatus = 'ACTIVE' | 'INACTIVE' | 'EXPIREE' | 'EN_MISSION';
 export type FuelVoucherStatus = 'DISPONIBLE' | 'UTILISE' | 'EXPIRE';
 
 export interface FuelCard {
@@ -125,11 +127,14 @@ export interface FuelCard {
     numero: string;
     solde: number;
     soldeInitial: number;
-    plafond?: number;
+    prixLitre?: number;
+    litresEstimes?: number;
     dateExpiration: string;
     statut: FuelCardStatus;
     fournisseur?: string;
+    description?: string;
     notes?: string;
+    quantite?: number;
 }
 
 export interface FuelVoucher {
@@ -141,6 +146,7 @@ export interface FuelVoucher {
     statut: FuelVoucherStatus;
     vehiculeId?: number;
     notes?: string;
+    quantite?: number;
 }
 
 export interface Alert {
@@ -203,59 +209,63 @@ export interface PieceChangee {
     quantite: number;
 }
 
+export type MaintenancePaymentSource = 'VEHICLE_BUDGET' | 'FUEL_CARD' | 'FUEL_VOUCHER' | 'CASH';
+
 export interface Maintenance {
     id: number;
     vehiculeId: number;
-    type: 'vidange' | 'revision' | 'reparation' | 'controle_technique' | 'pneumatiques' | 'freins' | 'autre';
-    date: string;
-    kilometrage: number;
-    cout: number;
+    type: 'PANNE' | 'REPARATION' | 'VIDANGE' | 'ASSURANCE' | 'VISITE_TECHNIQUE' | 'AUTRE';
     description: string;
-    prochaineMaintenance?: number;
+    dateDebut: string;
+    dateFin?: string;
+    montant?: number;
+    statut: 'EN_ATTENTE' | 'EN_COURS' | 'TERMINEE' | 'ANNULEE';
     garage?: string;
-    garageTelephone?: string;
-    garageAdresse?: string;
     notes?: string;
-    vehiculeAuGarage?: boolean;
-    dateSortieGarage?: string;
-    huileType?: string;
-    huileQuantite?: number;
-    huilePrix?: number;
-    filtreHuileChange?: boolean;
-    filtreHuilePrix?: number;
-    filtreAirChange?: boolean;
-    filtreAirPrix?: number;
-    filtreHabitacleChange?: boolean;
-    filtreHabitaclePrix?: number;
-    piecesChangees?: PieceChangee[];
-    mainOeuvre?: number;
-    heuresTravail?: number;
-    statut?: string;
+    modePaiement?: 'CARTE_CARBURANT' | 'BON_ESSENCE' | 'ESPECES' | 'CARTE_BANCAIRE';
+    carteCarburantId?: number;
+    bonEssenceId?: number;
+    mainDoeuvre?: number;
+    sourceMainDoeuvre?: MaintenancePaymentSource;
+    items?: {
+        nom: string;
+        reference?: string;
+        quantite: number;
+        prixUnitaire: number;
+        total: number;
+        sourcePaiement?: MaintenancePaymentSource;
+    }[];
 }
 
 export interface MaintenanceFormData {
     vehiculeId: number;
     type: Maintenance['type'];
-    date: string;
-    kilometrage: number;
-    cout: number;
     description: string;
-    prochaineMaintenance?: number;
+    dateDebut: string;
+    dateFin?: string;
+    montant?: number;
+    statut?: Maintenance['statut'];
     garage?: string;
-    garageTelephone?: string;
-    garageAdresse?: string;
     notes?: string;
-    vehiculeAuGarage?: boolean;
-    huileType?: string;
-    huileQuantite?: number;
-    huilePrix?: number;
-    filtreHuileChange?: boolean;
-    filtreHuilePrix?: number;
-    filtreAirChange?: boolean;
-    filtreAirPrix?: number;
-    filtreHabitacleChange?: boolean;
-    filtreHabitaclePrix?: number;
-    piecesChangees?: PieceChangee[];
-    mainOeuvre?: number;
-    heuresTravail?: number;
+    modePaiement?: Maintenance['modePaiement'];
+    carteCarburantId?: number;
+    bonEssenceId?: number;
+    mainDoeuvre?: number;
+    sourceMainDoeuvre?: MaintenancePaymentSource;
+    items?: Maintenance['items'];
+}
+
+export interface HistoryLog {
+    id: number;
+    action: string;
+    module: string;
+    details?: string;
+    utilisateurId?: number;
+    entiteId?: number;
+    entiteType?: string;
+    createdAt: string;
+    utilisateur?: {
+        nom: string;
+        prenom: string;
+    };
 }

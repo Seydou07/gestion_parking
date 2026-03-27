@@ -36,10 +36,13 @@ export function DriverDetailModal({ open, onOpenChange, driver, onEdit }: Driver
         <Dialog open={open} onOpenChange={onOpenChange}>
             <DialogContent className="max-w-2xl max-h-[90vh] p-0 border-none rounded-2xl shadow-xl bg-slate-50 dark:bg-slate-950 flex flex-col overflow-hidden">
                 <div className="shrink-0 px-6 py-4 bg-fleet-blue text-white flex items-center justify-between sticky top-0 z-50">
-                    <h2 className="text-xl font-black tracking-tight flex items-center gap-2">
+                    <DialogTitle className="text-xl font-black tracking-tight flex items-center gap-2">
                         <UserCircle className="w-5 h-5 text-white/90" />
                         Fiche Collaborateur
-                    </h2>
+                    </DialogTitle>
+                    <DialogDescription className="sr-only">
+                        Informations détaillées du chauffeur {driver.prenom} {driver.nom}
+                    </DialogDescription>
                     <Badge variant={status.variant} className="h-6 px-3 text-[10px] font-black uppercase tracking-widest bg-white/10 hover:bg-white/20 border-white/20 text-white mr-8">
                         {status.label}
                     </Badge>

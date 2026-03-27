@@ -41,7 +41,7 @@ const typeConfig: Record<string, { label: string; color: string }> = {
 export default function MaintenancePage() {
     const [searchTerm, setSearchTerm] = useState('');
     const { maintenances, loading: loadingMaint, add, update, remove, marquerRetourGarage } = useMaintenances();
-    const { vehicles, loading: loadingVehicles } = useVehicles();
+    const { vehicles, loading: loadingVehicles, refresh: refreshVehicles } = useVehicles();
     const { alerts, markRead, refresh: refreshAlerts } = useAlerts();
     
     const [formModalOpen, setFormModalOpen] = useState(false);
@@ -71,7 +71,7 @@ export default function MaintenancePage() {
         );
     });
 
-    const totalCouts = maintenances.reduce((acc, m) => acc + m.cout, 0);
+    const totalCouts = maintenances.reduce((acc, m) => acc + (m.montant || 0), 0);
     const vehiculesEnMaintenance = vehicles.filter(v => v.statut === 'EN_MAINTENANCE').length;
 
     const columns = [
@@ -80,7 +80,7 @@ export default function MaintenancePage() {
             header: 'Date', 
             render: (m: Maintenance) => (
                 <div className="flex flex-col">
-                    <span className="font-bold text-slate-900 dark:text-white">{formatDate(m.date)}</span>
+                    <span className="font-bold text-slate-900 dark:text-white">{formatDate(m.dateDebut)}</span>
                     <span className="text-[10px] text-slate-400 font-medium uppercase tracking-tighter">REF-{m.id.toString().padStart(4, '0')}</span>
                 </div>
             )
@@ -120,7 +120,7 @@ export default function MaintenancePage() {
             header: 'Coût', 
             render: (m: Maintenance) => (
                 <span className="font-black text-slate-900 dark:text-white">
-                    {formatCurrency(m.cout)}
+                    {formatSmartCurrency(m.montant || 0)}
                 </span>
             ) 
         },
@@ -136,14 +136,20 @@ export default function MaintenancePage() {
         {
             key: 'status',
             header: 'Statut',
-            render: (m: Maintenance) => (
-                <span className={cn(
-                    "text-[9px] font-black px-1.5 py-0.5 rounded uppercase",
-                    m.vehiculeAuGarage ? "bg-fleet-blue/10 text-fleet-blue" : "bg-emerald-100 text-emerald-600"
-                )}>
-                    {m.vehiculeAuGarage ? "EN COURS" : "TERMINEE"}
-                </span>
-            )
+            render: (m: Maintenance) => {
+                const statusConfig: Record<string, { label: string; className: string }> = {
+                    EN_ATTENTE: { label: 'PLANIFIÉE', className: 'bg-amber-100 text-amber-600' },
+                    EN_COURS: { label: 'AU GARAGE', className: 'bg-fleet-blue/10 text-fleet-blue' },
+                    TERMINEE: { label: 'TERMINÉE', className: 'bg-emerald-100 text-emerald-600' },
+                    ANNULEE: { label: 'ANNULÉE', className: 'bg-slate-100 text-slate-500' },
+                };
+                const cfg = statusConfig[m.statut] || statusConfig.EN_ATTENTE;
+                return (
+                    <span className={cn("text-[9px] font-black px-1.5 py-0.5 rounded uppercase", cfg.className)}>
+                        {cfg.label}
+                    </span>
+                );
+            }
         }
     ];
 
@@ -155,19 +161,21 @@ export default function MaintenancePage() {
         markRead(alert.id);
         if (alert.vehicule?.id) {
             setPreselectedVehicleId(alert.vehicule.id);
-            setPreselectedType('vidange');
+            setPreselectedType('VIDANGE');
             setSelectedMaintenance(null);
             setFormMode('create');
             setFormModalOpen(true);
         }
     };
 
-    const handleFormSubmit = (data: MaintenanceFormData) => {
+    const handleFormSubmit = async (data: MaintenanceFormData) => {
         if (formMode === 'create') { 
-            add(data); 
+            await add(data); 
+            refreshVehicles();
             toast.success('Intervention enregistrée avec succès'); 
         } else if (selectedMaintenance) { 
-            update(selectedMaintenance.id, data); 
+            await update(selectedMaintenance.id, data); 
+            refreshVehicles();
             toast.success('Intervention mise à jour'); 
         }
     };

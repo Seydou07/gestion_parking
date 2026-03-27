@@ -43,14 +43,13 @@ export function RenewModal({ open, onOpenChange, vehicle, type, onSubmit }: Rene
         <Dialog open={open} onOpenChange={onOpenChange}>
             <DialogContent className="max-w-md max-h-[90vh] p-0 border-none rounded-2xl shadow-xl bg-slate-50 dark:bg-slate-950 flex flex-col overflow-hidden">
                 <div className="shrink-0 px-6 py-4 bg-fleet-blue text-white flex items-center justify-between sticky top-0 z-50">
-                    <div className="flex items-center gap-3">
-                        <h2 className="text-lg font-black tracking-tight uppercase">
-                            {isAssurance ? 'Assurance' : 'Visite Technique'}
-                        </h2>
-                        <span className="text-[9px] font-black px-2 py-0.5 rounded-full uppercase tracking-widest bg-white/20 text-white mr-8">
-                            RENOUVELLEMENT
-                        </span>
-                    </div>
+                    <DialogTitle className="text-xl font-black tracking-tight flex items-center gap-2">
+                        {isAssurance ? <Shield className="w-5 h-5" /> : <Calendar className="w-5 h-5" />}
+                        {isAssurance ? 'Renouvellement Assurance' : 'Renouvellement Visite Technique'}
+                    </DialogTitle>
+                    <DialogDescription className="sr-only">
+                        Formulaire pour renouveler les documents de {vehicle.immatriculation}.
+                    </DialogDescription>
                 </div>
 
                 <form onSubmit={handleSubmit} className="flex-1 flex flex-col overflow-hidden">
@@ -107,18 +106,10 @@ export function RenewModal({ open, onOpenChange, vehicle, type, onSubmit }: Rene
                     </div>
 
                     <DialogFooter className="shrink-0 p-4 bg-white dark:bg-slate-900 border-t border-slate-100 dark:border-slate-800 flex items-center justify-end gap-3 px-6">
-                        <Button
-                            type="button"
-                            variant="outline"
-                            className="h-9 flex-1 rounded-xl font-bold text-slate-500 border-slate-200 text-[11px]"
-                            onClick={() => onOpenChange(false)}
-                        >
+                        <Button type="button" variant="outline" className="h-9 rounded-xl px-6 font-bold text-slate-500 border-slate-200 text-[11px]" onClick={() => onOpenChange(false)}>
                             ANNULER
                         </Button>
-                        <Button
-                            type="submit"
-                            className="h-9 flex-[2] rounded-xl font-bold bg-fleet-blue hover:bg-fleet-blue-dark shadow-lg shadow-fleet-blue/20 text-[11px] text-white uppercase tracking-wide"
-                        >
+                        <Button type="submit" className="h-9 rounded-xl px-10 font-bold bg-fleet-blue hover:bg-fleet-blue-dark shadow-lg shadow-fleet-blue/20 text-[11px] text-white uppercase tracking-wide">
                             CONFIRMER
                         </Button>
                     </DialogFooter>

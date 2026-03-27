@@ -1,4 +1,4 @@
-import { IsEnum, IsInt, IsOptional, IsDateString } from 'class-validator';
+import { IsEnum, IsInt, IsOptional, IsDateString, IsString, IsNumber } from 'class-validator';
 import { ApiProperty } from '@nestjs/swagger';
 import { MissionStatus } from '@prisma/client';
 
@@ -16,9 +16,35 @@ export class UpdateMissionDto {
     @ApiProperty()
     @IsInt()
     @IsOptional()
+    kmDepart?: number;
+
+    @ApiProperty()
+    @IsInt()
+    @IsOptional()
     kmRetour?: number;
 
     @ApiProperty()
+    @IsString()
+    @IsOptional()
+    observationDepart?: string;
+
+    @ApiProperty()
+    @IsString()
+    @IsOptional()
+    observationRetour?: string;
+
+    @ApiProperty()
+    @IsNumber()
+    @IsOptional()
+    montantCarburantUtilise?: number;
+
+    @ApiProperty()
+    @IsString()
+    @IsOptional()
+    lettreMission?: string;
+
+    @ApiProperty()
+    @IsString()
     @IsOptional()
     observations?: string;
 }

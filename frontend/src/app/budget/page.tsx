@@ -38,6 +38,10 @@ export default function BudgetPage() {
     const [history, setHistory] = useState<GlobalBudgetActivity[]>([]);
     const [loading, setLoading] = useState(true);
     const [stats, setStats] = useState<any>(null);
+    const [cardsBalance, setCardsBalance] = useState(0);
+    const [vouchersBalance, setVouchersBalance] = useState(0);
+    const [vehiclesTotalAllocated, setVehiclesTotalAllocated] = useState(0);
+    const [vehiclesTotalConsumed, setVehiclesTotalConsumed] = useState(0);
     
     // Modal states
     const [isSupplyModalOpen, setIsSupplyModalOpen] = useState(false);
@@ -56,12 +60,26 @@ export default function BudgetPage() {
     const fetchData = async () => {
         setLoading(true);
         try {
-            const [settingsData, historyData] = await Promise.all([
+            const [settingsData, historyData, cardsData, vouchersData, vehiclesData] = await Promise.all([
                 api.settings.get(),
                 api.budgets.getGlobalHistory(),
+                api.fuel.getCards(),
+                api.fuel.getVouchers(),
+                api.vehicles.getAll()
             ]);
             setSettings(settingsData);
             setHistory(historyData as GlobalBudgetActivity[]);
+            
+            const totalCards = (cardsData as any[]).reduce((sum, c) => sum + (c.solde || 0), 0);
+            const totalVouchers = (vouchersData as any[]).reduce((sum, v) => sum + (v.valeur || 0), 0);
+            
+            setCardsBalance(totalCards);
+            setVouchersBalance(totalVouchers);
+
+            const vTotalAllocated = (vehiclesData as any[]).reduce((sum, v) => sum + (v.budgetAlloue || 0), 0);
+            const vTotalConsumed = (vehiclesData as any[]).reduce((sum, v) => sum + (v.budgetConsomme || 0), 0);
+            setVehiclesTotalAllocated(vTotalAllocated);
+            setVehiclesTotalConsumed(vTotalConsumed);
 
             // Stats is optional (may require auth) — load it separately
             try {
@@ -110,7 +128,8 @@ export default function BudgetPage() {
         .filter(a => a.field === 'MAINTENANCE' && a.type === 'ALLOCATION_VEHICULE')
         .reduce((acc, a) => acc + a.amount, 0);
 
-    const grandTotal = totalFuelBudget + totalMaintenanceBudget + totalMaintenanceAlloue;
+    const grandTotal = cardsBalance + vouchersBalance + totalMaintenanceBudget + vehiclesTotalAllocated;
+    const fleetAllocatedTotal = vehiclesTotalAllocated + cardsBalance + vouchersBalance;
 
     const totalPages = Math.ceil(history.length / ITEMS_PER_PAGE);
     const paginatedHistory = history.slice(
@@ -168,19 +187,19 @@ export default function BudgetPage() {
                             <div>
                                 <p className="text-[10px] font-bold text-white/60 uppercase tracking-widest mb-1 flex items-center gap-2">
                                     <Wallet className="w-4 h-4" />
-                                    Capacité Totale
+                                    Budget Flotte (Consolidé)
                                 </p>
-                                <h3 className="text-3xl font-black tracking-tighter tabular-nums">{formatCurrency(grandTotal)}</h3>
+                                <h3 className="text-3xl font-black tracking-tighter tabular-nums">{formatCurrency(fleetAllocatedTotal)}</h3>
                             </div>
 
                             <div className="grid grid-cols-2 gap-4 pt-3 border-t border-white/10">
                                 <div>
-                                    <p className="text-[9px] font-bold text-white/50 uppercase tracking-widest mb-0.5">Enveloppe Annuelle</p>
-                                    <p className="text-lg font-black text-white tracking-tight">{formatCurrency(totalMaintenanceEnveloppe)}</p>
-                                </div>
-                                <div>
-                                    <p className="text-[9px] font-bold text-white/50 uppercase tracking-widest mb-0.5">Dispo en Caisse</p>
+                                    <p className="text-[9px] font-bold text-white/50 uppercase tracking-widest mb-0.5">Pool de Réserve</p>
                                     <p className="text-lg font-black text-white tracking-tight">{formatCurrency(totalMaintenanceBudget)}</p>
+                                </div>
+                                <div className="text-right">
+                                    <p className="text-[9px] font-bold text-white/50 uppercase tracking-widest mb-0.5">Valeur Totale</p>
+                                    <p className="text-lg font-black text-white tracking-tight">{formatCurrency(grandTotal)}</p>
                                 </div>
                             </div>
                         </div>
@@ -192,28 +211,28 @@ export default function BudgetPage() {
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                 {[
                     { 
-                        title: "Maintenance & Pièces", 
-                        amount: settings.budgetGlobalVehicules, 
+                        title: "Affecté aux Véhicules", 
+                        amount: vehiclesTotalAllocated, 
                         type: 'MAINTENANCE', 
                         color: 'emerald', 
                         icon: Database,
-                        desc: "Entretien général, réparations et pièces détachées"
+                        desc: "Sommme totale des budgets alloués à chaque véhicule"
                     },
                     { 
                         title: "Cartes Carburant", 
-                        amount: settings.budgetGlobalCartes, 
+                        amount: cardsBalance, 
                         type: 'FUEL_CARD', 
                         color: 'blue', 
                         icon: PieChart,
-                        desc: "Dotations globales pour les cartes Total/Ola/Vv"
+                        desc: "Solde cumulé actuel de vos cartes carburant"
                     },
                     { 
                         title: "Bons d'Essence", 
-                        amount: settings.budgetGlobalBons, 
+                        amount: vouchersBalance, 
                         type: 'FUEL_BON', 
                         color: 'amber', 
                         icon: TrendingUp,
-                        desc: "Enveloppe pour les bons de carburant papier"
+                        desc: "Valeur cumulée des bons disponibles"
                     }
                 ].map((card) => (
                     <div key={card.type} className="group relative bg-white dark:bg-slate-900 rounded-[24px] p-6 border border-slate-100 dark:border-slate-800 shadow-sm hover:shadow-lg transition-all duration-300 overflow-hidden">
@@ -222,12 +241,14 @@ export default function BudgetPage() {
                                 <div className={`w-10 h-10 bg-${card.color}-500/10 rounded-xl flex items-center justify-center border border-${card.color}-500/20`}>
                                     <card.icon className={`w-5 h-5 text-${card.color}-500`} />
                                 </div>
-                                <button 
-                                    onClick={() => openSupplyModal(card.type as any)}
-                                    className="p-2.5 bg-slate-900 dark:bg-slate-800 text-white rounded-xl hover:bg-fleet-blue transition-all active:scale-90"
-                                >
-                                    <Plus className="w-4 h-4" />
-                                </button>
+                                {card.type === 'MAINTENANCE' && (
+                                    <button 
+                                        onClick={() => openSupplyModal(card.type as any)}
+                                        className="p-2.5 bg-slate-900 dark:bg-slate-800 text-white rounded-xl hover:bg-fleet-blue transition-all active:scale-90"
+                                    >
+                                        <Plus className="w-4 h-4" />
+                                    </button>
+                                )}
                             </div>
 
                             <div>
@@ -236,18 +257,20 @@ export default function BudgetPage() {
                                 <p className="text-slate-500 text-[11px] mt-1 leading-tight">{card.desc}</p>
                             </div>
 
-                            <button 
-                                onClick={() => openSupplyModal(card.type as any)}
-                                className={cn(
-                                    "w-full flex items-center justify-center gap-2 py-3 rounded-xl text-[10px] font-bold uppercase tracking-widest transition-all border group/btn",
-                                    card.color === 'emerald' ? "bg-emerald-50 text-emerald-600 border-emerald-100 hover:bg-emerald-500 hover:text-white" :
-                                    card.color === 'blue' ? "bg-blue-50 text-blue-600 border-blue-100 hover:bg-fleet-blue hover:text-white" :
-                                    "bg-amber-50 text-amber-600 border-amber-100 hover:bg-amber-500 hover:text-white"
-                                )}
-                            >
-                                <ArrowUpCircle className="w-3.5 h-3.5" />
-                                Approvisionner
-                            </button>
+                            {card.type === 'MAINTENANCE' && (
+                                <button 
+                                    onClick={() => openSupplyModal(card.type as any)}
+                                    className={cn(
+                                        "w-full flex items-center justify-center gap-2 py-3 rounded-xl text-[10px] font-bold uppercase tracking-widest transition-all border group/btn",
+                                        card.color === 'emerald' ? "bg-emerald-50 text-emerald-600 border-emerald-100 hover:bg-emerald-500 hover:text-white" :
+                                        card.color === 'blue' ? "bg-blue-50 text-blue-600 border-blue-100 hover:bg-fleet-blue hover:text-white" :
+                                        "bg-amber-50 text-amber-600 border-amber-100 hover:bg-amber-500 hover:text-white"
+                                    )}
+                                >
+                                    <ArrowUpCircle className="w-3.5 h-3.5" />
+                                    Approvisionner
+                                </button>
+                            )}
                         </div>
                     </div>
                 ))}

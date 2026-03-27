@@ -53,7 +53,7 @@ export default function MissionsPage() {
                     <p className="font-black text-slate-900 dark:text-white uppercase tracking-tight">{m.destination}</p>
                     <div className="flex items-center gap-2 mt-1">
                         <span className="text-[10px] font-bold text-slate-500 bg-slate-100 dark:bg-slate-800 px-2 py-0.5 rounded uppercase">
-                            Du {formatDate(m.dateDebut)} au {formatDate(m.dateFin)}
+                            Du {formatDate(m.dateDepart)} au {formatDate(m.dateRetour)}
                         </span>
                     </div>
                 </div>
@@ -146,14 +146,37 @@ export default function MissionsPage() {
         setIsCheckInOpen(true);
     };
 
-    const handleCreateSubmit = async (data: Partial<Mission>) => {
+    const handleCreateSubmit = async (data: any) => {
         try {
             const { api } = await import('@/lib/api');
-            await api.missions.create(data);
+            
+            // Map old names to new names if they exist (cache safety for browser)
+            const submissionData = {
+                ...data,
+                dateDepart: data.dateDepart || data.dateDebut,
+                dateRetour: data.dateRetour || data.dateFin,
+                lettreMission: data.lettreMission || data.lettreMissionUrl
+            };
+
+            // Remove old/extra fields to avoid validation errors if forbidNonWhitelisted was on
+            delete submissionData.dateDebut;
+            delete submissionData.dateFin;
+            delete submissionData.lettreMissionUrl;
+
+            console.log('Submitting Mission Data:', submissionData);
+            
+            await api.missions.create(submissionData);
+
+            // Sync card status if one was selected
+            if (submissionData.typeCarburantDotation === 'CARTE' && submissionData.carteCarburantId) {
+                await api.fuel.updateCard(submissionData.carteCarburantId, { statut: 'EN_MISSION' });
+            }
+
             setIsCreateOpen(false);
             refreshMissions();
             toast.success('Mission planifiée avec succès');
         } catch (error) {
+            console.error('Error creating mission:', error);
             toast.error('Erreur lors de la planification');
         }
     };
@@ -163,7 +186,7 @@ export default function MissionsPage() {
             const { api } = await import('@/lib/api');
             await api.missions.update(id, {
                 statut: 'EN_COURS',
-                kilometrageDepart: kmDepart,
+                kmDepart: kmDepart,
                 observationDepart: observation
             });
             refreshMissions();
@@ -177,13 +200,30 @@ export default function MissionsPage() {
     const handleCheckInSubmit = async (id: number, kmRetour: number, observation: string, montant?: number, ticket?: string) => {
         try {
             const { api } = await import('@/lib/api');
+            const mission = missions.find(m => m.id === id);
+            let finalMontant = montant;
+
+            // Si c'est un bon, on récupère sa valeur pour l'analytics
+            if (mission?.typeCarburantDotation === 'BON' && mission.bonCarburantId) {
+                const voucher = fuelVouchers.find(v => v.id === mission.bonCarburantId);
+                if (voucher) {
+                    finalMontant = voucher.valeur;
+                }
+            }
+
             await api.missions.update(id, {
                 statut: 'TERMINEE',
-                kilometrageRetour: kmRetour,
+                kmRetour: kmRetour,
                 observationRetour: observation,
-                montantCarburantUtilise: montant,
+                montantCarburantUtilise: finalMontant,
                 ticketCarburantUrl: ticket
             });
+
+            // Reset card status if one was used
+            if (mission?.typeCarburantDotation === 'CARTE' && mission.carteCarburantId) {
+                await api.fuel.updateCard(mission.carteCarburantId, { statut: 'ACTIVE' });
+            }
+
             refreshMissions();
             toast.success("Retour enregistré avec succès.");
             setIsCheckInOpen(false);

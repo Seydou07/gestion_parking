@@ -5,9 +5,16 @@ import { PrismaService } from '../../prisma/prisma.service';
 export class HistoryService {
     constructor(private prisma: PrismaService) { }
 
-    async log(action: string, module: string, details?: string, userId?: number) {
+    async log(action: string, module: string, details?: string, userId?: number, entiteId?: number, entiteType?: string) {
         return this.prisma.historyLog.create({
-            data: { action, module, details, utilisateurId: userId },
+            data: { 
+                action, 
+                module, 
+                details, 
+                utilisateurId: userId,
+                entiteId,
+                entiteType
+            },
         });
     }
 

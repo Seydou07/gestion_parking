@@ -20,11 +20,12 @@ export class MaintenanceController {
         return this.maintenanceService.findAll();
     }
 
-    @Get('upcoming')
-    getUpcoming() {
-        return this.maintenanceService.getUpcoming();
+    @Get(':id')
+    findOne(@Param('id', ParseIntPipe) id: number) {
+        return this.maintenanceService.findOne(id);
     }
 
+    @Patch(':id')
     update(@Param('id', ParseIntPipe) id: number, @Body() dto: UpdateMaintenanceDto) {
         return this.maintenanceService.update(id, dto);
     }

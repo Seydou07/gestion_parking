@@ -1,5 +1,32 @@
-import { IsNotEmpty, IsInt, IsString, IsEnum, IsDateString, IsOptional, IsNumber } from 'class-validator';
-import { MaintenanceType, MaintenanceStatus, PaymentMethod } from '@prisma/client';
+import { IsNotEmpty, IsInt, IsString, IsEnum, IsDate, IsOptional, IsNumber, ValidateNested, IsArray } from 'class-validator';
+import { Type } from 'class-transformer';
+import { MaintenanceType, MaintenanceStatus, PaymentMethod, MaintenancePaymentSource } from '@prisma/client';
+
+export class MaintenanceItemDto {
+    @IsString()
+    @IsNotEmpty()
+    nom: string;
+
+    @IsOptional()
+    @IsString()
+    reference?: string;
+
+    @IsInt()
+    @IsNotEmpty()
+    quantite: number;
+
+    @IsNumber()
+    @IsNotEmpty()
+    prixUnitaire: number;
+
+    @IsNumber()
+    @IsNotEmpty()
+    total: number;
+
+    @IsOptional()
+    @IsEnum(MaintenancePaymentSource)
+    sourcePaiement?: MaintenancePaymentSource;
+}
 
 export class CreateMaintenanceDto {
     @IsInt()
@@ -14,13 +41,15 @@ export class CreateMaintenanceDto {
     @IsNotEmpty()
     description: string;
 
-    @IsDateString()
+    @Type(() => Date)
+    @IsDate()
     @IsNotEmpty()
-    dateDebut: string;
+    dateDebut: Date;
 
     @IsOptional()
-    @IsDateString()
-    dateFin?: string;
+    @Type(() => Date)
+    @IsDate()
+    dateFin?: Date;
 
     @IsOptional()
     @IsNumber()
@@ -49,4 +78,18 @@ export class CreateMaintenanceDto {
     @IsOptional()
     @IsInt()
     bonEssenceId?: number;
+
+    @IsOptional()
+    @IsNumber()
+    mainDoeuvre?: number;
+
+    @IsOptional()
+    @IsEnum(MaintenancePaymentSource)
+    sourceMainDoeuvre?: MaintenancePaymentSource;
+
+    @IsOptional()
+    @IsArray()
+    @ValidateNested({ each: true })
+    @Type(() => MaintenanceItemDto)
+    items?: MaintenanceItemDto[];
 }

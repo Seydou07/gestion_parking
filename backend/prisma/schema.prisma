@@ -168,11 +168,23 @@ model Mission {
   objectif      String?       @db.Text
   dateDepart    DateTime
   dateRetour    DateTime?
-  kmDepart      Int
+  kmDepart      Int           @default(0)
   kmRetour      Int?
   statut        MissionStatus @default(PLANIFIEE)
-  observations  String?       @db.Text
-  lettreMission String?       // File path for uploaded document
+  
+  // Observations
+  observationDepart String?    @db.Text
+  observationRetour String?    @db.Text
+  observations      String?    @db.Text // Keeping for compatibility
+  
+  // Fuel Dotation & Tracking
+  typeCarburantDotation String?  // 'AUCUNE', 'BON', 'CARTE'
+  bonCarburantId       Int?
+  carteCarburantId     Int?
+  montantCarburantUtilise Float?
+  ticketCarburantUrl   String?
+  lettreMission        String?  // File path for uploaded document
+  
   createdAt     DateTime      @default(now())
   updatedAt     DateTime      @updatedAt
 
@@ -191,6 +203,7 @@ enum FuelCardStatus {
   ACTIVE
   INACTIVE
   EXPIREE
+  EN_MISSION
 }
 
 model FuelCard {
@@ -198,7 +211,8 @@ model FuelCard {
   numero         String         @unique
   solde          Float          @default(0)
   soldeInitial   Float
-  plafond        Float?
+  prixLitre      Float?
+  litresEstimes  Float?
   dateExpiration DateTime
   statut         FuelCardStatus @default(ACTIVE)
   fournisseur    String?
@@ -252,6 +266,7 @@ model FuelRecord {
   date            DateTime
   quantite        Float
   montant         Float
+  prixLitre       Float?
   kilometrage     Int
   typeCarburant   FuelType
   station         String?
@@ -272,6 +287,13 @@ model FuelRecord {
 // ============================================================
 // MAINTENANCE & PANNES
 // ============================================================
+
+enum MaintenancePaymentSource {
+  VEHICLE_BUDGET
+  FUEL_CARD
+  FUEL_VOUCHER
+  CASH
+}
 
 enum MaintenanceType {
   PANNE
@@ -301,6 +323,11 @@ model Maintenance {
   garage          String?
   notes           String?           @db.Text
   
+  // New fields
+  mainDoeuvre     Float?            @default(0)
+  sourceMainDoeuvre MaintenancePaymentSource @default(VEHICLE_BUDGET)
+  items           MaintenanceItem[]
+  
   // Payment tracking
   modePaiement    PaymentMethod?    @default(ESPECES)
   carteCarburantId Int?
@@ -315,6 +342,21 @@ model Maintenance {
   bonEssence     FuelVoucher? @relation(fields: [bonEssenceId], references: [id])
 
   @@map("maintenances")
+}
+
+model MaintenanceItem {
+  id              Int         @id @default(autoincrement())
+  maintenanceId   Int
+  nom             String
+  reference       String?
+  quantite        Int         @default(1)
+  prixUnitaire    Float
+  total           Float
+  sourcePaiement  MaintenancePaymentSource @default(VEHICLE_BUDGET)
+  
+  maintenance     Maintenance @relation(fields: [maintenanceId], references: [id], onDelete: Cascade)
+  
+  @@map("maintenance_items")
 }
 
 // ============================================================
@@ -363,6 +405,11 @@ model HistoryLog {
   module       String
   details      String?  @db.Text
   utilisateurId Int?
+  
+  // New links
+  entiteId     Int?
+  entiteType   String?  // 'MISSION', 'MAINTENANCE', 'VEHICULE', etc.
+  
   createdAt    DateTime @default(now())
 
   // Relations

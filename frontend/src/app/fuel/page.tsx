@@ -1,13 +1,14 @@
 "use client";
 
 import { useState } from 'react';
-import { Fuel, CreditCard, Ticket, Activity, TrendingUp, Filter, Search, Plus, ListFilter, ArrowUpRight, ArrowDownRight, Clock, RefreshCw, AlertCircle, Coins, PlusCircle } from 'lucide-react';
+import { Fuel, CreditCard, Ticket, Activity, TrendingUp, Filter, Search, Plus, ListFilter, ArrowUpRight, ArrowDownRight, Clock, RefreshCw, AlertCircle, Coins, PlusCircle, Eye } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { DataTable } from '@/components/ui/data-table';
 import { mockFuelCards, mockFuelVouchers, mockMissions } from '@/data/mockData';
 import { cn, formatDate, formatCompactNumber, formatSmartCurrency, formatSmartNumber } from '@/lib/utils';
 import { FuelCardModal } from '@/components/fuel/FuelCardModal';
+import { FuelCardDetailModal } from '@/components/fuel/FuelCardDetailModal';
 import { FuelVoucherModal } from '@/components/fuel/FuelVoucherModal';
 import { FuelRechargeModal } from '@/components/fuel/FuelRechargeModal';
 import { FuelCard, FuelVoucher } from '@/types/api';
@@ -23,6 +24,7 @@ export default function FuelPage() {
     const [isVoucherModalOpen, setIsVoucherModalOpen] = useState(false);
     const [isRechargeModalOpen, setIsRechargeModalOpen] = useState(false);
     const [selectedCard, setSelectedCard] = useState<FuelCard | null>(null);
+    const [isDetailModalOpen, setIsDetailModalOpen] = useState(false);
     const [missions, setMissions] = useState<any[]>([]);
     const [loading, setLoading] = useState(true);
 
@@ -59,7 +61,7 @@ export default function FuelPage() {
         .filter(m => m.statut === 'TERMINEE' && m.montantCarburantUtilise)
         .map(m => ({
             id: `trace-${m.id}`,
-            date: m.dateFin,
+            date: m.dateRetour || m.updatedAt || m.dateDepart,
             missionId: m.id,
             destination: m.destination,
             vehicule: m.vehicule?.immatriculation,
@@ -68,7 +70,7 @@ export default function FuelPage() {
             identifiant: m.typeCarburantDotation === 'BON' ? vouchers.find(v => v.id === m.bonCarburantId)?.numero :
                 m.typeCarburantDotation === 'CARTE' ? cards.find(c => c.id === m.carteCarburantId)?.numero : 'N/A',
             montantGoutte: m.montantCarburantUtilise || 0,
-            kmParcourus: (m.kilometrageRetour || 0) - (m.kilometrageDepart || 0)
+            kmParcourus: (m.kmRetour || 0) - (m.kmDepart || 0)
         }));
 
     const totalConsomme = fuelTraces.reduce((acc, t) => acc + t.montantGoutte, 0);
@@ -91,10 +93,13 @@ export default function FuelPage() {
                     <span className="font-black text-slate-900 dark:text-white uppercase flex items-center gap-2">
                         {c.numero}
                         {c.statut === 'ACTIVE' && <span className="w-2 h-2 rounded-full bg-emerald-500"></span>}
+                        {c.statut === 'EN_MISSION' && <span className="w-2 h-2 rounded-full bg-amber-500"></span>}
                         {c.statut === 'INACTIVE' && <span className="w-2 h-2 rounded-full bg-slate-400"></span>}
                         {c.statut === 'EXPIREE' && <span className="w-2 h-2 rounded-full bg-rose-500"></span>}
                     </span>
-                    <span className="text-xs text-slate-500 font-bold">{c.notes || 'Carte Carburant'}</span>
+                    <span className="text-xs text-slate-500 font-bold">
+                        {c.statut === 'EN_MISSION' ? '📍 En cours de mission' : (c.notes || 'Carte Carburant')}
+                    </span>
                 </div>
             )
         },
@@ -113,7 +118,7 @@ export default function FuelPage() {
             )
         },
         {
-            key: 'fournisseur', header: 'Type', render: (c: typeof cards[0]) => (
+            key: 'type', header: 'Type', render: (c: typeof cards[0]) => (
                 <span className="font-bold text-slate-700 dark:text-slate-300 bg-slate-100 dark:bg-slate-800 px-3 py-1.5 rounded-lg text-xs tracking-wide">Standard</span>
             )
         },
@@ -134,18 +139,32 @@ export default function FuelPage() {
         },
         {
             key: 'actions', header: 'Action', render: (c: FuelCard) => (
-                <Button 
-                    size="sm" 
-                    variant="outline" 
-                    className="text-fleet-blue hover:bg-fleet-blue hover:text-white border-fleet-blue/30 gap-2 font-bold transition-all shadow-sm"
-                    onClick={() => {
-                        setSelectedCard(c);
-                        setIsRechargeModalOpen(true);
-                    }}
-                >
-                    <PlusCircle className="w-4 h-4" />
-                    Recharger
-                </Button>
+                <div className="flex gap-2">
+                    <Button 
+                        size="sm" 
+                        variant="ghost" 
+                        className="text-slate-500 hover:bg-slate-50 dark:hover:bg-slate-800 h-8 w-8 p-0"
+                        title="Voir la fiche"
+                        onClick={() => {
+                            setSelectedCard(c);
+                            setIsDetailModalOpen(true);
+                        }}
+                    >
+                        <Eye className="w-4 h-4" />
+                    </Button>
+                    <Button 
+                        size="sm" 
+                        variant="outline" 
+                        className="text-fleet-blue hover:bg-fleet-blue hover:text-white border-fleet-blue/30 gap-1 font-bold transition-all h-8 px-2"
+                        onClick={() => {
+                            setSelectedCard(c);
+                            setIsRechargeModalOpen(true);
+                        }}
+                    >
+                        <PlusCircle className="w-3.5 h-3.5" />
+                        Recharger
+                    </Button>
+                </div>
             )
         }
     ];
@@ -358,7 +377,10 @@ export default function FuelPage() {
                         <h2 className="font-black tracking-tight text-lg">Parc des Cartes Carburant</h2>
                         <div className="flex gap-2 items-center justify-end">
                             <Button variant="outline" className="h-10 text-xs font-bold gap-2"><Filter className="w-4 h-4" /> Filtrer</Button>
-                            <Button onClick={() => setIsCardModalOpen(true)} className="h-10 px-4 font-bold tracking-wide shadow-md bg-fleet-blue hover:bg-fleet-blue/90 text-white">
+                            <Button onClick={() => {
+                                setSelectedCard(null);
+                                setIsCardModalOpen(true);
+                            }} className="h-10 px-4 font-bold tracking-wide shadow-md bg-fleet-blue hover:bg-fleet-blue/90 text-white">
                                 <Plus className="w-4 h-4 mr-2" />
                                 Nouvelle Carte
                             </Button>
@@ -396,10 +418,18 @@ export default function FuelPage() {
             <FuelCardModal
                 open={isCardModalOpen}
                 onOpenChange={setIsCardModalOpen}
+                card={null}
+                existingCards={cards}
                 onSubmit={async (d) => {
                     await api.fuel.createCard(d);
                     refreshData();
                 }}
+            />
+
+            <FuelCardDetailModal
+                open={isDetailModalOpen}
+                onOpenChange={setIsDetailModalOpen}
+                card={selectedCard}
             />
 
             <FuelVoucherModal

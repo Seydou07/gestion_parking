@@ -13,11 +13,43 @@ export class MaintenanceService {
     ) { }
 
     async create(dto: CreateMaintenanceDto) {
+        const { items, ...maintenanceData } = dto;
         return this.prisma.$transaction(async (tx) => {
-            const maintenance = await tx.maintenance.create({ data: dto });
+            const maintenance = await tx.maintenance.create({
+                data: {
+                    vehiculeId: maintenanceData.vehiculeId,
+                    type: maintenanceData.type,
+                    description: maintenanceData.description,
+                    dateDebut: new Date(maintenanceData.dateDebut).toISOString(),
+                    dateFin: maintenanceData.dateFin ? new Date(maintenanceData.dateFin).toISOString() : undefined,
+                    montant: maintenanceData.montant,
+                    statut: maintenanceData.statut,
+                    garage: maintenanceData.garage,
+                    notes: maintenanceData.notes,
+                    modePaiement: maintenanceData.modePaiement,
+                    carteCarburantId: maintenanceData.carteCarburantId,
+                    bonEssenceId: maintenanceData.bonEssenceId,
+                    mainDoeuvre: maintenanceData.mainDoeuvre,
+                    sourceMainDoeuvre: maintenanceData.sourceMainDoeuvre,
+                    items: items ? {
+                        create: items.map(item => ({
+                            nom: item.nom,
+                            reference: item.reference,
+                            quantite: item.quantite,
+                            prixUnitaire: item.prixUnitaire,
+                            total: item.total,
+                            sourcePaiement: item.sourcePaiement
+                        }))
+                    } : undefined
+                }
+            });
 
-            // If it's a breakdown (PANNE), block the vehicle
-            if (dto.type === MaintenanceType.PANNE) {
+            // Block the vehicle if it's planned (EN_ATTENTE), actively in the garage (EN_COURS), or is a breakdown (PANNE)
+            const shouldBlock = dto.type === MaintenanceType.PANNE || 
+                                maintenanceData.statut === MaintenanceStatus.EN_COURS ||
+                                maintenanceData.statut === MaintenanceStatus.EN_ATTENTE ||
+                                !maintenanceData.statut;
+            if (shouldBlock) {
                 await tx.vehicle.update({
                     where: { id: dto.vehiculeId },
                     data: { statut: VehicleStatus.EN_MAINTENANCE },
@@ -27,7 +59,10 @@ export class MaintenanceService {
             await this.historyService.log(
                 'DEMANDE MAINTENANCE',
                 'MAINTENANCE',
-                `Nouvelle demande de ${maintenance.type.toLowerCase()} pour le véhicule ${maintenance.vehiculeId}`
+                `Nouvelle demande de ${maintenance.type.toLowerCase()} pour le véhicule ${maintenance.vehiculeId}`,
+                undefined,
+                maintenance.id,
+                'MAINTENANCE'
             );
 
             return maintenance;
@@ -36,37 +71,109 @@ export class MaintenanceService {
 
     async findAll() {
         return this.prisma.maintenance.findMany({
-            include: { vehicule: true },
+            include: { vehicule: true, items: true },
             orderBy: { dateDebut: 'desc' },
         });
     }
 
+    async findOne(id: number) {
+        const maintenance = await this.prisma.maintenance.findUnique({
+            where: { id },
+            include: { vehicule: true, items: true },
+        });
+        if (!maintenance) throw new NotFoundException(`Maintenance #${id} not found`);
+        return maintenance;
+    }
+
     async update(id: number, dto: UpdateMaintenanceDto) {
+        const { items, ...maintenanceData } = dto;
+        
         return this.prisma.$transaction(async (tx) => {
             const maintenance = await tx.maintenance.update({
                 where: { id },
-                data: dto,
+                include: { items: true },
+                data: {
+                    vehiculeId: maintenanceData.vehiculeId,
+                    type: maintenanceData.type,
+                    description: maintenanceData.description,
+                    dateDebut: maintenanceData.dateDebut ? new Date(maintenanceData.dateDebut).toISOString() : undefined,
+                    dateFin: maintenanceData.dateFin ? new Date(maintenanceData.dateFin).toISOString() : undefined,
+                    montant: maintenanceData.montant,
+                    statut: maintenanceData.statut,
+                    garage: maintenanceData.garage,
+                    notes: maintenanceData.notes,
+                    modePaiement: maintenanceData.modePaiement,
+                    carteCarburantId: maintenanceData.carteCarburantId,
+                    bonEssenceId: maintenanceData.bonEssenceId,
+                    mainDoeuvre: maintenanceData.mainDoeuvre,
+                    sourceMainDoeuvre: maintenanceData.sourceMainDoeuvre,
+                    items: items ? {
+                        deleteMany: {},
+                        create: items.map(item => ({
+                            nom: item.nom,
+                            reference: item.reference,
+                            quantite: item.quantite,
+                            prixUnitaire: item.prixUnitaire,
+                            total: item.total,
+                            sourcePaiement: item.sourcePaiement
+                        }))
+                    } : undefined
+                },
             });
 
-            // If maintenance is finished, release the vehicle and handle payment
-            if (dto.statut === MaintenanceStatus.TERMINEE) {
-                const updateData: any = { statut: VehicleStatus.DISPONIBLE };
-                const montant = maintenance.montant || 0;
+            // If maintenance is planned or actively in progress, block the vehicle
+            if (dto.statut === MaintenanceStatus.EN_COURS || dto.statut === MaintenanceStatus.EN_ATTENTE) {
+                await tx.vehicle.update({
+                    where: { id: maintenance.vehiculeId },
+                    data: { statut: VehicleStatus.EN_MAINTENANCE },
+                });
+            }
 
-                if (maintenance.modePaiement === PaymentMethod.CARTE_CARBURANT && maintenance.carteCarburantId) {
+            // If maintenance is canceled, release the vehicle
+            if (dto.statut === MaintenanceStatus.ANNULEE) {
+                await tx.vehicle.update({
+                    where: { id: maintenance.vehiculeId },
+                    data: { statut: VehicleStatus.DISPONIBLE },
+                });
+            }
+
+            // If maintenance is finished, release the vehicle and handle split payment
+            if (dto.statut === MaintenanceStatus.TERMINEE) {
+                const vehicle = await tx.vehicle.findUnique({ where: { id: maintenance.vehiculeId } });
+                if (!vehicle) throw new NotFoundException('Véhicule non trouvé');
+
+                let totalToDeductFromCard = 0;
+                let totalToDeductFromBudget = 0;
+
+                // Handle items
+                for (const item of maintenance.items) {
+                    if (item.sourcePaiement === 'FUEL_CARD') {
+                        totalToDeductFromCard += item.total;
+                    } else {
+                        totalToDeductFromBudget += item.total;
+                    }
+                }
+
+                // Handle labor
+                if (maintenance.sourceMainDoeuvre === 'FUEL_CARD') {
+                    totalToDeductFromCard += maintenance.mainDoeuvre || 0;
+                } else {
+                    totalToDeductFromBudget += maintenance.mainDoeuvre || 0;
+                }
+
+                // Apply Fuel Card deduction if needed
+                if (totalToDeductFromCard > 0 && maintenance.carteCarburantId) {
                     await tx.fuelCard.update({
                         where: { id: maintenance.carteCarburantId },
-                        data: { solde: { decrement: montant } },
+                        data: { solde: { decrement: totalToDeductFromCard } },
                     });
-                } else if (maintenance.modePaiement === PaymentMethod.BON_ESSENCE && maintenance.bonEssenceId) {
-                    await tx.fuelVoucher.update({
-                        where: { id: maintenance.bonEssenceId },
-                        data: { statut: FuelVoucherStatus.UTILISE },
-                    });
-                } else {
-                    // Paid by Cash or Bank -> deduct from Vehicle Budget
-                    updateData.budgetConsomme = { increment: montant };
                 }
+
+                // Apply Vehicle Budget deduction (increment consumed budget)
+                const updateData: any = { 
+                    statut: VehicleStatus.DISPONIBLE,
+                    budgetConsomme: { increment: totalToDeductFromBudget }
+                };
 
                 await tx.vehicle.update({
                     where: { id: maintenance.vehiculeId },
@@ -76,7 +183,10 @@ export class MaintenanceService {
                 await this.historyService.log(
                     'MAINTENANCE TERMINÉE',
                     'MAINTENANCE',
-                    `Intervention #${maintenance.id} terminée (${maintenance.montant || 0} FCFA)`
+                    `Intervention #${maintenance.id} terminée (Budget: ${totalToDeductFromBudget} FCFA, Carte: ${totalToDeductFromCard} FCFA)`,
+                    undefined,
+                    maintenance.id,
+                    'MAINTENANCE'
                 );
             }
 

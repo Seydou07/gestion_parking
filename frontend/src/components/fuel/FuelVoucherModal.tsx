@@ -50,18 +50,28 @@ export function FuelVoucherModal({ open, onOpenChange, onSubmit }: FuelVoucherMo
 
                 <form onSubmit={handleSubmit} className="flex-1 flex flex-col overflow-hidden">
                     <div className="flex-1 overflow-y-auto no-scrollbar p-6 space-y-5">
-                        <div className="grid grid-cols-2 gap-4">
                             <div className="space-y-1.5">
-                                <Label className="text-[10px] font-black uppercase text-slate-400 ml-1">Numéro {formData.quantite && formData.quantite > 1 ? '(Préfixe)' : '*'}</Label>
+                                <Label className="text-[10px] font-black uppercase text-slate-400 ml-1">Numéro {formData.quantite && formData.quantite > 1 ? '(Premier du lot)' : '*'}</Label>
                                 <Input
                                     required={!formData.quantite || formData.quantite <= 1}
-                                    placeholder={formData.quantite && formData.quantite > 1 ? 'Ex: LOT-2024' : 'Ex: SONA-2024-8842'}
+                                    placeholder={formData.quantite && formData.quantite > 1 ? 'Ex: 70044501' : 'Ex: 700300250150001'}
                                     value={formData.numero}
                                     onChange={(e) => updateField('numero', e.target.value)}
                                     className="h-9 px-4 rounded-xl border-slate-200 focus:border-amber-500 font-mono font-bold uppercase text-xs"
                                 />
-                                {formData.quantite && formData.quantite > 1 && (
-                                    <p className="text-[9px] text-slate-400 mt-1 italic leading-tight px-1">Les numéros seront générés : {formData.numero || 'LOT'}-1, {formData.numero || 'LOT'}-2...</p>
+                                {formData.quantite && formData.quantite > 1 && formData.numero && (
+                                    <p className="text-[9px] text-slate-400 mt-1 italic leading-tight px-1">
+                                        Ex: {formData.numero}, {(() => {
+                                            const match = formData.numero.match(/^(.*?)(\d+)$/);
+                                            if (match) {
+                                                const prefix = match[1];
+                                                const numStr = match[2];
+                                                const nextNum = parseInt(numStr) + 1;
+                                                return `${prefix}${nextNum.toString().padStart(numStr.length, '0')}`;
+                                            }
+                                            return `${formData.numero}-2`;
+                                        })()}...
+                                    </p>
                                 )}
                             </div>
 
@@ -71,12 +81,13 @@ export function FuelVoucherModal({ open, onOpenChange, onSubmit }: FuelVoucherMo
                                     type="number"
                                     required
                                     min="1"
+                                    max="50"
                                     value={formData.quantite || 1}
                                     onChange={(e) => updateField('quantite', Number(e.target.value))}
                                     className="h-9 px-4 rounded-xl border-slate-200 focus:border-amber-500 font-bold text-xs"
                                 />
                             </div>
-                        </div>
+
 
                         <div className="space-y-1.5">
                             <Label className="text-[10px] font-black uppercase text-slate-400 ml-1">Valeur Faciale (FCFA) *</Label>
@@ -103,6 +114,16 @@ export function FuelVoucherModal({ open, onOpenChange, onSubmit }: FuelVoucherMo
                                     className="h-9 pl-9 pr-4 rounded-xl border-slate-200 focus:border-amber-500 font-bold text-xs"
                                 />
                             </div>
+                        </div>
+
+                        <div className="space-y-1.5">
+                            <Label className="text-[10px] font-black uppercase text-slate-400 ml-1">Station / Source</Label>
+                            <Input
+                                placeholder="Ex: Shell, Total, ou Siege..."
+                                value={formData.station || ''}
+                                onChange={(e) => updateField('station', e.target.value)}
+                                className="h-9 px-4 rounded-xl border-slate-200 focus:border-amber-500 font-bold text-xs"
+                            />
                         </div>
 
                     </div>

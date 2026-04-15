@@ -6,7 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { FuelCard } from '@/types/api';
-import { CreditCard, Save, Droplets } from 'lucide-react';
+import { CreditCard, Save, Droplets, MapPin, UserCheck, Settings2 } from 'lucide-react';
 
 interface FuelCardModalProps {
     open: boolean;
@@ -17,58 +17,45 @@ interface FuelCardModalProps {
 }
 
 export function FuelCardModal({ open, onOpenChange, onSubmit, card, existingCards = [] }: FuelCardModalProps) {
-    const [formData, setFormData] = useState<Partial<FuelCard>>({
+    const defaultState: Partial<FuelCard> = {
         numero: '',
-        fournisseur: 'TOTAL',
+        fournisseur: '',
         notes: '',
         solde: 0,
         soldeInitial: 0,
-        prixLitre: undefined,
-        dateExpiration: new Date().toISOString().split('T')[0],
+        dateExpiration: new Date(new Date().getFullYear() + 2, 11, 31).toISOString().split('T')[0],
         statut: 'ACTIVE',
         quantite: 1,
-    });
-
-    const getNextCardNumber = (cards: FuelCard[]) => {
-        if (!cards.length) return '';
-        
-        // Find the most recent card or just the one with highest number suffix
-        // We look for patterns like SONA001, TOTAL-01, etc.
-        const lastCard = [...cards].sort((a, b) => b.id - a.id)[0];
-        if (!lastCard) return '';
-
-        const match = lastCard.numero.match(/^(.*?)(\d+)$/);
-        if (match) {
-            const prefix = match[1];
-            const numStr = match[2];
-            const nextNum = parseInt(numStr) + 1;
-            return `${prefix}${nextNum.toString().padStart(numStr.length, '0')}`;
-        }
-        
-        return lastCard.numero; // Fallback to last number if no numeric suffix
+        prixDiesel: 0, // Vidange complète
+        prixSuper: 0,  // Vidange complète
     };
 
+    const [formData, setFormData] = useState<Partial<FuelCard>>(defaultState);
+
+    // Reset logic when modal opens/closes
     useEffect(() => {
-        if (card) {
-            setFormData({
-                ...card,
-                dateExpiration: card.dateExpiration ? new Date(card.dateExpiration).toISOString().split('T')[0] : ''
-            });
-        } else if (open) {
-            const nextNum = getNextCardNumber(existingCards);
-            setFormData({
-                numero: nextNum,
-                fournisseur: existingCards.length > 0 ? (existingCards[existingCards.length - 1].fournisseur as any) : 'TOTAL',
-                notes: '',
-                solde: 0,
-                soldeInitial: 0,
-                prixLitre: undefined,
-                dateExpiration: new Date().toISOString().split('T')[0],
-                statut: 'ACTIVE',
-                quantite: 1,
-            });
+        if (open) {
+            if (card) {
+                // Modification d'une carte existante
+                setFormData({
+                    ...card,
+                    dateExpiration: card.dateExpiration ? new Date(card.dateExpiration).toISOString().split('T')[0] : '',
+                    prixDiesel: (card as any).prixDiesel || 0,
+                    prixSuper: (card as any).prixSuper || 0,
+                });
+            } else {
+                // Création d'une NOUVELLE carte : On vide TOUT
+                setFormData({
+                    ...defaultState,
+                    numero: '',       // Désactivation du pré-remplissage du numéro
+                    fournisseur: '',  // Désactivation du pré-remplissage de la station
+                    notes: '',        // Détenteur vide
+                    solde: 0,
+                    soldeInitial: 0
+                });
+            }
         }
-    }, [card, open, existingCards]);
+    }, [open, card]);
 
     const handleSubmit = (e: React.FormEvent) => {
         e.preventDefault();
@@ -76,89 +63,89 @@ export function FuelCardModal({ open, onOpenChange, onSubmit, card, existingCard
         onOpenChange(false);
     };
 
-    const updateField = (field: keyof FuelCard, value: any) => {
+    const updateField = (field: string, value: any) => {
         setFormData(prev => ({ ...prev, [field]: value }));
     };
 
-    const litresEstimes = formData.prixLitre && formData.prixLitre > 0 && formData.soldeInitial
-        ? Math.round(((formData.soldeInitial || 0) / formData.prixLitre) * 100) / 100
-        : null;
+    const litresDiesel = formData.soldeInitial && formData.prixDiesel && formData.prixDiesel > 0 
+        ? Math.round((formData.soldeInitial / (formData.prixDiesel as number)) * 10) / 10 : 0;
+    
+    const litresSuper = formData.soldeInitial && formData.prixSuper && formData.prixSuper > 0
+        ? Math.round((formData.soldeInitial / (formData.prixSuper as number)) * 10) / 10 : 0;
 
     return (
         <Dialog open={open} onOpenChange={onOpenChange}>
-            <DialogContent className="max-w-md max-h-[90vh] p-0 border-none rounded-2xl shadow-xl bg-white dark:bg-slate-950 flex flex-col overflow-hidden">
+            <DialogContent className="max-w-md max-h-[95vh] p-0 border-none rounded-2xl shadow-xl bg-white dark:bg-slate-950 flex flex-col overflow-hidden">
                 <div className="shrink-0 px-6 py-4 bg-fleet-blue text-white flex items-center justify-between sticky top-0 z-50">
                     <DialogTitle className="text-xl font-black tracking-tight flex items-center gap-2">
                         <CreditCard className="w-5 h-5" />
                         {card ? 'Modifier la Carte' : 'Nouvelle Carte'}
                     </DialogTitle>
-                    <DialogDescription className="sr-only">
-                        {card ? 'Modifier les détails de la carte carburant.' : 'Ajouter une nouvelle carte carburant.'}
-                    </DialogDescription>
                 </div>
 
                 <form onSubmit={handleSubmit} className="flex-1 flex flex-col overflow-hidden">
-                    <div className="flex-1 overflow-y-auto no-scrollbar p-6 space-y-5">
-                        <div className="grid grid-cols-2 gap-4">
+                    <div className="flex-1 overflow-y-auto no-scrollbar p-6 space-y-6">
+                        
+                        {/* Section Identification */}
+                        <div className="space-y-4">
                             <div className="space-y-1.5">
-                                <Label className="text-[10px] font-black uppercase text-slate-400 ml-1">Fournisseur *</Label>
-                                <select
-                                    className="flex h-9 w-full rounded-xl border border-slate-200 bg-white px-3 py-2 font-bold text-xs ring-offset-white focus-visible:outline-none focus:border-fleet-blue"
-                                    value={formData.fournisseur}
-                                    onChange={(e) => updateField('fournisseur', e.target.value)}
-                                    required
-                                >
-                                    <option value="TOTAL">TOTAL</option>
-                                    <option value="SHELL">SHELL</option>
-                                    <option value="ORYX">ORYX</option>
-                                    <option value="PETROFA">PETROFA</option>
-                                    <option value="CORLAY">CORLAY</option>
-                                    <option value="AUTRE">AUTRE</option>
-                                </select>
-                            </div>
-                            <div className="space-y-1.5">
-                                <Label className="text-[10px] font-black uppercase text-slate-400 ml-1">Numéro {formData.quantite && formData.quantite > 1 ? '(Préfixe)' : '*'}</Label>
+                                <Label className="text-[10px] font-black uppercase text-slate-400 ml-1">Station Service / Fournisseur *</Label>
                                 <Input
-                                    required={!formData.quantite || formData.quantite <= 1}
-                                    value={formData.numero}
-                                    onChange={(e) => updateField('numero', e.target.value)}
-                                    placeholder={formData.quantite && formData.quantite > 1 ? 'Ex: LOT-2024' : 'Numéro physique'}
-                                    className="h-9 px-4 rounded-xl border-slate-200 focus:border-fleet-blue font-mono font-bold uppercase text-xs"
+                                    required
+                                    value={formData.fournisseur || ''}
+                                    onChange={(e) => updateField('fournisseur', e.target.value)}
+                                    placeholder="Nom de la Station"
+                                    className="h-10 px-4 rounded-xl border-slate-200 focus:border-fleet-blue font-bold text-sm"
                                 />
-                                {formData.quantite && formData.quantite > 1 && (
-                                    <p className="text-[9px] text-slate-400 mt-1 italic leading-tight px-1">Générés : {formData.numero || 'CARD'}-1, {formData.numero || 'CARD'}-2...</p>
+                            </div>
+
+                            <div className="grid grid-cols-2 gap-4">
+                                <div className="space-y-1.5">
+                                    <Label className="text-[10px] font-black uppercase text-slate-400 ml-1">Numéro de Carte *</Label>
+                                    <Input
+                                        required
+                                        value={formData.numero || ''}
+                                        onChange={(e) => updateField('numero', e.target.value)}
+                                        placeholder="N° physique"
+                                        className="h-10 px-4 rounded-xl border-slate-200 focus:border-fleet-blue font-mono font-bold uppercase text-sm"
+                                    />
+                                </div>
+                                {!card && (
+                                    <div className="space-y-1.5">
+                                        <Label className="text-[10px] font-black uppercase text-slate-400 ml-1">Quantité (Lot) *</Label>
+                                        <Input
+                                            type="number"
+                                            required
+                                            min="1"
+                                            value={formData.quantite || 1}
+                                            onChange={(e) => updateField('quantite', Number(e.target.value))}
+                                            className="h-10 px-4 rounded-xl border-slate-200 focus:border-fleet-blue font-bold text-sm"
+                                        />
+                                    </div>
                                 )}
                             </div>
-                        </div>
 
-                        {!card && (
                             <div className="space-y-1.5">
-                                <Label className="text-[10px] font-black uppercase text-slate-400 ml-1">Quantité à créer *</Label>
+                                <Label className="text-[10px] font-black uppercase text-slate-400 ml-1">Détenteur de la Carte *</Label>
                                 <Input
-                                    type="number"
+                                    value={formData.notes || ''}
+                                    onChange={(e) => updateField('notes', e.target.value)}
+                                    placeholder="Ex: Nom du chauffeur"
                                     required
-                                    min="1"
-                                    value={formData.quantite || 1}
-                                    onChange={(e) => updateField('quantite', Number(e.target.value))}
-                                    className="h-9 px-4 rounded-xl border-slate-200 focus:border-fleet-blue font-bold text-xs"
+                                    className="h-10 px-4 rounded-xl border-slate-200 focus:border-fleet-blue font-bold text-sm"
                                 />
                             </div>
-                        )}
-
-                        <div className="space-y-1.5">
-                            <Label className="text-[10px] font-black uppercase text-slate-400 ml-1">Affectation *</Label>
-                            <Input
-                                value={formData.notes || ''}
-                                onChange={(e) => updateField('notes', e.target.value)}
-                                placeholder="Détenteur de la carte..."
-                                required
-                                className="h-9 px-4 rounded-xl border-slate-200 focus:border-fleet-blue font-bold text-xs"
-                            />
                         </div>
 
-                        <div className="grid grid-cols-2 gap-4">
+                        {/* Section Configuration Financière */}
+                        <div className="bg-slate-50 dark:bg-slate-900 border border-slate-100 dark:border-slate-800 rounded-2xl p-5 space-y-4">
+                            <div className="flex items-center gap-2 mb-2">
+                                <Settings2 className="w-5 h-5 text-fleet-blue" />
+                                <span className="text-[11px] font-black uppercase text-slate-500 tracking-widest">Prix du Litre & Chargement</span>
+                            </div>
+                            
                             <div className="space-y-1.5">
-                                <Label className="text-[10px] font-black uppercase text-slate-400 ml-1">Montant (FCFA) *</Label>
+                                <Label className="text-[10px] font-black uppercase text-slate-400 ml-1">Montant à Charger (FCFA) *</Label>
                                 <Input
                                     type="number"
                                     required
@@ -166,45 +153,67 @@ export function FuelCardModal({ open, onOpenChange, onSubmit, card, existingCard
                                     value={card ? formData.soldeInitial : formData.solde}
                                     onChange={(e) => {
                                         const val = Number(e.target.value);
-                                        if (card) updateField('soldeInitial', val);
-                                        else {
-                                            updateField('soldeInitial', val);
-                                            updateField('solde', val);
-                                        }
+                                        updateField('soldeInitial', val);
+                                        if (!card) updateField('solde', val);
                                     }}
-                                    className="h-9 px-4 rounded-xl border-slate-200 focus:border-fleet-blue font-bold text-xs"
+                                    className="h-12 px-5 rounded-xl border-slate-200 focus:border-fleet-blue font-black text-lg text-fleet-blue"
                                 />
                             </div>
 
-                            <div className="space-y-1.5">
-                                <Label className="text-[10px] font-black uppercase text-slate-400 ml-1">Prix / Litre (FCFA)</Label>
-                                <Input
-                                    type="number"
-                                    min="0"
-                                    value={formData.prixLitre || ''}
-                                    onChange={(e) => updateField('prixLitre', e.target.value ? Number(e.target.value) : undefined)}
-                                    placeholder="Ex: 700"
-                                    className="h-9 px-4 rounded-xl border-slate-200 focus:border-fleet-blue font-bold text-xs"
-                                />
+                            <div className="grid grid-cols-2 gap-4">
+                                <div className="space-y-1.5">
+                                    <Label className="text-[9px] font-black uppercase text-emerald-600 ml-1">Prix DIESEL / L *</Label>
+                                    <Input
+                                        type="number"
+                                        required
+                                        placeholder="0"
+                                        value={formData.prixDiesel || ''}
+                                        onChange={(e) => updateField('prixDiesel', Number(e.target.value))}
+                                        className="h-10 px-4 rounded-xl border-emerald-100 text-sm font-black text-emerald-700"
+                                    />
+                                </div>
+                                <div className="space-y-1.5">
+                                    <Label className="text-[9px] font-black uppercase text-amber-600 ml-1">Prix SUPER / L *</Label>
+                                    <Input
+                                        type="number"
+                                        required
+                                        placeholder="0"
+                                        value={formData.prixSuper || ''}
+                                        onChange={(e) => updateField('prixSuper', Number(e.target.value))}
+                                        className="h-10 px-4 rounded-xl border-amber-100 text-sm font-black text-amber-700"
+                                    />
+                                </div>
+                            </div>
+
+                            {/* Indicateurs de Conversion */}
+                            <div className="grid grid-cols-2 gap-3 pt-2">
+                                <div className="p-3 bg-white dark:bg-slate-950 rounded-xl border border-slate-100 shadow-sm flex items-center gap-3">
+                                    <div className="w-8 h-8 rounded-lg bg-emerald-50 text-emerald-600 flex items-center justify-center">
+                                        <Droplets className="w-4 h-4" />
+                                    </div>
+                                    <div>
+                                        <p className="text-[8px] font-black text-slate-400 uppercase leading-none mb-1">Total Diesel</p>
+                                        <p className="text-sm font-black text-slate-700 dark:text-slate-200">{litresDiesel} L</p>
+                                    </div>
+                                </div>
+                                <div className="p-3 bg-white dark:bg-slate-950 rounded-xl border border-slate-100 shadow-sm flex items-center gap-3">
+                                    <div className="w-8 h-8 rounded-lg bg-amber-50 text-amber-600 flex items-center justify-center">
+                                        <Droplets className="w-4 h-4" />
+                                    </div>
+                                    <div>
+                                        <p className="text-[8px] font-black text-slate-400 uppercase leading-none mb-1">Total Super</p>
+                                        <p className="text-sm font-black text-slate-700 dark:text-slate-200">{litresSuper} L</p>
+                                    </div>
+                                </div>
                             </div>
                         </div>
 
-                        {/* Calculated liters display */}
-                        {litresEstimes && (
-                            <div className="flex items-center gap-3 p-3 bg-fleet-blue/5 border border-fleet-blue/10 rounded-xl">
-                                <Droplets className="w-5 h-5 text-fleet-blue" />
-                                <div>
-                                    <p className="text-[9px] font-black uppercase text-slate-400 tracking-widest">Litres Estimés</p>
-                                    <p className="text-lg font-black text-fleet-blue">{litresEstimes} L</p>
-                                </div>
-                            </div>
-                        )}
-
+                        {/* Section Validité */}
                         <div className="grid grid-cols-2 gap-4">
                             <div className="space-y-1.5">
                                 <Label className="text-[10px] font-black uppercase text-slate-400 ml-1">Statut *</Label>
                                 <select
-                                    className="flex h-9 w-full rounded-xl border border-slate-200 bg-white px-3 py-2 font-bold text-xs ring-offset-white focus-visible:outline-none focus:border-fleet-blue"
+                                    className="flex h-10 w-full rounded-xl border border-slate-200 bg-white px-3 py-2 font-bold text-sm focus:border-fleet-blue"
                                     value={formData.statut}
                                     onChange={(e) => updateField('statut', e.target.value)}
                                     required
@@ -215,7 +224,6 @@ export function FuelCardModal({ open, onOpenChange, onSubmit, card, existingCard
                                     <option value="EXPIREE">EXPIREE</option>
                                 </select>
                             </div>
-
                             <div className="space-y-1.5">
                                 <Label className="text-[10px] font-black uppercase text-slate-400 ml-1">Expiration *</Label>
                                 <Input
@@ -223,20 +231,16 @@ export function FuelCardModal({ open, onOpenChange, onSubmit, card, existingCard
                                     required
                                     value={formData.dateExpiration}
                                     onChange={(e) => updateField('dateExpiration', e.target.value)}
-                                    className="h-9 px-4 rounded-xl border-slate-200 focus:border-fleet-blue font-bold text-xs"
+                                    className="h-10 px-4 rounded-xl border-slate-200 focus:border-fleet-blue font-bold text-sm"
                                 />
                             </div>
                         </div>
-
                     </div>
 
-                    <DialogFooter className="shrink-0 p-4 bg-white dark:bg-slate-900 border-t border-slate-100 dark:border-slate-800 flex items-center justify-end gap-3 px-6">
-                        <Button type="button" variant="outline" className="h-9 rounded-xl px-6 font-bold text-slate-500 border-slate-200 text-[11px]" onClick={() => onOpenChange(false)}>
-                            ANNULER
-                        </Button>
-                        <Button type="submit" className="h-9 rounded-xl px-10 font-bold bg-fleet-blue hover:bg-fleet-blue-dark shadow-lg shadow-fleet-blue/20 text-[11px] text-white flex items-center gap-2 uppercase tracking-wide">
-                            <Save className="w-3.5 h-3.5" />
-                            ENREGISTRER
+                    <DialogFooter className="p-4 border-t border-slate-100 flex gap-3 px-6 bg-slate-50/50">
+                        <Button type="button" variant="outline" className="h-10 rounded-xl font-bold text-[11px] px-6" onClick={() => onOpenChange(false)}>ANNULER</Button>
+                        <Button type="submit" className="h-10 rounded-xl bg-fleet-blue text-white font-bold text-[11px] px-10 tracking-widest flex items-center gap-2 shadow-lg shadow-fleet-blue/20 transition-transform active:scale-95">
+                            <Save className="w-4 h-4" /> ENREGISTRER LA CARTE
                         </Button>
                     </DialogFooter>
                 </form>

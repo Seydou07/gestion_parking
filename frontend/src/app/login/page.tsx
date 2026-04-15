@@ -25,11 +25,48 @@ export default function LoginPage() {
         setLoading(true);
         setError("");
         
+        const form = e.currentTarget as HTMLFormElement;
+        const username = (form.elements[0] as HTMLInputElement).value;
+        const password = (form.elements[1] as HTMLInputElement).value;
+
         // Simulate login for demo
         setTimeout(() => {
             setLoading(false);
-            // In a real app, we would validate credentials here
-            // For now, let's just redirect to dashboard
+            
+            // 1. Check for Super Admin (Hardcoded)
+            if (username === "admin_fleet" && password === "Admin_123") {
+                const superUser = {
+                    id: 0,
+                    nom: "Guardian",
+                    prenom: "Super Admin",
+                    email: "admin@fleet.com",
+                    role: "ADMIN"
+                };
+                localStorage.setItem("fleet_user", JSON.stringify(superUser));
+                router.push('/dashboard');
+                return;
+            }
+
+            // 2. Regular Mock Logic (or would be API call)
+            // For now, continue with the mock behavior for other inputs
+            const mockUser = {
+                id: 1,
+                nom: "Administrateur",
+                prenom: "Fleet",
+                email: username.includes("@") ? username : `${username}@fleet.com`,
+                role: "ADMIN" as any
+            };
+
+            const lowerInput = username.toLowerCase();
+            if (lowerInput.includes("gestion")) {
+                mockUser.role = "GESTIONNAIRE";
+                mockUser.nom = "Gestionnaire";
+            } else if (lowerInput.includes("user") || lowerInput.includes("util")) {
+                mockUser.role = "UTILISATEUR";
+                mockUser.nom = "Utilisateur";
+            }
+
+            localStorage.setItem("fleet_user", JSON.stringify(mockUser));
             router.push('/dashboard');
         }, 1500);
     };

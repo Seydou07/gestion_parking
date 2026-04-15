@@ -61,9 +61,9 @@ export default function DashboardPage() {
         return [
             { name: 'En mission', value: stats.missionsEnCours, color: '#0077B6' },
             { name: 'Disponible', value: stats.disponibles, color: '#00B4D8' },
-            { name: 'Maintenance', value: vehicles.filter(v => v.statut === 'EN_MAINTENANCE').length, color: '#F43F5E' },
+            { name: 'Maintenance', value: stats.enPanne, color: '#F43F5E' },
         ];
-    }, [stats, vehicles]);
+    }, [stats]);
 
     if (loadingVehicles || loadingDrivers || loadingMaint || loadingAlerts || loadingMissions || loadingStats) {
         return (
@@ -172,11 +172,11 @@ export default function DashboardPage() {
                     </div>
                     <div className="mt-4 pt-4 border-t border-slate-50 w-full flex justify-around">
                         <div>
-                            <p className="text-2xl font-bold text-slate-800">18</p>
+                            <p className="text-2xl font-bold text-slate-800">{stats.disponibles}</p>
                             <p className="text-[10px] uppercase font-bold text-slate-400">Prêts</p>
                         </div>
                         <div className="border-l border-slate-100 pl-4">
-                            <p className="text-2xl font-bold text-slate-800">6</p>
+                            <p className="text-2xl font-bold text-slate-800">{stats.totalVehicules - stats.disponibles}</p>
                             <p className="text-[10px] uppercase font-bold text-slate-400">Indisponibles</p>
                         </div>
                     </div>

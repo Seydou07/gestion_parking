@@ -12,6 +12,11 @@ export class BudgetController {
     return this.budgetService.allocate(dto);
   }
 
+  @Get('summary')
+  getSummary() {
+    return this.budgetService.getBudgetSummary();
+  }
+
   @Post('global/supply')
   supplyGlobal(@Body() dto: SupplyGlobalBudgetDto) {
     return this.budgetService.supplyGlobalBudget(dto);

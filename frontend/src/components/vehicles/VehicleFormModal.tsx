@@ -152,7 +152,7 @@ export function VehicleFormModal({ open, onOpenChange, onSubmit, initialData, mo
                 </div>
 
                 <form onSubmit={handleSubmit} className="flex-1 flex flex-col overflow-hidden">
-                    <div className="flex-1 overflow-y-auto no-scrollbar p-6 space-y-6">
+                    <div className="flex-1 overflow-y-auto p-6 space-y-6">
                         {/* Section 1: Identité */}
                         <div className="space-y-4">
                             <h3 className="font-black text-[9px] uppercase tracking-[0.2em] text-fleet-blue flex items-center gap-2">

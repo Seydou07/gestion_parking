@@ -7,123 +7,68 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-// ============================================================
-// USERS & AUTHENTICATION
-// ============================================================
-
-enum UserRole {
-  ADMIN
-  GESTIONNAIRE
-  CHAUFFEUR
-}
-
 model User {
   id        Int      @id @default(autoincrement())
   nom       String
   prenom    String
+  username  String   @unique
   email     String   @unique
   password  String
   role      UserRole @default(GESTIONNAIRE)
   actif     Boolean  @default(true)
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
-
-  historyLogs HistoryLog[]
+  logs      HistoryLog[]
 
   @@map("users")
 }
 
-// ============================================================
-// VEHICLES
-// ============================================================
-
-enum VehicleStatus {
-  DISPONIBLE
-  EN_MISSION
-  EN_MAINTENANCE
-  HORS_SERVICE
-}
-
-enum FuelType {
-  ESSENCE
-  DIESEL
-  ELECTRIQUE
-  HYBRIDE
-}
-
 model Vehicle {
-  id              Int           @id @default(autoincrement())
-  immatriculation String        @unique
-  marque          String
-  modele          String
-  annee           Int
-  kilometrage     Int           @default(0)
-  statut          VehicleStatus @default(DISPONIBLE)
-  typeCarburant   FuelType      @default(DIESEL)
-  capaciteReservoir Int?
-  numeroChassis   String?
-  couleur         String?
-  dateAcquisition DateTime?
-  prixAcquisition Float?
-  notes           String?       @db.Text
-
-  // Insurance
-  assuranceNumero    String?
-  assuranceCompagnie String?
-  assuranceExpiration DateTime?
-
-  // Technical visit
-  prochainControle DateTime?
-
-  // Budget
-  budgetAlloue   Float?    @default(0)
-  budgetConsomme Float?    @default(0)
-
-  transmission    String    @default("MANUELLE")
-  derniereVidangeKilometrage Int @default(0)
-  frequenceVidange           Int @default(5000)
-
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
-  // Relations
-  missions     Mission[]
-  fuelRecords  FuelRecord[]
-  fuelVouchers FuelVoucher[]
-  maintenances Maintenance[]
-  alerts       Alert[]
-  budgetAllocations BudgetAllocation[]
+  id                         Int           @id @default(autoincrement())
+  immatriculation            String        @unique
+  marque                     String
+  modele                     String
+  annee                      Int
+  kilometrage                Int           @default(0)
+  statut                     VehicleStatus @default(DISPONIBLE)
+  typeCarburant              FuelType      @default(DIESEL)
+  capaciteReservoir          Int?
+  numeroChassis              String?
+  couleur                    String?
+  dateAcquisition            DateTime?
+  prixAcquisition            Float?
+  notes                      String?       @db.Text
+  assuranceNumero            String?
+  assuranceCompagnie         String?
+  assuranceExpiration        DateTime?
+  prochainControle           DateTime?
+  budgetAlloue               Float?        @default(0)
+  budgetConsomme             Float?        @default(0)
+  transmission               String        @default("MANUELLE")
+  derniereVidangeKilometrage Int           @default(0)
+  frequenceVidange           Int           @default(5000)
+  createdAt                  DateTime      @default(now())
+  updatedAt                  DateTime      @updatedAt
+  maintenances               Maintenance[]
+  vouchers                   FuelVoucher[]
+  alerts                     Alert[]
+  fuelRecords                FuelRecord[]
+  missions                   Mission[]
 
   @@map("vehicles")
 }
 
-enum AllocationType {
-  ANNUEL
-  SUPPLEMENTAIRE
-}
-
 model BudgetAllocation {
-  id              Int            @id @default(autoincrement())
-  vehiculeId      Int
-  montant         Float
-  annee           Int
-  dateAllocation  DateTime       @default(now())
-  commentaire     String?        @db.Text
-  type            AllocationType @default(ANNUEL)
+  id             Int            @id @default(autoincrement())
+  vehiculeId     Int
+  montant        Float
+  annee          Int
+  dateAllocation DateTime       @default(now())
+  commentaire    String?        @db.Text
+  type           AllocationType @default(ANNUEL)
 
-  vehicule Vehicle @relation(fields: [vehiculeId], references: [id])
-
+  @@index([vehiculeId], map: "budget_allocations_vehiculeId_fkey")
   @@map("budget_allocations")
-}
-
-// ============================================================
-// DRIVERS (CHAUFFEURS)
-// ============================================================
-
-enum DriverStatus {
-  DISPONIBLE
-  EN_MISSION
-  INACTIF
 }
 
 model Driver {
@@ -142,68 +87,39 @@ model Driver {
   notes            String?      @db.Text
   createdAt        DateTime     @default(now())
   updatedAt        DateTime     @updatedAt
-
-  // Relations
-  missions Mission[]
+  missions         Mission[]
 
   @@map("drivers")
 }
 
-// ============================================================
-// MISSIONS
-// ============================================================
-
-enum MissionStatus {
-  PLANIFIEE
-  EN_COURS
-  TERMINEE
-  ANNULEE
-}
-
 model Mission {
-  id            Int           @id @default(autoincrement())
-  vehiculeId    Int
-  chauffeurId   Int
-  destination   String
-  objectif      String?       @db.Text
-  dateDepart    DateTime
-  dateRetour    DateTime?
-  kmDepart      Int           @default(0)
-  kmRetour      Int?
-  statut        MissionStatus @default(PLANIFIEE)
-  
-  // Observations
-  observationDepart String?    @db.Text
-  observationRetour String?    @db.Text
-  observations      String?    @db.Text // Keeping for compatibility
-  
-  // Fuel Dotation & Tracking
-  typeCarburantDotation String?  // 'AUCUNE', 'BON', 'CARTE'
-  bonCarburantId       Int?
-  carteCarburantId     Int?
+  id                      Int           @id @default(autoincrement())
+  vehiculeId              Int
+  chauffeurId             Int
+  destination             String
+  objectif                String?       @db.Text
+  dateDepart              DateTime
+  dateRetour              DateTime?
+  kmDepart                Int           @default(0)
+  kmRetour                Int?
+  statut                  MissionStatus @default(PLANIFIEE)
+  observationDepart       String?       @db.Text
+  observationRetour       String?       @db.Text
+  observations            String?       @db.Text
+  typeCarburantDotation   String?
+  carteCarburantId        Int?
   montantCarburantUtilise Float?
-  ticketCarburantUrl   String?
-  lettreMission        String?  // File path for uploaded document
-  
-  createdAt     DateTime      @default(now())
-  updatedAt     DateTime      @updatedAt
+  ticketCarburantUrl      String?
+  lettreMission           String?
+  createdAt               DateTime      @default(now())
+  updatedAt               DateTime      @updatedAt
+  vehicule                Vehicle       @relation(fields: [vehiculeId], references: [id])
+  chauffeur               Driver        @relation(fields: [chauffeurId], references: [id])
+  vouchers                FuelVoucher[]
 
-  // Relations
-  vehicule  Vehicle @relation(fields: [vehiculeId], references: [id])
-  chauffeur Driver  @relation(fields: [chauffeurId], references: [id])
-
+  @@index([chauffeurId], map: "missions_chauffeurId_fkey")
+  @@index([vehiculeId], map: "missions_vehiculeId_fkey")
   @@map("missions")
-}
-
-// ============================================================
-// FUEL (CARBURANT)
-// ============================================================
-
-enum FuelCardStatus {
-  ACTIVE
-  INACTIVE
-  EXPIREE
-  EN_MISSION
 }
 
 model FuelCard {
@@ -212,25 +128,20 @@ model FuelCard {
   solde          Float          @default(0)
   soldeInitial   Float
   prixLitre      Float?
+  prixDiesel     Float?         @default(675)
+  prixSuper      Float?         @default(750)
   litresEstimes  Float?
   dateExpiration DateTime
   statut         FuelCardStatus @default(ACTIVE)
   fournisseur    String?
+  station        String?
   notes          String?        @db.Text
   createdAt      DateTime       @default(now())
   updatedAt      DateTime       @updatedAt
-
-  // Relations
-  fuelRecords FuelRecord[]
-  maintenances Maintenance[]
+  fuelRecords    FuelRecord[]   @relation("CardFuelRecords")
+  maintenances   Maintenance[]  @relation("CardMaintenances")
 
   @@map("fuel_cards")
-}
-
-enum FuelVoucherStatus {
-  DISPONIBLE
-  UTILISE
-  EXPIRE
 }
 
 model FuelVoucher {
@@ -240,17 +151,199 @@ model FuelVoucher {
   dateEmission   DateTime
   dateExpiration DateTime?
   statut         FuelVoucherStatus @default(DISPONIBLE)
+  station        String?
   vehiculeId     Int?
+  missionId      Int?
   notes          String?           @db.Text
   createdAt      DateTime          @default(now())
   updatedAt      DateTime          @updatedAt
+  vehicule       Vehicle?          @relation(fields: [vehiculeId], references: [id])
+  mission        Mission?          @relation(fields: [missionId], references: [id])
+  fuelRecords    FuelRecord[]      @relation("VoucherFuelRecords")
+  maintenances   Maintenance[]     @relation("VoucherMaintenances")
 
-  // Relations
-  vehicule    Vehicle?     @relation(fields: [vehiculeId], references: [id])
-  fuelRecords FuelRecord[]
-  maintenances Maintenance[]
-
+  @@index([missionId], map: "fuel_vouchers_missionId_fkey")
+  @@index([vehiculeId], map: "fuel_vouchers_vehiculeId_fkey")
   @@map("fuel_vouchers")
+}
+
+model FuelRecord {
+  id               Int           @id @default(autoincrement())
+  vehiculeId       Int
+  date             DateTime
+  quantite         Float
+  montant          Float
+  prixLitre        Float?
+  kilometrage      Int
+  typeCarburant    FuelType
+  station          String?
+  modePaiement     PaymentMethod
+  carteCarburantId Int?
+  bonEssenceId     Int?
+  createdAt        DateTime      @default(now())
+  updatedAt        DateTime      @updatedAt
+  vehicule         Vehicle       @relation(fields: [vehiculeId], references: [id])
+  carteCarburant   FuelCard?     @relation("CardFuelRecords", fields: [carteCarburantId], references: [id])
+  bonEssence       FuelVoucher?  @relation("VoucherFuelRecords", fields: [bonEssenceId], references: [id])
+
+  @@index([bonEssenceId], map: "fuel_records_bonEssenceId_fkey")
+  @@index([carteCarburantId], map: "fuel_records_carteCarburantId_fkey")
+  @@index([vehiculeId], map: "fuel_records_vehiculeId_fkey")
+  @@map("fuel_records")
+}
+
+model Maintenance {
+  id                Int                      @id @default(autoincrement())
+  vehiculeId        Int
+  type              MaintenanceType
+  description       String                   @db.Text
+  dateDebut         DateTime
+  dateFin           DateTime?
+  montant           Float?
+  statut            MaintenanceStatus        @default(EN_ATTENTE)
+  garage            String?
+  notes             String?                  @db.Text
+  mainDoeuvre       Float?                   @default(0)
+  sourceMainDoeuvre MaintenancePaymentSource @default(VEHICLE_BUDGET)
+  modePaiement      PaymentMethod?           @default(ESPECES)
+  carteCarburantId  Int?
+  bonEssenceId      Int?
+  createdAt         DateTime                 @default(now())
+  updatedAt         DateTime                 @updatedAt
+  vehicule          Vehicle                  @relation(fields: [vehiculeId], references: [id])
+  carteCarburant    FuelCard?                @relation("CardMaintenances", fields: [carteCarburantId], references: [id])
+  bonEssence        FuelVoucher?             @relation("VoucherMaintenances", fields: [bonEssenceId], references: [id])
+  items             MaintenanceItem[]
+
+  @@index([bonEssenceId], map: "maintenances_bonEssenceId_fkey")
+  @@index([carteCarburantId], map: "maintenances_carteCarburantId_fkey")
+  @@index([vehiculeId], map: "maintenances_vehiculeId_fkey")
+  @@map("maintenances")
+}
+
+model MaintenanceItem {
+  id             Int                      @id @default(autoincrement())
+  maintenanceId  Int
+  nom            String
+  reference      String?
+  quantite       Int                      @default(1)
+  prixUnitaire   Float
+  total          Float
+  sourcePaiement MaintenancePaymentSource @default(VEHICLE_BUDGET)
+  maintenance    Maintenance              @relation(fields: [maintenanceId], references: [id])
+
+  @@index([maintenanceId], map: "maintenance_items_maintenanceId_fkey")
+  @@map("maintenance_items")
+}
+
+model Alert {
+  id           Int           @id @default(autoincrement())
+  type         String
+  message      String        @db.Text
+  module       AlertModule
+  severity     AlertSeverity @default(WARNING)
+  lue          Boolean       @default(false)
+  vehiculeId   Int?
+  dateCreation DateTime      @default(now())
+  updatedAt    DateTime      @updatedAt
+  vehicule     Vehicle?      @relation(fields: [vehiculeId], references: [id])
+
+  @@index([vehiculeId], map: "alerts_vehiculeId_fkey")
+  @@map("alerts")
+}
+
+model HistoryLog {
+  id            Int      @id @default(autoincrement())
+  action        String
+  module        String
+  details       String?  @db.Text
+  utilisateurId Int?
+  entiteId      Int?
+  entiteType    String?
+  createdAt     DateTime @default(now())
+  utilisateur   User?    @relation(fields: [utilisateurId], references: [id])
+
+  @@index([utilisateurId], map: "history_logs_utilisateurId_fkey")
+  @@map("history_logs")
+}
+
+model SystemSettings {
+  id                    Int      @id @default(1)
+  nomEntreprise         String   @default("CCVA Fleet")
+  devise                String   @default("FCFA")
+  alerteStockCarburant  Int      @default(10000)
+  seuilVidangeKm        Int      @default(5000)
+  relanceAssuranceJours Int      @default(15)
+  relanceVisiteJours    Int      @default(15)
+  budgetGlobalVehicules Float    @default(0)
+  budgetGlobalCarburant Float    @default(0)
+  budgetGlobalCartes    Float    @default(0)
+  budgetGlobalBons      Float    @default(0)
+  updatedAt             DateTime @updatedAt
+
+  @@map("system_settings")
+}
+
+model GlobalBudgetActivity {
+  id          Int      @id @default(autoincrement())
+  field       String
+  amount      Float
+  type        String   @default("REPLENISHMENT")
+  date        DateTime @default(now())
+  description String?  @db.Text
+
+  @@map("global_budget_activities")
+}
+
+enum UserRole {
+  ADMIN
+  GESTIONNAIRE
+  UTILISATEUR
+}
+
+enum VehicleStatus {
+  DISPONIBLE
+  EN_MISSION
+  EN_MAINTENANCE
+  HORS_SERVICE
+}
+
+enum FuelType {
+  ESSENCE
+  DIESEL
+  ELECTRIQUE
+  HYBRIDE
+}
+
+enum AllocationType {
+  ANNUEL
+  SUPPLEMENTAIRE
+}
+
+enum DriverStatus {
+  DISPONIBLE
+  EN_MISSION
+  INACTIF
+}
+
+enum MissionStatus {
+  PLANIFIEE
+  EN_COURS
+  TERMINEE
+  ANNULEE
+}
+
+enum FuelCardStatus {
+  ACTIVE
+  INACTIVE
+  EXPIREE
+  EN_MISSION
+}
+
+enum FuelVoucherStatus {
+  DISPONIBLE
+  UTILISE
+  EXPIRE
 }
 
 enum PaymentMethod {
@@ -259,34 +352,6 @@ enum PaymentMethod {
   ESPECES
   CARTE_BANCAIRE
 }
-
-model FuelRecord {
-  id              Int           @id @default(autoincrement())
-  vehiculeId      Int
-  date            DateTime
-  quantite        Float
-  montant         Float
-  prixLitre       Float?
-  kilometrage     Int
-  typeCarburant   FuelType
-  station         String?
-  modePaiement    PaymentMethod
-  carteCarburantId Int?
-  bonEssenceId    Int?
-  createdAt       DateTime      @default(now())
-  updatedAt       DateTime      @updatedAt
-
-  // Relations
-  vehicule       Vehicle      @relation(fields: [vehiculeId], references: [id])
-  carteCarburant FuelCard?    @relation(fields: [carteCarburantId], references: [id])
-  bonEssence     FuelVoucher? @relation(fields: [bonEssenceId], references: [id])
-
-  @@map("fuel_records")
-}
-
-// ============================================================
-// MAINTENANCE & PANNES
-// ============================================================
 
 enum MaintenancePaymentSource {
   VEHICLE_BUDGET
@@ -311,58 +376,6 @@ enum MaintenanceStatus {
   ANNULEE
 }
 
-model Maintenance {
-  id              Int               @id @default(autoincrement())
-  vehiculeId      Int
-  type            MaintenanceType
-  description     String            @db.Text
-  dateDebut       DateTime
-  dateFin         DateTime?
-  montant         Float?
-  statut          MaintenanceStatus @default(EN_ATTENTE)
-  garage          String?
-  notes           String?           @db.Text
-  
-  // New fields
-  mainDoeuvre     Float?            @default(0)
-  sourceMainDoeuvre MaintenancePaymentSource @default(VEHICLE_BUDGET)
-  items           MaintenanceItem[]
-  
-  // Payment tracking
-  modePaiement    PaymentMethod?    @default(ESPECES)
-  carteCarburantId Int?
-  bonEssenceId    Int?
-
-  createdAt       DateTime          @default(now())
-  updatedAt       DateTime          @updatedAt
-
-  // Relations
-  vehicule       Vehicle      @relation(fields: [vehiculeId], references: [id])
-  carteCarburant FuelCard?    @relation(fields: [carteCarburantId], references: [id])
-  bonEssence     FuelVoucher? @relation(fields: [bonEssenceId], references: [id])
-
-  @@map("maintenances")
-}
-
-model MaintenanceItem {
-  id              Int         @id @default(autoincrement())
-  maintenanceId   Int
-  nom             String
-  reference       String?
-  quantite        Int         @default(1)
-  prixUnitaire    Float
-  total           Float
-  sourcePaiement  MaintenancePaymentSource @default(VEHICLE_BUDGET)
-  
-  maintenance     Maintenance @relation(fields: [maintenanceId], references: [id], onDelete: Cascade)
-  
-  @@map("maintenance_items")
-}
-
-// ============================================================
-// ALERTS
-// ============================================================
-
 enum AlertSeverity {
   INFO
   WARNING
@@ -376,80 +389,4 @@ enum AlertModule {
   CARBURANT
   MAINTENANCE
   BUDGET
-}
-
-model Alert {
-  id          Int           @id @default(autoincrement())
-  type        String
-  message     String        @db.Text
-  module      AlertModule
-  severity    AlertSeverity @default(WARNING)
-  lue         Boolean       @default(false)
-  vehiculeId  Int?
-  dateCreation DateTime     @default(now())
-  updatedAt   DateTime      @updatedAt
-
-  // Relations
-  vehicule Vehicle? @relation(fields: [vehiculeId], references: [id])
-
-  @@map("alerts")
-}
-
-// ============================================================
-// HISTORY LOG (AUDIT)
-// ============================================================
-
-model HistoryLog {
-  id           Int      @id @default(autoincrement())
-  action       String
-  module       String
-  details      String?  @db.Text
-  utilisateurId Int?
-  
-  // New links
-  entiteId     Int?
-  entiteType   String?  // 'MISSION', 'MAINTENANCE', 'VEHICULE', etc.
-  
-  createdAt    DateTime @default(now())
-
-  // Relations
-  utilisateur User? @relation(fields: [utilisateurId], references: [id])
-
-  @@map("history_logs")
-}
-
-// ============================================================
-// SETTINGS
-// ============================================================
-
-model SystemSettings {
-  id                    Int      @id @default(1)
-  nomEntreprise         String   @default("CCVA Fleet")
-  devise                String   @default("FCFA")
-  alerteStockCarburant  Int      @default(10000) // Minimum solde global avant alerte
-  seuilVidangeKm        Int      @default(5000)
-  relanceAssuranceJours Int      @default(15)
-  relanceVisiteJours    Int      @default(15)
-  budgetGlobalVehicules Float    @default(0)
-  budgetGlobalCarburant Float    @default(0)
-  budgetGlobalCartes    Float    @default(0)
-  budgetGlobalBons      Float    @default(0)
-  updatedAt             DateTime @updatedAt
-
-  @@map("system_settings")
-}
-
-// ============================================================
-// GLOBAL BUDGET ACTIVITY (TRACEABILITY)
-// ============================================================
-
-model GlobalBudgetActivity {
-  id          Int      @id @default(autoincrement())
-  field       String   // 'MAINTENANCE', 'FUEL_CARD', 'FUEL_BON'
-  amount      Float
-  type        String   @default("REPLENISHMENT") // REPLENISHMENT, CORRECTION
-  date        DateTime @default(now())
-  description String?  @db.Text
-
-  @@map("global_budget_activities")
 }

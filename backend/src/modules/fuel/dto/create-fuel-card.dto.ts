@@ -33,6 +33,10 @@ export class CreateFuelCardDto {
     @IsOptional()
     fournisseur?: string;
 
+    @IsString()
+    @IsOptional()
+    station?: string;
+
     @IsEnum(FuelCardStatus)
     @IsOptional()
     statut?: FuelCardStatus;

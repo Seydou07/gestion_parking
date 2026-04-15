@@ -25,16 +25,25 @@ export class MissionsService {
         }
 
         const status = createMissionDto.statut || MissionStatus.PLANIFIEE;
+        const { bonCarburantIds, ...rest } = createMissionDto;
 
         return this.prisma.$transaction(async (tx) => {
             const mission = await tx.mission.create({
                 data: {
-                    ...createMissionDto,
+                    ...rest,
                     dateDepart: new Date(createMissionDto.dateDepart),
                     dateRetour: createMissionDto.dateRetour ? new Date(createMissionDto.dateRetour) : null,
                     statut: status,
                 },
             });
+
+            // Mark multiple vouchers as used if assigned
+            if (createMissionDto.typeCarburantDotation === 'BON' && bonCarburantIds?.length) {
+                await tx.fuelVoucher.updateMany({
+                    where: { id: { in: bonCarburantIds } },
+                    data: { statut: 'UTILISE', missionId: mission.id }
+                });
+            }
 
             // Only update vehicle/driver status if mission starts immediately
             if (status === MissionStatus.EN_COURS) {
@@ -76,6 +85,7 @@ export class MissionsService {
             include: {
                 vehicule: true,
                 chauffeur: true,
+                vouchers: true,
             },
             orderBy: { dateDepart: 'desc' },
         });
@@ -84,23 +94,50 @@ export class MissionsService {
     async findOne(id: number) {
         const mission = await this.prisma.mission.findUnique({
             where: { id },
-            include: { vehicule: true, chauffeur: true },
+            include: { vehicule: true, chauffeur: true, vouchers: true },
         });
         if (!mission) throw new NotFoundException(`Mission #${id} non trouvée`);
         return mission;
     }
 
     async update(id: number, updateMissionDto: UpdateMissionDto) {
-        const currentMission = await this.findOne(id);
+        const currentMission = await this.prisma.mission.findUnique({
+            where: { id },
+            include: { vouchers: true, vehicule: true, chauffeur: true }
+        });
+        if (!currentMission) throw new NotFoundException(`Mission #${id} non trouvée`);
+
+        const { bonCarburantIds, ...rest } = updateMissionDto;
 
         return this.prisma.$transaction(async (tx) => {
             const mission = await tx.mission.update({
                 where: { id },
                 data: {
-                    ...updateMissionDto,
+                    ...rest,
                     dateRetour: updateMissionDto.dateRetour ? new Date(updateMissionDto.dateRetour) : undefined,
                 },
             });
+
+            // Handle multi-voucher changes
+            if (updateMissionDto.typeCarburantDotation === 'BON' && bonCarburantIds) {
+                // 1. Dissociate all vouchers currently linked to this mission
+                await tx.fuelVoucher.updateMany({
+                    where: { missionId: id },
+                    data: { statut: 'DISPONIBLE', missionId: null }
+                });
+
+                // 2. Link the new set of vouchers
+                await tx.fuelVoucher.updateMany({
+                    where: { id: { in: bonCarburantIds } },
+                    data: { statut: 'UTILISE', missionId: mission.id }
+                });
+            } else if (updateMissionDto.typeCarburantDotation !== 'BON' && currentMission.vouchers.length > 0) {
+                // If dotation type changed from BON to something else, release vouchers
+                await tx.fuelVoucher.updateMany({
+                    where: { missionId: id },
+                    data: { statut: 'DISPONIBLE', missionId: null }
+                });
+            }
 
             // Transition from PLANIFIEE to EN_COURS (Check-out)
             if (currentMission.statut === MissionStatus.PLANIFIEE && updateMissionDto.statut === MissionStatus.EN_COURS) {
@@ -117,7 +154,10 @@ export class MissionsService {
                 await this.historyService.log(
                     'DÉPART MISSION',
                     'MISSION',
-                    `Départ en mission pour ${mission.destination} (Chauffeur: ${currentMission.chauffeur.nom}, Véhicule: ${currentMission.vehicule.immatriculation})`
+                    `Départ en mission pour ${mission.destination} (Chauffeur: ${currentMission.chauffeur.nom}, Véhicule: ${currentMission.vehicule.immatriculation})`,
+                    undefined,
+                    mission.id,
+                    'MISSION'
                 );
             }
 
@@ -174,6 +214,7 @@ export class MissionsService {
             return mission;
         });
     }
+
 
     async remove(id: number) {
         return this.prisma.mission.delete({ where: { id } });

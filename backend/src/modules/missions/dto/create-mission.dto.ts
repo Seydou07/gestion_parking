@@ -48,10 +48,10 @@ export class CreateMissionDto {
     @IsOptional()
     typeCarburantDotation?: string;
 
-    @ApiProperty()
-    @IsInt()
+    @ApiProperty({ type: [Number], example: [1, 2] })
+    @IsInt({ each: true })
     @IsOptional()
-    bonCarburantId?: number;
+    bonCarburantIds?: number[];
 
     @ApiProperty()
     @IsInt()

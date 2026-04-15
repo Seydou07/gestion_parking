@@ -13,8 +13,13 @@ export class AuthService {
     ) { }
 
     async login(loginDto: LoginDto) {
-        const user = await this.prisma.user.findUnique({
-            where: { email: loginDto.email },
+        const user = await this.prisma.user.findFirst({
+            where: {
+                OR: [
+                    { email: loginDto.identifier },
+                    { username: loginDto.identifier }
+                ]
+            },
         });
 
         if (!user || !user.actif) {
@@ -26,7 +31,7 @@ export class AuthService {
             throw new UnauthorizedException('Identifiants invalides');
         }
 
-        const payload = { sub: user.id, email: user.email, role: user.role };
+        const payload = { sub: user.id, email: user.email, username: user.username, role: user.role };
         const token = this.jwtService.sign(payload);
 
         return {
@@ -46,8 +51,12 @@ export class AuthService {
 
         const user = await this.prisma.user.create({
             data: {
-                ...registerDto,
+                nom: registerDto.nom,
+                prenom: registerDto.prenom,
+                email: registerDto.email,
+                username: registerDto.username,
                 password: hashedPassword,
+                role: registerDto.role,
             },
         });
 

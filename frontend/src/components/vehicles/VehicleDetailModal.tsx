@@ -29,6 +29,8 @@ import {
     Cell 
 } from 'recharts';
 
+import { useAuth } from '@/hooks/useAuth';
+
 interface VehicleDetailModalProps {
     open: boolean;
     onOpenChange: (open: boolean) => void;
@@ -46,6 +48,7 @@ const statusConfig = {
 };
 
 export function VehicleDetailModal({ open, onOpenChange, vehicle, onEdit, onRenewInsurance, onRenewControl }: VehicleDetailModalProps) {
+    const { isUtilisateur, canViewBudget } = useAuth();
     const [budgetData, setBudgetData] = useState<VehicleBudget | null>(null);
     const [analyticsData, setAnalyticsData] = useState<any>(null);
     const [loadingBudget, setLoadingBudget] = useState(false);
@@ -55,10 +58,12 @@ export function VehicleDetailModal({ open, onOpenChange, vehicle, onEdit, onRene
 
     useEffect(() => {
         if (open && vehicle) {
-            fetchBudgetData();
-            fetchAnalyticsData();
+            if (canViewBudget) {
+                fetchBudgetData();
+                fetchAnalyticsData();
+            }
         }
-    }, [open, vehicle]);
+    }, [open, vehicle, canViewBudget]);
 
     const fetchAnalyticsData = async () => {
         if (!vehicle) return;
@@ -180,26 +185,28 @@ export function VehicleDetailModal({ open, onOpenChange, vehicle, onEdit, onRene
                         </div>
                     </div>
 
-                    <div className="flex bg-slate-100 dark:bg-slate-900 p-1 rounded-xl mb-6">
-                        <button 
-                            onClick={() => setActiveTab('DETAILS')}
-                            className={cn(
-                                "flex-1 py-2 text-[10px] font-black uppercase tracking-widest rounded-lg transition-all",
-                                activeTab === 'DETAILS' ? "bg-white dark:bg-slate-800 text-fleet-blue shadow-sm" : "text-slate-500 hover:text-slate-700"
-                            )}
-                        >
-                            Fiche Technique
-                        </button>
-                        <button 
-                            onClick={() => setActiveTab('ANALYTICS')}
-                            className={cn(
-                                "flex-1 py-2 text-[10px] font-black uppercase tracking-widest rounded-lg transition-all",
-                                activeTab === 'ANALYTICS' ? "bg-white dark:bg-slate-800 text-fleet-blue shadow-sm" : "text-slate-500 hover:text-slate-700"
-                            )}
-                        >
-                            Analytics & Consommation
-                        </button>
-                    </div>
+                    {canViewBudget && (
+                        <div className="flex bg-slate-100 dark:bg-slate-900 p-1 rounded-xl mb-6">
+                            <button 
+                                onClick={() => setActiveTab('DETAILS')}
+                                className={cn(
+                                    "flex-1 py-2 text-[10px] font-black uppercase tracking-widest rounded-lg transition-all",
+                                    activeTab === 'DETAILS' ? "bg-white dark:bg-slate-800 text-fleet-blue shadow-sm" : "text-slate-500 hover:text-slate-700"
+                                )}
+                            >
+                                Fiche Technique
+                            </button>
+                            <button 
+                                onClick={() => setActiveTab('ANALYTICS')}
+                                className={cn(
+                                    "flex-1 py-2 text-[10px] font-black uppercase tracking-widest rounded-lg transition-all",
+                                    activeTab === 'ANALYTICS' ? "bg-white dark:bg-slate-800 text-fleet-blue shadow-sm" : "text-slate-500 hover:text-slate-700"
+                                )}
+                            >
+                                Analytics & Consommation
+                            </button>
+                        </div>
+                    )}
 
                     {activeTab === 'DETAILS' ? (
                         <div className="space-y-6">
@@ -291,7 +298,7 @@ export function VehicleDetailModal({ open, onOpenChange, vehicle, onEdit, onRene
                                                 {formatDate(vehicle.assuranceExpiration)}
                                             </p>
                                         </div>
-                                        {onRenewInsurance && (
+                                        {onRenewInsurance && !isUtilisateur && (
                                             <Button size="sm" variant="outline" className="h-7 text-[9px] px-3 font-black uppercase border-amber-200 text-amber-600 hover:bg-amber-50" onClick={() => onRenewInsurance(vehicle)}>
                                                 Renouveler
                                             </Button>
@@ -304,7 +311,7 @@ export function VehicleDetailModal({ open, onOpenChange, vehicle, onEdit, onRene
                                                 {formatDate(vehicle.prochainControle)}
                                             </p>
                                         </div>
-                                        {onRenewControl && (
+                                        {onRenewControl && !isUtilisateur && (
                                             <Button size="sm" variant="outline" className="h-7 text-[9px] px-3 font-black uppercase border-amber-200 text-amber-600 hover:bg-amber-50" onClick={() => onRenewControl(vehicle)}>
                                                 Renouveler
                                             </Button>
@@ -313,64 +320,66 @@ export function VehicleDetailModal({ open, onOpenChange, vehicle, onEdit, onRene
                                 </div>
                             </div>
 
-                            <div className="p-5 bg-white dark:bg-slate-900 rounded-2xl shadow-sm border border-slate-100 dark:border-slate-800">
-                                <div className="flex justify-between items-center mb-4">
-                                    <h4 className="text-[9px] font-black text-slate-400 uppercase tracking-[0.2em] flex items-center gap-2">
-                                        <Coins className="w-3.5 h-3.5 text-amber-500" />
-                                        Consommation du Budget Alloué
-                                    </h4>
-                                    <Button 
-                                        size="sm" 
-                                        className="h-7 text-[9px] font-black uppercase tracking-tight bg-slate-900 text-white"
-                                        onClick={() => setIsAllocateModalOpen(true)}
-                                    >
-                                        Allouer Budget
-                                    </Button>
+                             {canViewBudget && (
+                                <div className="p-5 bg-white dark:bg-slate-900 rounded-2xl shadow-sm border border-slate-100 dark:border-slate-800">
+                                    <div className="flex justify-between items-center mb-4">
+                                        <h4 className="text-[9px] font-black text-slate-400 uppercase tracking-[0.2em] flex items-center gap-2">
+                                            <Coins className="w-3.5 h-3.5 text-amber-500" />
+                                            Consommation du Budget Alloué
+                                        </h4>
+                                        <Button 
+                                            size="sm" 
+                                            className="h-7 text-[9px] font-black uppercase tracking-tight bg-slate-900 text-white"
+                                            onClick={() => setIsAllocateModalOpen(true)}
+                                        >
+                                            Allouer Budget
+                                        </Button>
+                                    </div>
+                                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+                                        <div className="p-4 bg-slate-50 dark:bg-slate-800/50 rounded-2xl border border-slate-100 dark:border-slate-800">
+                                            <p className="text-[8px] font-black text-slate-400 uppercase tracking-widest mb-1">Total Alloué</p>
+                                            <p className="text-xl font-black text-slate-900 dark:text-white">
+                                                {formatSmartCurrency(budgetData?.totalAllocated || vehicle.budgetAlloue || 0)}
+                                            </p>
+                                        </div>
+                                        <div className="p-4 bg-slate-50 dark:bg-slate-800/50 rounded-2xl border border-slate-100 dark:border-slate-800">
+                                            <p className="text-[8px] font-black text-slate-400 uppercase tracking-widest mb-1">Total Consommé</p>
+                                            <p className="text-xl font-black text-blue-500">
+                                                {formatSmartCurrency(budgetData?.totalSpent || vehicle.budgetConsomme || 0)}
+                                            </p>
+                                        </div>
+                                        <div className="p-4 bg-emerald-50 dark:bg-emerald-900/10 rounded-2xl border border-emerald-100 dark:border-emerald-900/20">
+                                            <p className="text-[8px] font-black text-emerald-600 uppercase tracking-widest mb-1">Solde Restant</p>
+                                            <p className={cn(
+                                                "text-xl font-black",
+                                                ((budgetData?.totalAllocated || vehicle.budgetAlloue || 0) - (budgetData?.totalSpent || vehicle.budgetConsomme || 0)) <= 0 ? "text-rose-500" : "text-emerald-600"
+                                            )}>
+                                                {formatSmartCurrency((budgetData?.totalAllocated || vehicle.budgetAlloue || 0) - (budgetData?.totalSpent || vehicle.budgetConsomme || 0))}
+                                            </p>
+                                        </div>
+                                    </div>
+                                    <div className="space-y-2 mb-6">
+                                        <div className="flex justify-between text-[10px] font-bold uppercase tracking-widest">
+                                            <span className="text-slate-400">Utilisation du Budget</span>
+                                            <span className={cn(
+                                                (budgetData?.totalSpent || 0) / (budgetData?.totalAllocated || 1) > 0.9 ? "text-rose-500" : "text-fleet-blue"
+                                            )}>
+                                                {Math.round(((budgetData?.totalSpent || 0) / (budgetData?.totalAllocated || 1)) * 100)}%
+                                            </span>
+                                        </div>
+                                        <div className="h-2 rounded-full bg-slate-100 dark:bg-slate-800 overflow-hidden">
+                                            <div
+                                                className={cn(
+                                                    "h-full rounded-full transition-all duration-1000",
+                                                    ((budgetData?.totalSpent || 0) / (budgetData?.totalAllocated || 1)) > 0.9 ? "bg-rose-500" :
+                                                        ((budgetData?.totalSpent || 0) / (budgetData?.totalAllocated || 1)) > 0.7 ? "bg-amber-500" : "bg-fleet-blue"
+                                                )}
+                                                style={{ width: `${Math.min(100, ((budgetData?.totalSpent || 0) / (budgetData?.totalAllocated || 1)) * 100)}%` }}
+                                            />
+                                        </div>
+                                    </div>
                                 </div>
-                                <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
-                                    <div className="p-4 bg-slate-50 dark:bg-slate-800/50 rounded-2xl border border-slate-100 dark:border-slate-800">
-                                        <p className="text-[8px] font-black text-slate-400 uppercase tracking-widest mb-1">Total Alloué</p>
-                                        <p className="text-xl font-black text-slate-900 dark:text-white">
-                                            {formatSmartCurrency(budgetData?.totalAllocated || vehicle.budgetAlloue || 0)}
-                                        </p>
-                                    </div>
-                                    <div className="p-4 bg-slate-50 dark:bg-slate-800/50 rounded-2xl border border-slate-100 dark:border-slate-800">
-                                        <p className="text-[8px] font-black text-slate-400 uppercase tracking-widest mb-1">Total Consommé</p>
-                                        <p className="text-xl font-black text-blue-500">
-                                            {formatSmartCurrency(budgetData?.totalSpent || vehicle.budgetConsomme || 0)}
-                                        </p>
-                                    </div>
-                                    <div className="p-4 bg-emerald-50 dark:bg-emerald-900/10 rounded-2xl border border-emerald-100 dark:border-emerald-900/20">
-                                        <p className="text-[8px] font-black text-emerald-600 uppercase tracking-widest mb-1">Solde Restant</p>
-                                        <p className={cn(
-                                            "text-xl font-black",
-                                            ((budgetData?.totalAllocated || vehicle.budgetAlloue || 0) - (budgetData?.totalSpent || vehicle.budgetConsomme || 0)) <= 0 ? "text-rose-500" : "text-emerald-600"
-                                        )}>
-                                            {formatSmartCurrency((budgetData?.totalAllocated || vehicle.budgetAlloue || 0) - (budgetData?.totalSpent || vehicle.budgetConsomme || 0))}
-                                        </p>
-                                    </div>
-                                </div>
-                                <div className="space-y-2 mb-6">
-                                    <div className="flex justify-between text-[10px] font-bold uppercase tracking-widest">
-                                        <span className="text-slate-400">Utilisation du Budget</span>
-                                        <span className={cn(
-                                            (budgetData?.totalSpent || 0) / (budgetData?.totalAllocated || 1) > 0.9 ? "text-rose-500" : "text-fleet-blue"
-                                        )}>
-                                            {Math.round(((budgetData?.totalSpent || 0) / (budgetData?.totalAllocated || 1)) * 100)}%
-                                        </span>
-                                    </div>
-                                    <div className="h-2 rounded-full bg-slate-100 dark:bg-slate-800 overflow-hidden">
-                                        <div
-                                            className={cn(
-                                                "h-full rounded-full transition-all duration-1000",
-                                                ((budgetData?.totalSpent || 0) / (budgetData?.totalAllocated || 1)) > 0.9 ? "bg-rose-500" :
-                                                    ((budgetData?.totalSpent || 0) / (budgetData?.totalAllocated || 1)) > 0.7 ? "bg-amber-500" : "bg-fleet-blue"
-                                            )}
-                                            style={{ width: `${Math.min(100, ((budgetData?.totalSpent || 0) / (budgetData?.totalAllocated || 1)) * 100)}%` }}
-                                        />
-                                    </div>
-                                </div>
-                            </div>
+                             )}
                         </div>
                     ) : (
                         <div className="space-y-6 animate-in slide-in-from-right-4 duration-300">

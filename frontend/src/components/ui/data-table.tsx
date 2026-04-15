@@ -19,6 +19,7 @@ interface DataTableProps<T> {
     onDelete?: (item: T) => void;
     emptyMessage?: string;
     rowClassName?: (item: T) => string;
+    onRowClick?: (item: T) => void;
     showPagination?: boolean;
     initialPageSize?: number;
 }
@@ -30,6 +31,7 @@ export function DataTable<T>({
     onView,
     onEdit,
     onDelete,
+    onRowClick,
     emptyMessage = "Aucune donnée trouvée",
     rowClassName,
     showPagination = true,
@@ -79,9 +81,11 @@ export function DataTable<T>({
                             <tr
                                 key={keyExtractor(item)}
                                 className={cn(
-                                    "group hover:bg-slate-50/50 dark:hover:bg-slate-800/30 transition-colors",
+                                    "group transition-colors",
+                                    onRowClick && "cursor-pointer hover:bg-slate-50/50 dark:hover:bg-slate-800/30",
                                     rowClassName && rowClassName(item)
                                 )}
+                                onClick={() => onRowClick && onRowClick(item)}
                             >
                                 {columns.map((column) => (
                                     <td key={column.key} className={cn("px-6 py-4 text-sm text-slate-600 dark:text-slate-300", column.className)}>

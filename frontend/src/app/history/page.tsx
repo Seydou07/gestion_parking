@@ -134,14 +134,14 @@ export default function HistoryPage() {
 
             <div className="card-premium">
                 <div className="mb-8">
-                    <div className="relative">
-                        <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+                    <div className="relative max-w-sm">
+                        <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
                         <input 
                             type="text" 
                             placeholder="Rechercher dans les logs..." 
                             value={search}
                             onChange={(e) => setSearch(e.target.value)}
-                            className="w-full pl-10 pr-4 py-3 rounded-xl bg-slate-50 dark:bg-slate-800 border-none text-sm outline-none focus:ring-2 focus:ring-fleet-blue/20" 
+                            className="w-full pl-11 h-11 rounded-xl bg-slate-50 dark:bg-slate-800 border-none text-sm outline-none focus:ring-2 focus:ring-fleet-blue/20 transition-all font-medium" 
                         />
                     </div>
                 </div>

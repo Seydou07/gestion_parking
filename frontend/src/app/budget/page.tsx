@@ -1,57 +1,58 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useMemo } from "react";
 import { 
-    Wallet, 
-    ArrowUpCircle, 
-    Database, 
-    PieChart, 
-    TrendingUp, 
-    AlertCircle,
     Plus,
     History,
-    CheckCircle2,
-    Clock,
-    User,
-    ChevronRight,
-    Search,
-    Filter,
+    Landmark,
+    Ticket,
+    Fuel,
+    Car,
+    ArrowUpCircle,
+    Gauge,
+    LayoutDashboard,
+    Wallet,
+    TrendingUp,
     ShieldCheck,
-    Settings,
-    ArrowRightLeft,
+    CreditCard,
+    Search,
+    AlertTriangle,
     TrendingDown,
-    Activity,
-    Landmark
+    Zap,
+    Wrench,
+    ArrowRight,
+    TrendingUp as TrendingUpIcon,
+    AlertCircle
 } from "lucide-react";
 import { api } from "@/lib/api";
 import { toast, Toaster } from "sonner";
-import { GlobalBudgetActivity } from "@/types/api";
-import { cn } from "@/lib/utils";
+import { cn, formatCurrency } from "@/lib/utils";
 import GlobalBudgetSupplyModal from "@/components/budget/GlobalBudgetSupplyModal";
 import AnnualBudgetConfigModal from "@/components/budget/AnnualBudgetConfigModal";
 import { HistoryDetailsModal } from "@/components/history/HistoryDetailsModal";
-
-const ITEMS_PER_PAGE = 5;
+import { Button } from '@/components/ui/button';
+import StatCard from "@/components/dashboard/StatCard";
+import VehicleBudgetDetailModal from "@/components/budget/VehicleBudgetDetailModal";
+import { DataTable } from "@/components/ui/data-table";
+import { Input } from "@/components/ui/input";
 
 export default function BudgetPage() {
-    const [settings, setSettings] = useState<any>(null);
-    const [history, setHistory] = useState<GlobalBudgetActivity[]>([]);
+    const [summary, setSummary] = useState<any>(null);
     const [loading, setLoading] = useState(true);
-    const [stats, setStats] = useState<any>(null);
-    const [cardsBalance, setCardsBalance] = useState(0);
-    const [vouchersBalance, setVouchersBalance] = useState(0);
-    const [vehiclesTotalAllocated, setVehiclesTotalAllocated] = useState(0);
-    const [vehiclesTotalConsumed, setVehiclesTotalConsumed] = useState(0);
+    const [searchTerm, setSearchTerm] = useState("");
     
     // Modal states
     const [isSupplyModalOpen, setIsSupplyModalOpen] = useState(false);
     const [isConfigModalOpen, setIsConfigModalOpen] = useState(false);
     const [supplyType, setSupplyType] = useState<'MAINTENANCE' | 'FUEL_CARD' | 'FUEL_BON'>('MAINTENANCE');
 
-    // Pagination & Details states
-    const [currentPage, setCurrentPage] = useState(1);
+    // Details states
     const [selectedActivity, setSelectedActivity] = useState<any>(null);
     const [isDetailsOpen, setIsDetailsOpen] = useState(false);
+    
+    // Vehicle Detail Modal
+    const [selectedVehicle, setSelectedVehicle] = useState<any>(null);
+    const [isVehicleModalOpen, setIsVehicleModalOpen] = useState(false);
 
     useEffect(() => {
         fetchData();
@@ -60,37 +61,11 @@ export default function BudgetPage() {
     const fetchData = async () => {
         setLoading(true);
         try {
-            const [settingsData, historyData, cardsData, vouchersData, vehiclesData] = await Promise.all([
-                api.settings.get(),
-                api.budgets.getGlobalHistory(),
-                api.fuel.getCards(),
-                api.fuel.getVouchers(),
-                api.vehicles.getAll()
-            ]);
-            setSettings(settingsData);
-            setHistory(historyData as GlobalBudgetActivity[]);
-            
-            const totalCards = (cardsData as any[]).reduce((sum, c) => sum + (c.solde || 0), 0);
-            const totalVouchers = (vouchersData as any[]).reduce((sum, v) => sum + (v.valeur || 0), 0);
-            
-            setCardsBalance(totalCards);
-            setVouchersBalance(totalVouchers);
-
-            const vTotalAllocated = (vehiclesData as any[]).reduce((sum, v) => sum + (v.budgetAlloue || 0), 0);
-            const vTotalConsumed = (vehiclesData as any[]).reduce((sum, v) => sum + (v.budgetConsomme || 0), 0);
-            setVehiclesTotalAllocated(vTotalAllocated);
-            setVehiclesTotalConsumed(vTotalConsumed);
-
-            // Stats is optional (may require auth) — load it separately
-            try {
-                const dashboardData = await api.stats.getDashboard();
-                setStats(dashboardData);
-            } catch (statsError) {
-                console.warn("Stats could not be loaded (auth required):", statsError);
-            }
+            const data = await api.budgets.getSummary();
+            setSummary(data);
         } catch (error) {
-            console.error("Failed to fetch budget data:", error);
-            toast.error("Impossible de charger les données budgétaires");
+            console.error("Failed to fetch budget summary:", error);
+            toast.error("Impossible de charger le tableau de bord financier");
         } finally {
             setLoading(false);
         }
@@ -101,352 +76,317 @@ export default function BudgetPage() {
         setIsSupplyModalOpen(true);
     };
 
-    const formatCurrency = (amount: number) => {
-        return new Intl.NumberFormat('fr-FR', { 
-            style: 'currency', 
-            currency: 'XOF', 
-            maximumFractionDigits: 0 
-        }).format(amount).replace('XOF', 'FCFA');
+    const handleOpenVehicleDetails = (vehicle: any) => {
+        setSelectedVehicle(vehicle);
+        setIsVehicleModalOpen(true);
     };
 
-    if (loading || !settings) return (
+    const filteredVehicles = useMemo(() => {
+        if (!summary?.vehicleStats) return [];
+        return summary.vehicleStats.filter((v: any) => 
+            v.immatriculation.toLowerCase().includes(searchTerm.toLowerCase()) ||
+            v.marque.toLowerCase().includes(searchTerm.toLowerCase()) ||
+            v.modele.toLowerCase().includes(searchTerm.toLowerCase())
+        );
+    }, [summary?.vehicleStats, searchTerm]);
+
+    // Intelligence Flotte : Calcul des Rankings Critiques
+    const analytics = useMemo(() => {
+        if (!summary?.vehicleStats) return null;
+        const stats = summary.vehicleStats;
+
+        // 1. Plus gros consommateurs (Dépenses Totales)
+        const topExpenses = [...stats].sort((a, b) => b.totalExpenses - a.totalExpenses).slice(0, 3);
+        
+        // 2. Plus coûteux au Km (Efficacité)
+        const topCostPerKm = [...stats].sort((a, b) => b.costPerKm - a.costPerKm).slice(0, 3);
+        
+        // 3. Maintenance Intensive (Gros budget maintenance)
+        const topMaintenance = [...stats].sort((a, b) => b.budgetConsomme - a.budgetConsomme).slice(0, 3);
+
+        return { topExpenses, topCostPerKm, topMaintenance };
+    }, [summary?.vehicleStats]);
+
+    if (loading || !summary) return (
         <div className="py-20 text-center space-y-4">
             <div className="w-10 h-10 border-4 border-fleet-blue border-t-transparent rounded-full animate-spin mx-auto"></div>
-            <p className="text-slate-400 font-bold tracking-tight uppercase text-xs">Analyse financière en cours...</p>
+            <p className="text-slate-400 font-bold tracking-tight uppercase text-xs">Consolidation des données financières...</p>
         </div>
     );
 
-    const totalFuelBudget = settings.budgetGlobalCarburant + settings.budgetGlobalCartes + settings.budgetGlobalBons;
-    const totalMaintenanceBudget = settings.budgetGlobalVehicules;
-    
-    // Nouveaux calculs pour la traçabilité
-    const totalMaintenanceEnveloppe = history
-        .filter(a => a.field === 'MAINTENANCE' && (a.type === 'INITIAL_DEFINITION' || a.type === 'REPLENISHMENT'))
-        .reduce((acc, a) => acc + a.amount, 0);
-    
-    const totalMaintenanceAlloue = history
-        .filter(a => a.field === 'MAINTENANCE' && a.type === 'ALLOCATION_VEHICULE')
-        .reduce((acc, a) => acc + a.amount, 0);
+    const { settings, fuelCards, fuelVouchers, maintenance } = summary;
 
-    const grandTotal = cardsBalance + vouchersBalance + totalMaintenanceBudget + vehiclesTotalAllocated;
-    const fleetAllocatedTotal = vehiclesTotalAllocated + cardsBalance + vouchersBalance;
-
-    const totalPages = Math.ceil(history.length / ITEMS_PER_PAGE);
-    const paginatedHistory = history.slice(
-        (currentPage - 1) * ITEMS_PER_PAGE,
-        currentPage * ITEMS_PER_PAGE
-    );
-
-    const handleOpenDetails = (activity: any) => {
-        // Adapt GlobalBudgetActivity to HistoryLog structure for the modal
-        const log = {
-            id: activity.id,
-            action: activity.type,
-            module: activity.field,
-            description: activity.description,
-            createdAt: activity.date,
-        };
-        setSelectedActivity(log);
-        setIsDetailsOpen(true);
-    };
+    const vehicleColumns = [
+        {
+            key: 'vehicle', header: 'Véhicule', render: (v: any) => (
+                <div className="flex items-center gap-4">
+                    <div className="w-12 h-12 rounded-2xl bg-slate-50 dark:bg-slate-900 flex items-center justify-center border border-slate-100 group-hover:scale-105 transition-transform">
+                        <Car className="w-6 h-6 text-slate-400 group-hover:text-fleet-blue" />
+                    </div>
+                    <div>
+                        <p className="font-black text-slate-900 dark:text-white uppercase leading-none mb-1">{v.immatriculation}</p>
+                        <p className="text-[10px] text-slate-400 font-bold uppercase tracking-wider">{v.marque} {v.modele}</p>
+                    </div>
+                </div>
+            )
+        },
+        {
+            key: 'usage', header: 'Usage & Efficacité', render: (v: any) => (
+                <div className="space-y-1">
+                    <p className="font-black text-slate-700 dark:text-slate-300 text-sm">{(v.kilometrage || 0).toLocaleString()} <span className="text-[10px] opacity-60">KM</span></p>
+                    <div className="flex items-center gap-1.5">
+                        <Gauge className="w-3 h-3 text-fleet-blue" />
+                        <span className="text-[11px] font-black text-fleet-blue uppercase tracking-tight">{v.costPerKm.toFixed(1)} CFA / KM</span>
+                    </div>
+                </div>
+            )
+        },
+        {
+            key: 'breakdown', header: 'Maint. / Carb.', className: "text-right", render: (v: any) => (
+                <div className="space-y-1">
+                    <p className="text-xs font-black text-emerald-600">{formatCurrency(v.budgetConsomme)}</p>
+                    <p className="text-[10px] font-bold text-amber-500 uppercase">{formatCurrency(v.fuelSpent)}</p>
+                </div>
+            )
+        },
+        {
+            key: 'total', header: 'Total Dépenses', className: "text-right", render: (v: any) => (
+                <div className="flex flex-col items-end">
+                    <p className={cn(
+                        "text-base font-black tracking-tight",
+                        v.totalExpenses > v.budgetAlloue ? "text-rose-600" : "text-slate-900 dark:text-white"
+                    )}>
+                        {formatCurrency(v.totalExpenses)}
+                    </p>
+                    <div className="flex items-center gap-1.5 mt-1">
+                        <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest">Budget: {formatCurrency(v.budgetAlloue)}</span>
+                        {v.totalExpenses > v.budgetAlloue && <AlertCircle className="w-3 h-3 text-rose-500" />}
+                    </div>
+                </div>
+            )
+        }
+    ];
 
     return (
-        <div className="space-y-8 pb-10 animate-in fade-in slide-in-from-bottom-4 duration-700">
-            {/* Professional Hero Section */}
-            <div className="relative overflow-hidden bg-gradient-ccva rounded-[30px] p-8 md:p-10 text-white shadow-xl">
-                {/* Background Decor */}
-                <div className="absolute top-0 right-0 w-[400px] h-[400px] bg-white/10 rounded-full blur-[80px] -mr-32 -mt-32"></div>
-                
-                <div className="relative z-10 flex flex-col md:flex-row justify-between items-start md:items-center gap-8">
-                    <div className="space-y-4">
-                        <div className="inline-flex px-3 py-1 rounded-full bg-white/20 backdrop-blur-md border border-white/20 text-[10px] font-bold uppercase tracking-widest text-white">
-                            Gestion Budgétaire
+        <div className="space-y-10 pb-20 animate-fade-in">
+            {/* Header / Stats Grid */}
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 xl:grid-cols-5 gap-6">
+                <StatCard title="Budget Total" value={maintenance.initialEnvelope} icon={Wallet} variant="info" />
+                <StatCard title="Budget Consommé" value={maintenance.totalAllocatedToVehicles} icon={TrendingUp} variant="warning" />
+                <StatCard title="Budget Restant" value={maintenance.currentPool} icon={ShieldCheck} variant="success" />
+                <StatCard title="Bons d'essence" value={fuelVouchers.totalValue} icon={Ticket} variant="default" extraValue={`${fuelVouchers.count} bons`} />
+                <StatCard title="Cartes Carburant" value={fuelCards.totalBalance} icon={CreditCard} variant="default" extraValue={`${fuelCards.count} cartes`} />
+            </div>
+
+            {/* SECTIONS ANALYTIQUES (INTELLIGENCE FLOTTE) */}
+            <div className="space-y-6">
+                <div className="flex items-center justify-between px-2">
+                    <h2 className="text-sm font-black uppercase tracking-[0.3em] text-slate-400 flex items-center gap-3">
+                        <Zap className="w-5 h-5 text-fleet-blue" /> Intelligence Flotte : Analyse de Performance
+                    </h2>
+                    <div className="hidden md:flex items-center gap-4 text-[10px] font-black uppercase tracking-widest text-slate-400">
+                        <span>Analyse basée sur l'historique complet</span>
+                        <div className="w-1.5 h-1.5 rounded-full bg-emerald-500"></div>
+                    </div>
+                </div>
+
+                <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                    {/* Top Consommateurs */}
+                    <div className="bg-white dark:bg-slate-950 border border-slate-100 dark:border-slate-800 rounded-[35px] p-8 shadow-sm hover:shadow-xl transition-all">
+                        <div className="flex items-center gap-4 mb-8">
+                            <div className="w-12 h-12 bg-rose-50 text-rose-600 rounded-2xl flex items-center justify-center border border-rose-100">
+                                <TrendingUpIcon className="w-6 h-6" />
+                            </div>
+                            <div>
+                                <h3 className="font-black text-sm uppercase tracking-tight">Plus Gros Coûts</h3>
+                                <p className="text-[9px] font-bold text-slate-400 uppercase tracking-widest">Dépenses Cumulées</p>
+                            </div>
                         </div>
-                        <div className="space-y-1">
-                            <h1 className="text-3xl md:text-4xl font-black tracking-tight leading-tight">
-                                Trésorerie <span className="text-white/80">Globale</span>
-                            </h1>
-                            <p className="text-white/70 font-medium text-sm max-w-md">
-                                Suivi des budgets annuels et allocations en temps réel.
-                            </p>
-                        </div>
-                        
-                        <div className="flex flex-wrap gap-3 pt-2">
-                            <button 
-                                onClick={() => setIsConfigModalOpen(true)}
-                                className="px-6 py-3 bg-white text-fleet-blue rounded-xl font-bold text-xs uppercase tracking-wider hover:bg-slate-50 transition-all shadow-lg flex items-center gap-2"
-                            >
-                                <Settings className="w-4 h-4" />
-                                Configurer l'Année
-                            </button>
+                        <div className="space-y-5">
+                            {analytics?.topExpenses.map((v, i) => (
+                                <div key={v.id} onClick={() => handleOpenVehicleDetails(v)} className="flex items-center justify-between group cursor-pointer">
+                                    <div className="flex items-center gap-4">
+                                        <div className="text-xl font-black text-slate-100 dark:text-slate-800">0{i+1}</div>
+                                        <div>
+                                            <p className="font-black text-xs uppercase group-hover:text-fleet-blue transition-colors">{v.immatriculation}</p>
+                                            <p className="text-[9px] font-bold text-slate-400 uppercase">{v.marque} {v.modele}</p>
+                                        </div>
+                                    </div>
+                                    <p className="font-black text-xs text-rose-600">{formatCurrency(v.totalExpenses)}</p>
+                                </div>
+                            ))}
                         </div>
                     </div>
 
-                    <div className="w-full md:w-auto">
-                        <div className="bg-white/10 backdrop-blur-xl border border-white/20 rounded-[24px] p-6 space-y-4 relative overflow-hidden">
+                    {/* Top Fragilité (Maintenance) */}
+                    <div className="bg-white dark:bg-slate-950 border border-slate-100 dark:border-slate-800 rounded-[35px] p-8 shadow-sm hover:shadow-xl transition-all">
+                        <div className="flex items-center gap-4 mb-8">
+                            <div className="w-12 h-12 bg-amber-50 text-amber-600 rounded-2xl flex items-center justify-center border border-amber-100">
+                                <Wrench className="w-6 h-6" />
+                            </div>
                             <div>
-                                <p className="text-[10px] font-bold text-white/60 uppercase tracking-widest mb-1 flex items-center gap-2">
-                                    <Wallet className="w-4 h-4" />
-                                    Budget Flotte (Consolidé)
-                                </p>
-                                <h3 className="text-3xl font-black tracking-tighter tabular-nums">{formatCurrency(fleetAllocatedTotal)}</h3>
+                                <h3 className="font-black text-sm uppercase tracking-tight">Plus Fragiles</h3>
+                                <p className="text-[9px] font-bold text-slate-400 uppercase tracking-widest">Budget Maintenance</p>
                             </div>
+                        </div>
+                        <div className="space-y-5">
+                            {analytics?.topMaintenance.map((v, i) => (
+                                <div key={v.id} onClick={() => handleOpenVehicleDetails(v)} className="flex items-center justify-between group cursor-pointer">
+                                    <div className="flex items-center gap-4">
+                                        <div className="text-xl font-black text-slate-100 dark:text-slate-800">0{i+1}</div>
+                                        <div>
+                                            <p className="font-black text-xs uppercase group-hover:text-fleet-blue transition-colors">{v.immatriculation}</p>
+                                            <p className="text-[9px] font-bold text-slate-400 uppercase">{v.marque} {v.modele}</p>
+                                        </div>
+                                    </div>
+                                    <p className="font-black text-xs text-amber-600">{formatCurrency(v.budgetConsomme)}</p>
+                                </div>
+                            ))}
+                        </div>
+                    </div>
 
-                            <div className="grid grid-cols-2 gap-4 pt-3 border-t border-white/10">
-                                <div>
-                                    <p className="text-[9px] font-bold text-white/50 uppercase tracking-widest mb-0.5">Pool de Réserve</p>
-                                    <p className="text-lg font-black text-white tracking-tight">{formatCurrency(totalMaintenanceBudget)}</p>
-                                </div>
-                                <div className="text-right">
-                                    <p className="text-[9px] font-bold text-white/50 uppercase tracking-widest mb-0.5">Valeur Totale</p>
-                                    <p className="text-lg font-black text-white tracking-tight">{formatCurrency(grandTotal)}</p>
-                                </div>
+                    {/* Top Coût au KM */}
+                    <div className="bg-white dark:bg-slate-950 border border-slate-100 dark:border-slate-800 rounded-[35px] p-8 shadow-sm hover:shadow-xl transition-all">
+                        <div className="flex items-center gap-4 mb-8">
+                            <div className="w-12 h-12 bg-slate-50 text-slate-600 rounded-2xl flex items-center justify-center border border-slate-100">
+                                <Gauge className="w-6 h-6" />
                             </div>
+                            <div>
+                                <h3 className="font-black text-sm uppercase tracking-tight">Moins Rentables</h3>
+                                <p className="text-[9px] font-bold text-slate-400 uppercase tracking-widest">Coût au Kilomètre</p>
+                            </div>
+                        </div>
+                        <div className="space-y-5">
+                            {analytics?.topCostPerKm.map((v, i) => (
+                                <div key={v.id} onClick={() => handleOpenVehicleDetails(v)} className="flex items-center justify-between group cursor-pointer">
+                                    <div className="flex items-center gap-4">
+                                        <div className="text-xl font-black text-slate-100 dark:text-slate-800">0{i+1}</div>
+                                        <div>
+                                            <p className="font-black text-xs uppercase group-hover:text-fleet-blue transition-colors">{v.immatriculation}</p>
+                                            <p className="text-[9px] font-bold text-slate-400 uppercase">{v.marque} {v.modele}</p>
+                                        </div>
+                                    </div>
+                                    <div>
+                                        <p className="font-black text-xs text-fleet-blue text-right">{v.costPerKm.toFixed(1)}</p>
+                                        <p className="text-[8px] font-bold text-slate-400 uppercase text-right leading-none">CFA / KM</p>
+                                    </div>
+                                </div>
+                            ))}
                         </div>
                     </div>
                 </div>
             </div>
 
-            {/* Allocation Cards */}
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                {[
-                    { 
-                        title: "Affecté aux Véhicules", 
-                        amount: vehiclesTotalAllocated, 
-                        type: 'MAINTENANCE', 
-                        color: 'emerald', 
-                        icon: Database,
-                        desc: "Sommme totale des budgets alloués à chaque véhicule"
-                    },
-                    { 
-                        title: "Cartes Carburant", 
-                        amount: cardsBalance, 
-                        type: 'FUEL_CARD', 
-                        color: 'blue', 
-                        icon: PieChart,
-                        desc: "Solde cumulé actuel de vos cartes carburant"
-                    },
-                    { 
-                        title: "Bons d'Essence", 
-                        amount: vouchersBalance, 
-                        type: 'FUEL_BON', 
-                        color: 'amber', 
-                        icon: TrendingUp,
-                        desc: "Valeur cumulée des bons disponibles"
-                    }
-                ].map((card) => (
-                    <div key={card.type} className="group relative bg-white dark:bg-slate-900 rounded-[24px] p-6 border border-slate-100 dark:border-slate-800 shadow-sm hover:shadow-lg transition-all duration-300 overflow-hidden">
-                        <div className="relative z-10 space-y-4">
-                            <div className="flex justify-between items-center">
-                                <div className={`w-10 h-10 bg-${card.color}-500/10 rounded-xl flex items-center justify-center border border-${card.color}-500/20`}>
-                                    <card.icon className={`w-5 h-5 text-${card.color}-500`} />
-                                </div>
-                                {card.type === 'MAINTENANCE' && (
-                                    <button 
-                                        onClick={() => openSupplyModal(card.type as any)}
-                                        className="p-2.5 bg-slate-900 dark:bg-slate-800 text-white rounded-xl hover:bg-fleet-blue transition-all active:scale-90"
-                                    >
-                                        <Plus className="w-4 h-4" />
-                                    </button>
-                                )}
-                            </div>
-
-                            <div>
-                                <p className="text-slate-400 text-[9px] font-bold uppercase tracking-widest mb-1">{card.title}</p>
-                                <h3 className="text-xl font-black text-slate-800 dark:text-white tracking-tight">{formatCurrency(card.amount)}</h3>
-                                <p className="text-slate-500 text-[11px] mt-1 leading-tight">{card.desc}</p>
-                            </div>
-
-                            {card.type === 'MAINTENANCE' && (
-                                <button 
-                                    onClick={() => openSupplyModal(card.type as any)}
-                                    className={cn(
-                                        "w-full flex items-center justify-center gap-2 py-3 rounded-xl text-[10px] font-bold uppercase tracking-widest transition-all border group/btn",
-                                        card.color === 'emerald' ? "bg-emerald-50 text-emerald-600 border-emerald-100 hover:bg-emerald-500 hover:text-white" :
-                                        card.color === 'blue' ? "bg-blue-50 text-blue-600 border-blue-100 hover:bg-fleet-blue hover:text-white" :
-                                        "bg-amber-50 text-amber-600 border-amber-100 hover:bg-amber-500 hover:text-white"
-                                    )}
-                                >
-                                    <ArrowUpCircle className="w-3.5 h-3.5" />
-                                    Approvisionner
-                                </button>
-                            )}
+            {/* POOL MAINTENANCE SECTION (DATATABLE) */}
+            <div className="bg-white dark:bg-slate-950 border border-slate-100 dark:border-slate-800 rounded-[40px] p-10 shadow-2xl relative overflow-hidden">
+                <div className="absolute top-0 right-0 w-64 h-64 bg-fleet-blue/5 rounded-full translate-x-32 -translate-y-32"></div>
+                
+                <div className="flex flex-col md:flex-row items-center justify-between gap-8 mb-12 relative z-10">
+                    <div className="flex items-center gap-6">
+                        <div className="w-16 h-16 bg-emerald-50 text-emerald-600 rounded-[25px] flex items-center justify-center border border-emerald-100">
+                            <Car className="w-8 h-8" />
+                        </div>
+                        <div>
+                            <h2 className="text-2xl font-black tracking-tight leading-none mb-1.5">Pool Maintenance & Dépenses</h2>
+                            <p className="text-[11px] font-black uppercase text-slate-400 tracking-[0.2em]">Inventaire détaillé et suivi budgétaire par unité</p>
                         </div>
                     </div>
-                ))}
+
+                    <div className="flex flex-col sm:flex-row items-center gap-4 w-full md:w-auto">
+                        <div className="relative w-full sm:w-80">
+                            <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+                            <Input 
+                                placeholder="Rechercher un véhicule..." 
+                                value={searchTerm}
+                                onChange={(e) => setSearchTerm(e.target.value)}
+                                className="pl-11 h-11 bg-slate-50 border-transparent rounded-2xl font-bold text-xs focus:bg-white focus:border-fleet-blue transition-all"
+                            />
+                        </div>
+                        <Button 
+                            onClick={() => openSupplyModal('MAINTENANCE')}
+                            className="h-10 px-8 bg-fleet-blue hover:bg-fleet-blue-dark text-white font-black text-xs uppercase tracking-widest rounded-2xl shadow-xl shadow-fleet-blue/20 transition-transform active:scale-95 flex items-center gap-3 w-full sm:w-auto"
+                        >
+                            <Plus className="w-5 h-5" /> RECHARGER LE POOL
+                        </Button>
+                    </div>
+                </div>
+
+                <div className="bg-slate-50/50 dark:bg-slate-900/50 rounded-3xl p-4 border border-slate-100 dark:border-slate-800">
+                    <DataTable 
+                        data={filteredVehicles} 
+                        columns={vehicleColumns} 
+                        keyExtractor={(v) => v.id}
+                        onRowClick={handleOpenVehicleDetails}
+                        emptyMessage="Aucun véhicule trouvé correspondant à votre recherche."
+                    />
+                </div>
             </div>
 
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-                {/* Compact Traceability History */}
-                <div className="lg:col-span-2 bg-white dark:bg-slate-900 rounded-[30px] p-6 border border-slate-100 dark:border-slate-800 shadow-sm relative overflow-hidden">
-                    <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-8">
-                        <div className="space-y-0.5">
-                            <h2 className="text-xl font-black text-slate-800 dark:text-white tracking-tight flex items-center gap-2">
-                                <History className="w-5 h-5 text-fleet-blue" />
-                                Flux & Traçabilité
-                            </h2>
-                            <p className="text-slate-500 text-[9px] font-bold uppercase tracking-widest">Audit financier en temps réel</p>
+            {/* INVENTAIRE EXPRESS (CARTES & BONS) */}
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                {/* Cartes Carburant */}
+                <div className="bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-[35px] p-8">
+                    <div className="flex items-center justify-between mb-8">
+                        <div className="flex items-center gap-4">
+                            <div className="w-10 h-10 bg-blue-50 text-blue-600 rounded-xl flex items-center justify-center">
+                                <CreditCard className="w-5 h-5" />
+                            </div>
+                            <h3 className="font-black text-sm uppercase tracking-tight">Cartes Magnétiques</h3>
                         </div>
-                        
-                        <div className="flex gap-2">
-                            <button className="flex items-center gap-2 px-4 py-2 bg-slate-50 dark:bg-slate-800 text-slate-400 hover:bg-white hover:text-fleet-blue border border-slate-100 dark:border-slate-700 rounded-xl text-[9px] font-bold uppercase tracking-widest transition-all shadow-sm">
-                                <Search className="w-3.5 h-3.5" />
-                                Recherche
-                            </button>
-                        </div>
+                        <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">{fuelCards.count} Actives</span>
                     </div>
-
-                    <div className="space-y-4">
-                        {paginatedHistory.length > 0 ? (
-                            paginatedHistory.map((activity) => (
-                                <div 
-                                    key={activity.id} 
-                                    className="group p-4 rounded-[20px] bg-white dark:bg-slate-800 border border-slate-100 dark:border-slate-700 hover:bg-fleet-blue/5 hover:border-fleet-blue/20 transition-all duration-300 cursor-pointer"
-                                    onClick={() => handleOpenDetails(activity)}
-                                >
-                                    <div className="flex items-center gap-4">
-                                        <div className={cn(
-                                            "w-12 h-12 rounded-xl flex items-center justify-center border transition-all duration-300",
-                                            activity.field === 'MAINTENANCE' ? "bg-emerald-50 border-emerald-100 text-emerald-500" :
-                                            activity.field === 'FUEL_CARD' ? "bg-blue-50 border-blue-100 text-blue-500" :
-                                            "bg-amber-50 border-amber-100 text-amber-500"
-                                        )}>
-                                            {activity.type === 'INITIAL_DEFINITION' ? <Landmark className="w-5 h-5" /> : <ArrowUpCircle className="w-5 h-5" />}
-                                        </div>
-                                        <div className="flex-1 min-w-0">
-                                            <div className="flex items-center justify-between mb-0.5">
-                                                <h4 className="font-bold text-slate-800 dark:text-white text-sm truncate">
-                                                    {activity.field === 'MAINTENANCE' ? "Entretien Flotte" : 
-                                                     activity.field === 'FUEL_CARD' ? "Cartes Carburant" : "Bons d'Essence"}
-                                                </h4>
-                                                <span className={cn(
-                                                    "font-bold text-sm tabular-nums",
-                                                    activity.type === 'ALLOCATION_VEHICULE' ? "text-amber-600" :
-                                                    activity.type === 'INITIAL_DEFINITION' ? "text-slate-900 dark:text-white" : "text-emerald-600"
-                                                )}>
-                                                    {activity.type === 'ALLOCATION_VEHICULE' ? '-' : activity.type === 'INITIAL_DEFINITION' ? '' : '+'}{formatCurrency(activity.amount)}
-                                                </span>
-                                            </div>
-                                            <p className="text-slate-500 text-[11px] line-clamp-1">{activity.description}</p>
-                                            
-                                            <div className="flex items-center gap-3 mt-2">
-                                                <div className="flex items-center gap-1.5 text-[9px] font-bold text-slate-400 uppercase tracking-wider">
-                                                    <Clock className="w-3 h-3 text-fleet-blue" />
-                                                    {new Date(activity.date).toLocaleDateString('fr-FR', { day: '2-digit', month: '2-digit', year: 'numeric' })}
-                                                </div>
-                                                <div className="px-2 py-0.5 rounded-lg bg-slate-100 text-[8px] font-bold text-slate-500 uppercase tracking-widest">
-                                                    {activity.type}
-                                                </div>
-                                            </div>
-                                        </div>
-                                        <ChevronRight className="w-4 h-4 text-slate-300 group-hover:translate-x-1 transition-all" />
-                                    </div>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                        {fuelCards.cards.slice(0, 4).map((card: any) => (
+                            <div key={card.id} className="p-4 rounded-2xl bg-slate-50 dark:bg-slate-900 border border-slate-100 dark:border-slate-800 hover:border-blue-200 transition-all flex flex-col gap-3">
+                                <div className="flex justify-between items-start">
+                                    <p className="text-[10px] font-black text-blue-600 uppercase tracking-widest">{card.fournisseur || 'Station'}</p>
+                                    <div className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></div>
                                 </div>
-                            ))
-                        ) : (
-                            <div className="py-20 text-center bg-slate-50/50 rounded-[30px] border-2 border-dashed border-slate-200">
-                                <History className="w-12 h-12 text-slate-300 mx-auto mb-4" />
-                                <p className="text-slate-400 font-bold uppercase tracking-widest text-[9px]">Aucun flux financier détecté</p>
+                                <div>
+                                    <p className="text-sm font-black text-slate-900 dark:text-white leading-none">{formatCurrency(card.solde)}</p>
+                                    <p className="text-[9px] font-black text-slate-400 mt-1 uppercase tracking-tighter">N° {card.numero}</p>
+                                </div>
                             </div>
-                        )}
+                        ))}
                     </div>
-
-                    {/* Pagination UI */}
-                    {totalPages > 1 && (
-                        <div className="mt-8 pt-6 border-t border-slate-100 dark:border-slate-800 flex items-center justify-between">
-                            <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">
-                                Page {currentPage} sur {totalPages}
-                            </p>
-                            <div className="flex gap-2">
-                                <button 
-                                    onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))}
-                                    disabled={currentPage === 1}
-                                    className="px-4 py-2 rounded-xl bg-slate-50 dark:bg-slate-800 text-slate-400 text-[10px] font-black uppercase tracking-widest disabled:opacity-30 hover:bg-slate-100 transition-all border border-slate-100"
-                                >
-                                    Prec.
-                                </button>
-                                <button 
-                                    onClick={() => setCurrentPage(prev => Math.min(totalPages, prev + 1))}
-                                    disabled={currentPage === totalPages}
-                                    className="px-4 py-2 rounded-xl bg-slate-50 dark:bg-slate-800 text-slate-400 text-[10px] font-black uppercase tracking-widest disabled:opacity-30 hover:bg-slate-100 transition-all border border-slate-100"
-                                >
-                                    Suiv.
-                                </button>
-                            </div>
-                        </div>
+                    {fuelCards.count > 4 && (
+                        <p className="text-center mt-6 text-[10px] font-black text-slate-400 uppercase tracking-widest">+ {fuelCards.count - 4} autres cartes dans l'onglet Carburant</p>
                     )}
                 </div>
 
-                {/* Status Column */}
-                <div className="space-y-6">
-                    <div className="bg-slate-900 p-8 rounded-[30px] text-white overflow-hidden relative shadow-lg group/status h-fit">
-                         <div className="relative z-10">
-                            <div className="flex items-center justify-between mb-8">
-                                <div>
-                                    <h3 className="font-black text-lg tracking-tight uppercase">Santé Budget</h3>
-                                </div>
-                                <div className="w-10 h-10 bg-white/10 rounded-xl flex items-center justify-center border border-white/10">
-                                    <Activity className="w-5 h-5 text-fleet-blue-light" />
-                                </div>
+                {/* Bons d'Essence */}
+                <div className="bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-[35px] p-8">
+                    <div className="flex items-center justify-between mb-8">
+                        <div className="flex items-center gap-4">
+                            <div className="w-10 h-10 bg-amber-50 text-amber-600 rounded-xl flex items-center justify-center">
+                                <Ticket className="w-5 h-5" />
                             </div>
-
-                            <div className="space-y-6">
-                                <div className="space-y-2">
-                                    <div className="flex justify-between items-end px-1 text-[10px]">
-                                        <p className="font-bold text-slate-400 uppercase tracking-widest">Maintenance</p>
-                                        <span className="font-bold text-emerald-400 uppercase tracking-widest">OK</span>
-                                    </div>
-                                    <div className="h-2.5 bg-white/5 rounded-full overflow-hidden p-0.5">
-                                        <div className="h-full bg-emerald-500 rounded-full" style={{ width: '100%' }}></div>
-                                    </div>
-                                </div>
-
-                                <div className="space-y-2">
-                                    <div className="flex justify-between items-end px-1 text-[10px]">
-                                        <p className="font-bold text-slate-400 uppercase tracking-widest">Carburant</p>
-                                        <span className="font-bold text-fleet-blue-light uppercase tracking-widest">Actif</span>
-                                    </div>
-                                    <div className="h-2.5 bg-white/5 rounded-full overflow-hidden p-0.5">
-                                        <div className="h-full bg-fleet-blue rounded-full" style={{ width: '100%' }}></div>
-                                    </div>
-                                </div>
-                            </div>
-                         </div>
-                         <div className="absolute -bottom-10 -right-10 w-32 h-32 bg-fleet-blue/10 rounded-full blur-[60px]"></div>
-                    </div>
-
-                    <div className="p-6 bg-slate-50 rounded-[30px] border border-slate-100 space-y-3">
-                        <div className="flex items-center gap-2">
-                            <ShieldCheck className="w-4 h-4 text-emerald-500" />
-                            <span className="text-[10px] font-bold uppercase tracking-widest text-slate-600">Sécurité Actalisée</span>
+                            <h3 className="font-black text-sm uppercase tracking-tight">Réserve de Bons</h3>
                         </div>
-                        <p className="text-[11px] text-slate-500 leading-normal">
-                            Les allocations sont protégées par des règles de validation strictes.
-                        </p>
+                        <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">{formatCurrency(fuelVouchers.totalValue)}</span>
+                    </div>
+                    <div className="space-y-3">
+                        {fuelVouchers.denominations.map((denom: any) => (
+                            <div key={denom.value} className="flex items-center justify-between p-4 rounded-2xl border border-slate-100 dark:border-slate-800 bg-slate-50/50">
+                                <div className="flex items-center gap-4">
+                                    <div className="text-xs font-black px-2 py-1 bg-white dark:bg-slate-800 rounded-lg shadow-sm">{formatCurrency(denom.value)}</div>
+                                    <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Valeur Unitaire</p>
+                                </div>
+                                <div className="text-right">
+                                    <p className="text-sm font-black text-slate-900 dark:text-white leading-none">{denom.count}</p>
+                                    <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest">En Stock</p>
+                                </div>
+                            </div>
+                        ))}
                     </div>
                 </div>
             </div>
 
-            <GlobalBudgetSupplyModal 
-                isOpen={isSupplyModalOpen}
-                onClose={() => setIsSupplyModalOpen(false)}
-                onSuccess={fetchData}
-                type={supplyType}
-            />
-
-            <AnnualBudgetConfigModal 
-                isOpen={isConfigModalOpen}
-                onClose={() => setIsConfigModalOpen(false)}
-                onSuccess={fetchData}
-                currentSettings={settings}
-            />
-
-            <HistoryDetailsModal 
-                log={selectedActivity}
-                open={isDetailsOpen}
-                onOpenChange={setIsDetailsOpen}
-            />
-
+            {/* Modals */}
+            <GlobalBudgetSupplyModal isOpen={isSupplyModalOpen} onClose={() => setIsSupplyModalOpen(false)} onSuccess={fetchData} type={supplyType} />
+            <AnnualBudgetConfigModal isOpen={isConfigModalOpen} onClose={() => setIsConfigModalOpen(false)} onSuccess={fetchData} currentSettings={settings} />
+            <HistoryDetailsModal log={selectedActivity} open={isDetailsOpen} onOpenChange={setIsDetailsOpen} />
+            <VehicleBudgetDetailModal isOpen={isVehicleModalOpen} onClose={() => setIsVehicleModalOpen(false)} vehicle={selectedVehicle} />
             <Toaster position="top-right" richColors />
         </div>
     );

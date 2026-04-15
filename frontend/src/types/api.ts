@@ -1,4 +1,4 @@
-export type UserRole = 'ADMIN' | 'GESTIONNAIRE' | 'CHAUFFEUR';
+export type UserRole = 'ADMIN' | 'GESTIONNAIRE' | 'UTILISATEUR';
 export type VehicleStatus = 'DISPONIBLE' | 'EN_MISSION' | 'EN_MAINTENANCE' | 'HORS_SERVICE';
 export type DriverStatus = 'DISPONIBLE' | 'EN_MISSION' | 'INACTIF';
 export type MissionStatus = 'PLANIFIEE' | 'EN_COURS' | 'TERMINEE' | 'ANNULEE';
@@ -11,6 +11,7 @@ export interface User {
     id: number;
     nom: string;
     prenom: string;
+    username: string;
     email: string;
     role: UserRole;
     actif: boolean;
@@ -114,7 +115,8 @@ export interface Mission {
     lettreMission?: string;
     typeCarburantDotation?: 'CARTE' | 'BON' | 'AUCUNE';
     carteCarburantId?: number;
-    bonCarburantId?: number; // Reférence au bon d'essence physiquement attribué
+    bonCarburantIds?: number[]; // IDs for multi-selection
+    vouchers?: FuelVoucher[]; // List of vouchers attached to the mission
     montantCarburantUtilise?: number; // Montant réel utilisé au retour
     ticketCarburantUrl?: string; // Upload du ticket de caisse
 }
@@ -128,10 +130,13 @@ export interface FuelCard {
     solde: number;
     soldeInitial: number;
     prixLitre?: number;
+    prixDiesel?: number;
+    prixSuper?: number;
     litresEstimes?: number;
     dateExpiration: string;
     statut: FuelCardStatus;
     fournisseur?: string;
+    station?: string;
     description?: string;
     notes?: string;
     quantite?: number;
@@ -144,6 +149,7 @@ export interface FuelVoucher {
     dateEmission: string;
     dateExpiration?: string;
     statut: FuelVoucherStatus;
+    station?: string;
     vehiculeId?: number;
     notes?: string;
     quantite?: number;

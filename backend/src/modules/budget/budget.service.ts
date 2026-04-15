@@ -171,6 +171,137 @@ export class BudgetService {
     });
   }
 
+  async getBudgetSummary() {
+    const settings = await this.prisma.systemSettings.findFirst();
+    const currentYear = new Date().getFullYear();
+
+    // 1. Fuel Cards
+    const cards = await this.prisma.fuelCard.findMany({
+      orderBy: { numero: 'asc' }
+    });
+    const totalCardsBalance = cards.reduce((sum, c) => sum + (c.solde || 0), 0);
+
+    // 2. Fuel Vouchers
+    const vouchers = await this.prisma.fuelVoucher.findMany({
+        where: { statut: 'DISPONIBLE' }
+    });
+    const totalVouchersValue = vouchers.reduce((sum, v) => sum + (v.valeur || 0), 0);
+    
+    // Breakdown by station and denomination
+    const stationBreakdown: Record<string, { count: number, total: number, denominations: any[] }> = {};
+    
+    vouchers.forEach(v => {
+      const station = v.station || 'Non spécifiée';
+      if (!stationBreakdown[station]) {
+        stationBreakdown[station] = { count: 0, total: 0, denominations: [] };
+      }
+      stationBreakdown[station].count++;
+      stationBreakdown[station].total += v.valeur;
+      
+      let denomEntry = stationBreakdown[station].denominations.find(d => d.value === v.valeur);
+      if (!denomEntry) {
+        denomEntry = { value: v.valeur, count: 0 };
+        stationBreakdown[station].denominations.push(denomEntry);
+      }
+      denomEntry.count++;
+    });
+
+    // Global Denomination Breakdown
+    const globalDenominations: any[] = [];
+    vouchers.forEach(v => {
+        let entry = globalDenominations.find(d => d.value === v.valeur);
+        if (!entry) {
+            entry = { value: v.valeur, count: 0 };
+            globalDenominations.push(entry);
+        }
+        entry.count++;
+    });
+
+    // 3. Vehicle Budgets & Maintenance
+    const vehicles = await this.prisma.vehicle.findMany();
+
+    const startDate = new Date(currentYear, 0, 1);
+    const endDate = new Date(currentYear, 11, 31, 23, 59, 59);
+
+    const [maintenances, fuelRecords] = await Promise.all([
+        this.prisma.maintenance.findMany({
+            where: {
+                dateDebut: { gte: startDate, lte: endDate },
+                statut: 'TERMINEE'
+            }
+        }),
+        this.prisma.fuelRecord.findMany({
+            where: {
+                date: { gte: startDate, lte: endDate }
+            }
+        })
+    ]);
+
+    const vehicleStats = vehicles.map(v => {
+        const vMaintenances = maintenances.filter(m => m.vehiculeId === v.id);
+        const vFuelRecords = fuelRecords.filter(fr => fr.vehiculeId === v.id);
+        
+        const budgetConsumed = vMaintenances.reduce((sum, m) => sum + (m.montant || 0), 0);
+        const fuelSpent = vFuelRecords.reduce((sum, fr) => sum + fr.montant, 0);
+        
+        return {
+            id: v.id,
+            immatriculation: v.immatriculation,
+            marque: v.marque,
+            modele: v.modele,
+            budgetAlloue: v.budgetAlloue || 0,
+            budgetConsomme: budgetConsumed,
+            fuelSpent,
+            totalExpenses: budgetConsumed + fuelSpent,
+            kilometrage: v.kilometrage,
+            costPerKm: v.kilometrage > 0 ? (budgetConsumed + fuelSpent) / v.kilometrage : 0
+        };
+    });
+
+    const totalMaintenanceAllocated = vehicles.reduce((sum, v) => sum + (v.budgetAlloue || 0), 0);
+
+    // Initial Envelope (Search in history)
+    const initialActivity = await this.prisma.globalBudgetActivity.findFirst({
+        where: {
+            field: 'MAINTENANCE',
+            type: 'INITIAL_DEFINITION',
+            date: { gte: startDate, lte: endDate }
+        }
+    });
+
+    // 4. Global Activity
+    const activities = await this.prisma.globalBudgetActivity.findMany({
+      orderBy: { date: 'desc' },
+      take: 15
+    });
+
+    return {
+      settings,
+      fuelCards: {
+        totalBalance: totalCardsBalance,
+        count: cards.length,
+        cards
+      },
+      fuelVouchers: {
+        totalValue: totalVouchersValue,
+        count: vouchers.length,
+        denominations: globalDenominations.sort((a, b) => b.value - a.value),
+        breakdownByStation: Object.entries(stationBreakdown).map(([name, data]) => ({
+            name,
+            ...data,
+            denominations: data.denominations.sort((a,b) => b.value - a.value)
+        }))
+      },
+      maintenance: {
+        initialEnvelope: initialActivity?.amount || (settings?.budgetGlobalVehicules || 0) + totalMaintenanceAllocated,
+        currentPool: settings?.budgetGlobalVehicules || 0,
+        totalAllocatedToVehicles: totalMaintenanceAllocated,
+      },
+      vehicleStats: vehicleStats.sort((a, b) => b.totalExpenses - a.totalExpenses),
+      recentActivities: activities
+    };
+  }
+
   async getVehicleBudget(vehicleId: number, year?: number) {
     const currentYear = year || new Date().getFullYear();
 
@@ -214,10 +345,42 @@ export class BudgetService {
     const totalSpentMaint = maintenances.reduce((acc, curr) => acc + (curr.montant || 0), 0);
     const totalSpentFuel = fuelRecords.reduce((acc, curr) => acc + curr.montant, 0);
 
-    return {
+    // Monthly breakdown
+    const monthlyData = Array(12).fill(0).map((_, i) => ({
+        month: i,
+        maintenance: 0,
+        fuel: 0,
+        total: 0
+    }));
+
+    maintenances.forEach(m => {
+        const month = new Date(m.dateDebut).getMonth();
+        if (month >= 0 && month < 12) {
+            monthlyData[month].maintenance += (m.montant || 0);
+            monthlyData[month].total += (m.montant || 0);
+        }
+    });
+
+    fuelRecords.forEach(fr => {
+        const month = new Date(fr.date).getMonth();
+        if (month >= 0 && month < 12) {
+            monthlyData[month].fuel += fr.montant;
+            monthlyData[month].total += fr.montant;
+        }
+    });
+
+    const response = {
       totalAllocated,
       totalSpent: totalSpentMaint + totalSpentFuel,
+      totalSpentMaint,
+      totalSpentFuel,
       allocations,
+      monthlyData,
+      maintenances: maintenances.sort((a, b) => b.dateDebut.getTime() - a.dateDebut.getTime()),
+      fuelRecords: fuelRecords.sort((a, b) => b.date.getTime() - a.date.getTime()),
     };
+    console.log('DEBUG Budget Response for vehicle', vehicleId, ':', JSON.stringify(response).substring(0, 100) + '...');
+    return response;
   }
 }
+// Force recompilation

@@ -238,28 +238,25 @@ export default function MaintenancePage() {
 
             {/* Content Section */}
             <div className="card-premium overflow-hidden">
-                <div className="p-6 border-b border-slate-50 dark:border-slate-800 flex flex-col md:flex-row md:items-center justify-between gap-4">
-                    <div className="flex items-center gap-4">
-                        <h3 className="font-black text-lg text-slate-900 dark:text-white flex items-center gap-2">
-                            <Settings2 className="w-5 h-5 text-fleet-blue" />
-                            Dossiers d'Intervention
-                        </h3>
+                <div className="p-4 sm:p-6 border-b border-slate-100 dark:border-slate-800 flex flex-col sm:flex-row gap-4 justify-between items-center bg-transparent">
+                    <div className="relative w-full max-w-sm">
+                        <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+                        <Input 
+                            placeholder="Véhicule, garage, description..." 
+                            value={searchTerm}
+                            onChange={(e) => setSearchTerm(e.target.value)}
+                            className="pl-11 h-11 w-full bg-slate-50 border-none dark:bg-slate-900/50 text-sm rounded-xl"
+                        />
                     </div>
-                    <div className="flex items-center gap-2 max-w-lg w-full">
-                        <div className="relative flex-1">
-                            <Search className="absolute left-3 top-2.5 w-4 h-4 text-slate-400" />
-                            <Input 
-                                placeholder="Véhicule, garage, description..." 
-                                value={searchTerm}
-                                onChange={(e) => setSearchTerm(e.target.value)}
-                                className="pl-10 rounded-xl bg-slate-50/50 dark:bg-slate-900/50 border-none focus:ring-2 focus:ring-fleet-blue/20"
-                            />
-                        </div>
+                    <div className="flex gap-2 w-full sm:w-auto items-center justify-end">
+                        <Button variant="outline" className="h-10 px-4 gap-2 shrink-0 text-xs font-black uppercase tracking-widest rounded-xl">
+                            <Filter className="w-3.5 h-3.5" /> Filtrer
+                        </Button>
                         <Button 
                             onClick={handleAdd}
-                            className="rounded-xl bg-fleet-blue hover:bg-fleet-blue-dark font-black px-4 h-9 shadow-lg shadow-fleet-blue/20 text-[10px] shrink-0"
+                            className="h-10 px-6 bg-fleet-blue hover:bg-fleet-blue-dark text-white font-black uppercase tracking-widest text-[10px] rounded-xl shadow-lg shadow-fleet-blue/20 shrink-0"
                         >
-                            <Plus className="w-3.5 h-3.5 mr-1.5" />
+                            <Plus className="w-4 h-4 mr-2" />
                             NOUVELLE INTERVENTION
                         </Button>
                         <button className="p-2.5 border border-slate-100 dark:border-slate-800 rounded-xl text-slate-400 hover:text-fleet-blue hover:bg-slate-50 transition-all shadow-sm shrink-0">

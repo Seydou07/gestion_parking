@@ -54,7 +54,8 @@ async function bootstrap() {
 
     const port = process.env.PORT || 3001;
     await app.listen(port);
-    console.log(`🚀 CCVA Fleet API running on http://localhost:${port}`);
+    console.log('--- FLEET GUARDIAN SERVER IS RUNNING (VER 2.0) ---');
+    console.log(`Application is running on: ${await app.getUrl()}`);
     console.log(`📚 Swagger docs at http://localhost:${port}/api`);
 }
 bootstrap();

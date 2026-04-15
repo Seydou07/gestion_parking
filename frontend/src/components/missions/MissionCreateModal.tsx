@@ -32,7 +32,7 @@ export function MissionCreateModal({ open, onOpenChange, vehicles, drivers, fuel
         vehiculeId: undefined,
         chauffeurId: undefined,
         typeCarburantDotation: 'AUCUNE',
-        bonCarburantId: undefined,
+        bonCarburantIds: [],
         carteCarburantId: undefined,
         lettreMission: '',
         statut: 'PLANIFIEE'
@@ -168,7 +168,7 @@ export function MissionCreateModal({ open, onOpenChange, vehicles, drivers, fuel
                 </div>
 
                 <form onSubmit={handleSubmit} className="flex-1 flex flex-col overflow-hidden">
-                    <div className="flex-1 overflow-y-auto no-scrollbar p-6 space-y-6">
+                    <div className="flex-1 overflow-y-auto p-6 space-y-6">
                         {/* Fichier Lettre de Mission - Compact */}
                         <div className="p-4 bg-amber-50 dark:bg-amber-900/10 rounded-xl border border-amber-100 dark:border-amber-900/30 flex items-center justify-between">
                             <div className="flex items-center gap-3">
@@ -266,7 +266,7 @@ export function MissionCreateModal({ open, onOpenChange, vehicles, drivers, fuel
                                                     value={vehicleSearch}
                                                     onValueChange={setVehicleSearch}
                                                 />
-                                                <CommandList className="no-scrollbar">
+                                                            <CommandList>
                                                     <CommandEmpty>Aucun véhicule trouvé.</CommandEmpty>
                                                     <CommandGroup heading="Véhicules Disponibles">
                                                         {displayedVehicles.map((v) => {
@@ -348,7 +348,7 @@ export function MissionCreateModal({ open, onOpenChange, vehicles, drivers, fuel
                                                     value={driverSearch}
                                                     onValueChange={setDriverSearch}
                                                 />
-                                                <CommandList className="no-scrollbar">
+                                                            <CommandList>
                                                     <CommandEmpty>Aucun chauffeur trouvé.</CommandEmpty>
                                                     <CommandGroup heading="Chauffeurs Disponibles">
                                                         {displayedDrivers.map((d) => (
@@ -403,7 +403,7 @@ export function MissionCreateModal({ open, onOpenChange, vehicles, drivers, fuel
                                                         checked={formData.typeCarburantDotation === type}
                                                         onChange={() => {
                                                             updateField('typeCarburantDotation', type);
-                                                            updateField('bonCarburantId', undefined);
+                                                            updateField('bonCarburantIds', []);
                                                             updateField('carteCarburantId', undefined);
                                                         }}
                                                         className="accent-amber-500 w-3 h-3 cursor-pointer"
@@ -428,9 +428,13 @@ export function MissionCreateModal({ open, onOpenChange, vehicles, drivers, fuel
                                                             aria-expanded={voucherOpen}
                                                             className="w-full h-10 justify-between rounded-xl border-amber-100 bg-amber-50/30 font-bold text-xs text-amber-900 hover:bg-amber-100/50"
                                                         >
-                                                            {formData.bonCarburantId
-                                                                ? `№ ${fuelVouchers.find((v) => v.id === formData.bonCarburantId)?.numero}`
-                                                                : "Choisir un bon..."}
+                                                            {formData.bonCarburantIds && formData.bonCarburantIds.length > 0
+                                                                ? `${formData.bonCarburantIds.length} bon(s) sélectionné(s) (${formatSmartCurrency(
+                                                                    fuelVouchers
+                                                                        .filter(v => formData.bonCarburantIds?.includes(v.id))
+                                                                        .reduce((sum, v) => sum + v.valeur, 0)
+                                                                  )})`
+                                                                : "Choisir des bons..."}
                                                             <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
                                                         </Button>
                                                     </PopoverTrigger>
@@ -441,7 +445,7 @@ export function MissionCreateModal({ open, onOpenChange, vehicles, drivers, fuel
                                                                 value={voucherSearch}
                                                                 onValueChange={setVoucherSearch}
                                                             />
-                                                            <CommandList className="no-scrollbar">
+                                                                        <CommandList>
                                                                 <CommandEmpty>Aucun bon trouvé.</CommandEmpty>
                                                                 <CommandGroup heading={voucherSearch === '' ? "Bons disponibles (Aperçu)" : "Résultats de recherche"}>
                                                                     {displayedVouchers.map((v) => (
@@ -449,8 +453,11 @@ export function MissionCreateModal({ open, onOpenChange, vehicles, drivers, fuel
                                                                             key={v.id}
                                                                             value={v.id.toString()}
                                                                             onSelect={() => {
-                                                                                updateField('bonCarburantId', v.id);
-                                                                                setVoucherOpen(false);
+                                                                                const currentIds = formData.bonCarburantIds || [];
+                                                                                const newIds = currentIds.includes(v.id)
+                                                                                    ? currentIds.filter(id => id !== v.id)
+                                                                                    : [...currentIds, v.id];
+                                                                                updateField('bonCarburantIds', newIds);
                                                                                 setVoucherSearch('');
                                                                             }}
                                                                             className="flex items-center justify-between p-3"
@@ -467,7 +474,7 @@ export function MissionCreateModal({ open, onOpenChange, vehicles, drivers, fuel
                                                                             <Check
                                                                                 className={cn(
                                                                                     "h-4 w-4 text-amber-600",
-                                                                                    formData.bonCarburantId === v.id ? "opacity-100" : "opacity-0"
+                                                                                    formData.bonCarburantIds?.includes(v.id) ? "opacity-100" : "opacity-0"
                                                                                 )}
                                                                             />
                                                                         </CommandItem>

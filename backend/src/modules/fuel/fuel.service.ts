@@ -107,12 +107,33 @@ export class FuelService {
     async updateCard(id: number, dto: any) {
         const card = await this.prisma.fuelCard.findUnique({ where: { id } });
         if (!card) throw new NotFoundException('Carte introuvable');
-        
+
+        // Only pick fields that exist on the Prisma FuelCard model
+        const allowed = ['numero', 'solde', 'soldeInitial', 'prixLitre', 'dateExpiration', 'statut', 'fournisseur', 'notes', 'litresEstimes'];
+        const updateData: any = {};
+        for (const key of allowed) {
+            if (dto[key] !== undefined) updateData[key] = dto[key];
+        }
+
+        // Ensure dateExpiration is a proper Date object
+        if (updateData.dateExpiration) {
+            updateData.dateExpiration = new Date(updateData.dateExpiration);
+        }
+
+        // Recalculate litresEstimes if prixLitre or soldeInitial changed
+        const newSoldeInitial = updateData.soldeInitial ?? card.soldeInitial;
+        const newPrixLitre = updateData.prixLitre ?? card.prixLitre;
+        if (newPrixLitre && newPrixLitre > 0) {
+            updateData.litresEstimes = Math.round((newSoldeInitial / newPrixLitre) * 100) / 100;
+        }
+
         return this.prisma.fuelCard.update({
             where: { id },
-            data: dto,
+            data: updateData,
         });
     }
+
+
 
     // --- Fuel Vouchers ---
     async createVoucher(dto: CreateFuelVoucherDto) {
@@ -121,12 +142,29 @@ export class FuelService {
         if (qty > 1) {
             return this.prisma.$transaction(async (tx) => {
                 const vouchers: any[] = [];
+                const baseNumero = dto.numero || `BON-${Math.floor(dto.valeur)}`;
+                
                 for (let i = 0; i < qty; i++) {
                     const { quantite, ...data } = dto;
+                    
+                    let numero = baseNumero;
+                    if (i > 0) {
+                        // Smart numbering: find trailing digits and increment them
+                        const match = baseNumero.match(/^(.*?)(\d+)$/);
+                        if (match) {
+                            const prefix = match[1];
+                            const numStr = match[2];
+                            const nextNum = parseInt(numStr) + i;
+                            numero = `${prefix}${nextNum.toString().padStart(numStr.length, '0')}`;
+                        } else {
+                            numero = `${baseNumero}-${i + 1}`;
+                        }
+                    }
+
                     const voucher = await tx.fuelVoucher.create({
                         data: {
                             ...data,
-                            numero: data.numero ? `${data.numero}-${i + 1}` : `BON-${Math.floor(data.valeur)}-${Date.now()}-${i + 1}`
+                            numero: numero
                         }
                     });
                     vouchers.push(voucher);
@@ -135,8 +173,45 @@ export class FuelService {
             });
         }
 
-        return this.prisma.fuelVoucher.create({ data: dto as any });
+        const { quantite, ...data } = dto as any;
+        return this.prisma.fuelVoucher.create({ data: data });
     }
+
+    async updateVoucher(id: number, dto: any) {
+        const voucher = await this.prisma.fuelVoucher.findUnique({ where: { id } });
+        if (!voucher) throw new NotFoundException('Bon introuvable');
+
+        // Only pick fields that exist on the Prisma FuelVoucher model
+        const allowed = ['numero', 'valeur', 'dateEmission', 'dateExpiration', 'statut', 'vehiculeId', 'notes'];
+        const updateData: any = {};
+        for (const key of allowed) {
+            if (dto[key] !== undefined) updateData[key] = dto[key];
+        }
+
+        if (updateData.dateEmission) updateData.dateEmission = new Date(updateData.dateEmission);
+        if (updateData.dateExpiration) updateData.dateExpiration = new Date(updateData.dateExpiration);
+
+        const updatedVoucher = await this.prisma.fuelVoucher.update({
+            where: { id },
+            data: updateData,
+        });
+
+        // Log justification if provided for usage
+        if (updateData.statut === 'UTILISE' && dto.justification) {
+            await this.historyService.log(
+                'UTILISATION BON (HORS MISSION)',
+                'CARBURANT',
+                `Bon N° ${voucher.numero} marqué comme UTILISÉ. Justification : ${dto.justification}`,
+                undefined,
+                voucher.id,
+                'FUEL_VOUCHER'
+            );
+        }
+
+        return updatedVoucher;
+    }
+
+
 
     async findAllVouchers() {
         return this.prisma.fuelVoucher.findMany({ include: { vehicule: true } });

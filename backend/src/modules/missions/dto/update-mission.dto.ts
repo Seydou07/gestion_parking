@@ -47,4 +47,19 @@ export class UpdateMissionDto {
     @IsString()
     @IsOptional()
     observations?: string;
+
+    @ApiProperty()
+    @IsString()
+    @IsOptional()
+    typeCarburantDotation?: string;
+
+    @ApiProperty({ type: [Number], example: [1, 2] })
+    @IsInt({ each: true })
+    @IsOptional()
+    bonCarburantIds?: number[];
+
+    @ApiProperty()
+    @IsInt()
+    @IsOptional()
+    carteCarburantId?: number;
 }

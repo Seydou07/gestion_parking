@@ -6,7 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Mission } from '@/types/api';
 import { mockFuelCards, mockFuelVouchers } from '@/data/mockData';
 import { formatDate, formatSmartCurrency, formatSmartNumber } from '@/lib/utils';
-import { Map, Calendar, Car, User, Fuel, Gauge, FileText, Download } from 'lucide-react';
+import { Map, Calendar, Car, User, Fuel, Gauge, FileText, Download, Ticket } from 'lucide-react';
 
 interface MissionDetailModalProps {
     open: boolean;
@@ -17,7 +17,6 @@ interface MissionDetailModalProps {
 export function MissionDetailModal({ open, onOpenChange, mission }: MissionDetailModalProps) {
     if (!mission) return null;
 
-    const usedVoucher = mockFuelVouchers.find(v => v.id === mission.bonCarburantId);
     const usedCard = mockFuelCards.find(c => c.id === mission.carteCarburantId);
 
     return (
@@ -107,10 +106,21 @@ export function MissionDetailModal({ open, onOpenChange, mission }: MissionDetai
                                                 {mission.typeCarburantDotation}
                                             </p>
                                         </div>
-                                        {mission.typeCarburantDotation === 'BON' && usedVoucher && (
-                                            <div>
-                                                <p className="text-[10px] font-black text-amber-600/70 uppercase mb-1">Référence</p>
-                                                <p className="font-black text-xs text-amber-900 dark:text-amber-500 uppercase">{usedVoucher.numero}</p>
+                                        {mission.typeCarburantDotation === 'BON' && mission.vouchers && mission.vouchers.length > 0 && (
+                                            <div className="md:col-span-2">
+                                                <p className="text-[10px] font-black text-amber-600/70 uppercase mb-2">Bons d'Essence Assignés</p>
+                                                <div className="flex flex-wrap gap-2">
+                                                    {mission.vouchers.map(v => (
+                                                        <div key={v.id} className="bg-white dark:bg-slate-800 border border-amber-200 px-3 py-1.5 rounded-lg flex items-center gap-2">
+                                                            <Ticket className="w-3 h-3 text-amber-600" />
+                                                            <span className="font-black text-[10px] text-amber-900 dark:text-amber-500 uppercase">{v.numero}</span>
+                                                            <span className="text-[10px] text-amber-600 font-bold">({formatSmartCurrency(v.valeur)})</span>
+                                                        </div>
+                                                    ))}
+                                                </div>
+                                                <div className="mt-2 text-[10px] font-black text-amber-700 uppercase">
+                                                    Total Dotation : {formatSmartCurrency(mission.vouchers.reduce((sum, v) => sum + v.valeur, 0))}
+                                                </div>
                                             </div>
                                         )}
                                         {mission.typeCarburantDotation === 'CARTE' && usedCard && (

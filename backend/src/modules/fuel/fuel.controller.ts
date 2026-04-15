@@ -56,6 +56,11 @@ export class FuelController {
         return this.fuelService.updateCard(id, dto);
     }
 
+    @Patch('vouchers/:id')
+    updateVoucher(@Param('id', ParseIntPipe) id: number, @Body() dto: any) {
+        return this.fuelService.updateVoucher(id, dto);
+    }
+
     @Get('stats/vehicle/:id')
     @ApiOperation({ summary: 'Statistiques de consommation par véhicule' })
     getVehicleConsumption(@Param('id', ParseIntPipe) id: number) {

@@ -8,6 +8,7 @@ import {
     UserCircle, CalendarDays, IdCard, MapPin, Edit2, AlertTriangle, Phone, Mail, Droplet, Car
 } from 'lucide-react';
 import { cn, formatDate } from '@/lib/utils';
+import { useAuth } from '@/hooks/useAuth';
 
 interface DriverDetailModalProps {
     open: boolean;
@@ -23,6 +24,7 @@ const statusConfig = {
 };
 
 export function DriverDetailModal({ open, onOpenChange, driver, onEdit }: DriverDetailModalProps) {
+    const { isUtilisateur } = useAuth();
     if (!driver) return null;
 
     const today = new Date();
@@ -119,28 +121,30 @@ export function DriverDetailModal({ open, onOpenChange, driver, onEdit }: Driver
                             </div>
 
                             {/* HR Info */}
-                            <div className="p-5 bg-white dark:bg-slate-900 rounded-2xl shadow-sm border border-slate-100 dark:border-slate-800">
-                                <h4 className="text-[9px] font-black text-slate-400 uppercase tracking-[0.2em] mb-4 flex items-center gap-2">
-                                    <CalendarDays className="w-3.5 h-3.5 text-emerald-500" />
-                                    Administration
-                                </h4>
-                                <div className="space-y-3">
-                                    <div className="flex items-center gap-3">
-                                        <div className="p-1.5 rounded-lg bg-slate-50 dark:bg-slate-800 text-slate-400"><CalendarDays className="w-3.5 h-3.5" /></div>
-                                        <div>
-                                            <p className="text-[9px] font-black uppercase text-slate-400">Date d'embauche</p>
-                                            <p className="text-sm font-bold">{driver.dateEmbauche ? formatDate(driver.dateEmbauche) : 'N/A'}</p>
+                            {!isUtilisateur && (
+                                <div className="p-5 bg-white dark:bg-slate-900 rounded-2xl shadow-sm border border-slate-100 dark:border-slate-800">
+                                    <h4 className="text-[9px] font-black text-slate-400 uppercase tracking-[0.2em] mb-4 flex items-center gap-2">
+                                        <CalendarDays className="w-3.5 h-3.5 text-emerald-500" />
+                                        Administration
+                                    </h4>
+                                    <div className="space-y-3">
+                                        <div className="flex items-center gap-3">
+                                            <div className="p-1.5 rounded-lg bg-slate-50 dark:bg-slate-800 text-slate-400"><CalendarDays className="w-3.5 h-3.5" /></div>
+                                            <div>
+                                                <p className="text-[9px] font-black uppercase text-slate-400">Date d'embauche</p>
+                                                <p className="text-sm font-bold">{driver.dateEmbauche ? formatDate(driver.dateEmbauche) : 'N/A'}</p>
+                                            </div>
                                         </div>
-                                    </div>
-                                    <div className="flex items-center gap-3">
-                                        <div className="p-1.5 rounded-lg bg-slate-50 dark:bg-slate-800 text-slate-400"><Droplet className="w-3.5 h-3.5 text-rose-400" /></div>
-                                        <div>
-                                            <p className="text-[9px] font-black uppercase text-slate-400">Groupe Sanguin</p>
-                                            <p className="text-sm font-bold">A+</p> {/* Example static, if not in type */}
+                                        <div className="flex items-center gap-3">
+                                            <div className="p-1.5 rounded-lg bg-slate-50 dark:bg-slate-800 text-slate-400"><Droplet className="w-3.5 h-3.5 text-rose-400" /></div>
+                                            <div>
+                                                <p className="text-[9px] font-black uppercase text-slate-400">Groupe Sanguin</p>
+                                                <p className="text-sm font-bold">A+</p> {/* Example static, if not in type */}
+                                            </div>
                                         </div>
                                     </div>
                                 </div>
-                            </div>
+                            )}
                         </div>
 
                         {/* Mission Section */}

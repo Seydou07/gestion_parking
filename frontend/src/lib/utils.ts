@@ -17,6 +17,7 @@ export function formatDate(date: string | Date) {
 }
 
 export function formatCurrency(amount: number) {
+    if (amount === null || amount === undefined || isNaN(amount)) return '0 FCFA';
     return new Intl.NumberFormat('fr-FR', {
         style: 'currency',
         currency: 'XOF',

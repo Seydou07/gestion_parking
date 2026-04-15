@@ -54,16 +54,10 @@ export function BudgetAllocationModal({ open, onOpenChange, vehicle, onSuccess }
         }
 
         // --- Validation du Seuil Global ---
-        const totalAllocatedOtherVehicles = vehicles
-            .filter(v => v.id !== vehicle.id)
-            .reduce((acc, v) => acc + (v.budgetAlloue || 0), 0);
-        
-        const currentVehicleAllocation = vehicle.budgetAlloue || 0;
-        const newTotalAllocation = totalAllocatedOtherVehicles + currentVehicleAllocation + allocationAmount;
-        const globalCap = settings?.budgetGlobalVehicules || 0;
+        const globalRemaining = settings?.budgetGlobalVehicules || 0;
 
-        if (globalCap > 0 && newTotalAllocation > globalCap) {
-            toast.error(`Dépassement du budget global ! Restant disponible: ${((globalCap - (totalAllocatedOtherVehicles + currentVehicleAllocation))).toLocaleString()} FCFA`);
+        if (globalRemaining > 0 && allocationAmount > globalRemaining) {
+            toast.error(`Budget global insuffisant ! Disponible: ${globalRemaining.toLocaleString()} FCFA`);
             return;
         }
 
@@ -99,9 +93,10 @@ export function BudgetAllocationModal({ open, onOpenChange, vehicle, onSuccess }
                         <Landmark className="w-5 h-5" />
                         Allocation Budget
                     </DialogTitle>
-                    <DialogDescription className="sr-only">
-                        Formulaire d'allocation de budget pour le véhicule {vehicle.immatriculation}
-                    </DialogDescription>
+                    <div className="text-right">
+                        <p className="text-[9px] font-bold text-white/60 uppercase tracking-widest">Restant Global</p>
+                        <p className="text-sm font-black text-white">{(settings?.budgetGlobalVehicules || 0).toLocaleString()} FCFA</p>
+                    </div>
                 </div>
 
                 <form onSubmit={handleSubmit} className="p-6 space-y-5 bg-white dark:bg-slate-900">

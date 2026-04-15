@@ -31,5 +31,9 @@ export class CreateFuelVoucherDto {
 
     @IsString()
     @IsOptional()
+    station?: string;
+
+    @IsString()
+    @IsOptional()
     notes?: string;
 }

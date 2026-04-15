@@ -17,6 +17,7 @@ import { toast, Toaster } from 'sonner';
 import StatCard from '@/components/dashboard/StatCard';
 import { useVehicles } from '@/hooks/useFleetStore';
 import { Loader2 } from 'lucide-react';
+import { useAuth } from '@/hooks/useAuth';
 
 const statusConfig = {
     DISPONIBLE: { label: 'Disponible', variant: 'success' as const },
@@ -27,6 +28,7 @@ const statusConfig = {
 
 export default function Vehicules() {
     const { vehicles, loading, updateVehicle, refresh } = useVehicles();
+    const { isUtilisateur, canEdit, canViewBudget } = useAuth();
     const [searchTerm, setSearchTerm] = useState('');
     const [formModalOpen, setFormModalOpen] = useState(false);
     const [detailModalOpen, setDetailModalOpen] = useState(false);
@@ -213,25 +215,27 @@ export default function Vehicules() {
             {/* Main Data Table Card */}
             <div className="bg-white dark:bg-slate-900 rounded-3xl border border-slate-100 dark:border-slate-800 shadow-2xl overflow-hidden p-2">
                 <div className="p-4 sm:p-6 border-b border-slate-100 dark:border-slate-800 flex flex-col sm:flex-row gap-4 justify-between items-center bg-transparent">
-                    <div className="relative w-full max-w-md">
-                        <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400" />
+                    <div className="relative w-full max-w-sm">
+                        <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
                         <Input
                             placeholder="Rechercher Immatriculation, Marque..."
                             value={searchTerm}
                             onChange={(e) => setSearchTerm(e.target.value)}
-                            className="pl-12 h-14 w-full bg-slate-50 border-none dark:bg-slate-900/50"
+                            className="pl-11 h-11 w-full bg-slate-50 border-none dark:bg-slate-900/50 text-sm rounded-xl"
                         />
                     </div>
-                    <div className="flex gap-2 w-full sm:w-auto overflow-x-auto pb-2 sm:pb-0 items-center justify-end">
-                        <Button variant="outline" className="h-12 px-6 gap-2 shrink-0 text-sm">
-                            <ListFilter className="w-4 h-4" /> Statut
+                    <div className="flex gap-2 w-full sm:w-auto items-center justify-end">
+                        <Button variant="outline" className="h-10 px-4 gap-2 shrink-0 text-xs font-black uppercase tracking-widest rounded-xl">
+                            <ListFilter className="w-3.5 h-3.5" /> Statut
                         </Button>
-                        <Button variant="outline" className="h-12 px-6 gap-2 shrink-0 text-sm">
-                            <Download className="w-4 h-4" /> Export
+                        <Button variant="outline" className="h-10 px-4 gap-2 shrink-0 text-xs font-black uppercase tracking-widest rounded-xl">
+                            <Download className="w-3.5 h-3.5" /> Export
                         </Button>
-                        <Button className="h-12 px-6 flex items-center gap-2 shadow-xl shadow-fleet-blue/20 transition-all font-bold shrink-0 text-sm" onClick={handleAdd}>
-                            <Plus className="w-4 h-4" /> Nouveau Véhicule
-                        </Button>
+                        {!isUtilisateur && (
+                            <Button className="h-10 px-6 flex items-center gap-2 shadow-xl shadow-fleet-blue/20 transition-all font-black text-xs uppercase tracking-widest shrink-0 rounded-xl" onClick={handleAdd}>
+                                <Plus className="w-4 h-4" /> Nouveau Véhicule
+                            </Button>
+                        )}
                     </div>
                 </div>
 
@@ -241,8 +245,8 @@ export default function Vehicules() {
                         columns={columns}
                         keyExtractor={(v) => v.id}
                         onView={handleView}
-                        onEdit={handleEdit}
-                        onDelete={handleDelete}
+                        onEdit={canEdit ? handleEdit : undefined}
+                        onDelete={canEdit ? handleDelete : undefined}
                         rowClassName={getRowClassName}
                         emptyMessage="Aucun véhicule trouvé dans la base de données"
                     />

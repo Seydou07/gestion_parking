@@ -6,7 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { DataTable } from '@/components/ui/data-table';
 import { Mission } from '@/types/api';
-import { cn, formatDate } from '@/lib/utils';
+import { cn, formatDate, formatSmartCurrency } from '@/lib/utils';
 import { toast, Toaster } from 'sonner';
 import { useMissions, useVehicles, useDrivers, useFuelCards, useFuelVouchers } from '@/hooks/useFleetStore';
 import { Loader2 } from 'lucide-react';
@@ -66,14 +66,15 @@ export default function MissionsPage() {
             header: 'Véhicule',
             className: "hidden sm:table-cell",
             render: (m: Mission) => {
-                const voucher = fuelVouchers.find(v => v.id === m.bonCarburantId);
+                const vouchers = m.vouchers || [];
+                const totalVouchersValue = vouchers.reduce((sum, v) => sum + v.valeur, 0);
                 return (
                     <div>
                         <p className="font-bold text-fleet-blue">{m.vehicule?.immatriculation}</p>
                         <div className="hidden lg:block">
-                            {m.typeCarburantDotation === 'BON' && voucher ? (
+                            {m.typeCarburantDotation === 'BON' && vouchers.length > 0 ? (
                                 <p className="text-[10px] font-black uppercase text-amber-600 mt-1 flex items-center gap-1">
-                                    {voucher.numero} ({voucher.valeur.toLocaleString('fr-FR')} FCFA)
+                                    {vouchers.length} bon(s) ({formatSmartCurrency(totalVouchersValue)})
                                 </p>
                             ) : m.typeCarburantDotation === 'CARTE' ? (
                                 <p className="text-[10px] font-black uppercase text-amber-600 mt-1 flex items-center gap-1">
@@ -211,12 +212,9 @@ export default function MissionsPage() {
             const mission = missions.find(m => m.id === id);
             let finalMontant = montant;
 
-            // Si c'est un bon, on récupère sa valeur pour l'analytics
-            if (mission?.typeCarburantDotation === 'BON' && mission.bonCarburantId) {
-                const voucher = fuelVouchers.find(v => v.id === mission.bonCarburantId);
-                if (voucher) {
-                    finalMontant = voucher.valeur;
-                }
+            // Si c'est un bon, on récupère sa valeur cumulée pour l'analytics
+            if (mission?.typeCarburantDotation === 'BON' && mission.vouchers && mission.vouchers.length > 0) {
+                finalMontant = mission.vouchers.reduce((sum, v) => sum + v.valeur, 0);
             }
 
             await api.missions.update(id, {
@@ -269,23 +267,23 @@ export default function MissionsPage() {
             {/* Main Table Area */}
             <div className="bg-white dark:bg-slate-900 rounded-3xl border border-slate-100 dark:border-slate-800 shadow-2xl overflow-hidden p-2">
                 <div className="p-4 border-b border-slate-100 dark:border-slate-800 flex flex-col sm:flex-row gap-4 justify-between items-center bg-transparent">
-                    <div className="relative w-full max-w-md">
+                    <div className="relative w-full max-w-sm">
                         <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
                         <Input
                             placeholder="Rechercher une destination..."
                             value={searchTerm}
                             onChange={(e) => setSearchTerm(e.target.value)}
-                            className="pl-11 h-12 bg-slate-50 dark:bg-slate-800/50 border-slate-200 dark:border-slate-700"
+                            className="pl-11 h-11 bg-slate-50 dark:bg-slate-800/50 border-transparent rounded-xl text-sm"
                         />
                     </div>
                     <div className="flex gap-2 w-full sm:w-auto justify-end items-center">
-                        <Button variant="outline" className="h-12 px-6 gap-2 shrink-0">
-                            <Filter className="w-4 h-4" /> Filtres
+                        <Button variant="outline" className="h-10 px-4 gap-2 shrink-0 text-xs font-black uppercase tracking-widest rounded-xl">
+                            <Filter className="w-3.5 h-3.5" /> Filtres
                         </Button>
-                        <Button variant="outline" className="h-12 px-6 gap-2 shrink-0">
-                            <Download className="w-4 h-4" /> Export
+                        <Button variant="outline" className="h-10 px-4 gap-2 shrink-0 text-xs font-black uppercase tracking-widest rounded-xl">
+                            <Download className="w-3.5 h-3.5" /> Export
                         </Button>
-                        <Button className="h-12 px-6 flex items-center gap-2 shadow-xl shadow-fleet-blue/20 transition-all font-bold shrink-0 text-sm" onClick={handleOpenCreate}>
+                        <Button className="h-10 px-6 flex items-center gap-2 shadow-xl shadow-fleet-blue/20 transition-all font-black text-xs uppercase tracking-widest shrink-0 rounded-xl" onClick={handleOpenCreate}>
                             <Plus className="w-4 h-4" />
                             Planifier une Mission
                         </Button>

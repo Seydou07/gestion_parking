@@ -5,25 +5,25 @@ import {
     Settings,
     Bell,
     Shield,
-    Globe,
     Moon,
     Sun,
     Database,
-    Smartphone,
-    ChevronRight,
     Save,
-    Building2,
-    DollarSign,
+    Wallet,
     AlertTriangle,
     Clock,
-    Landmark,
-    Wallet
+    CheckCircle2,
+    RefreshCw,
+    ShieldCheck,
+    Palette
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { api } from "@/lib/api";
 import { toast, Toaster } from "sonner";
+import { useTheme } from "@/context/ThemeContext";
 
 export default function SettingsPage() {
+    const { theme, toggleTheme } = useTheme();
     const [settings, setSettings] = useState<any>(null);
     const [loading, setLoading] = useState(true);
     const [saving, setSaving] = useState(false);
@@ -48,7 +48,7 @@ export default function SettingsPage() {
         setSaving(true);
         try {
             await api.settings.update(settings);
-            toast.success("Paramètres enregistrés avec succès !");
+            toast.success("Paramètres système mis à jour !");
         } catch (error) {
             console.error("Failed to save settings:", error);
             toast.error("Erreur lors de la sauvegarde.");
@@ -58,163 +58,194 @@ export default function SettingsPage() {
     };
 
     if (loading || !settings) return (
-        <div className="py-20 text-center space-y-4">
-            <div className="w-10 h-10 border-4 border-fleet-blue border-t-transparent rounded-full animate-spin mx-auto"></div>
-            <p className="text-slate-400 font-bold">Chargement des paramètres...</p>
+        <div className="flex flex-col items-center justify-center py-20 animate-pulse">
+            <div className="w-12 h-12 border-4 border-fleet-blue border-t-transparent rounded-full animate-spin mb-4"></div>
+            <p className="text-slate-500 font-bold dark:text-slate-400">Initialisation de la configuration...</p>
         </div>
     );
 
     return (
-        <div className="space-y-6 pb-10">
-            <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-                <div>
-                    <h1 className="text-2xl font-black text-slate-800 dark:text-white flex items-center gap-3">
-                        <Settings className="w-8 h-8 text-fleet-blue" />
-                        Configuration Système
-                    </h1>
-                    <p className="text-slate-500 text-sm font-medium">Gérez les préférences globales de votre flotte</p>
+        <div className="max-w-5xl mx-auto space-y-8 animate-fade-in pb-12">
+            {/* Header Section */}
+            <div className="flex flex-col md:flex-row md:items-end justify-between gap-6 border-b border-slate-200 dark:border-slate-800 pb-8">
+                <div className="space-y-1">
+                    <div className="flex items-center gap-3">
+                        <div className="p-2 bg-fleet-blue/10 rounded-lg">
+                            <Settings className="w-6 h-6 text-fleet-blue" />
+                        </div>
+                        <h1 className="text-3xl font-black text-slate-900 dark:text-white tracking-tight">Paramètres</h1>
+                    </div>
+                    <p className="text-slate-500 dark:text-slate-400 font-medium ml-11">Configuration globale et préférences du système</p>
                 </div>
                 
                 <button 
                     onClick={handleSave}
                     disabled={saving}
-                    className="h-12 px-6 bg-slate-900 text-white rounded-xl font-bold flex items-center gap-2 hover:bg-slate-800 transition-all shadow-xl shadow-slate-900/10 disabled:opacity-50"
+                    className="h-12 px-8 bg-fleet-blue text-white rounded-2xl font-black flex items-center gap-3 hover:bg-fleet-blue-dark transition-all shadow-xl shadow-fleet-blue/20 active:scale-95 disabled:opacity-50"
                 >
-                    <Save className={cn("w-4 h-4", saving && "animate-spin")} />
-                    {saving ? "Enregistrement..." : "Enregistrer les modifications"}
+                    {saving ? <RefreshCw className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
+                    {saving ? "Synchronisation..." : "Enregistrer"}
                 </button>
             </div>
 
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-                {/* Navigation Section */}
-                <div className="lg:col-span-1 space-y-2">
-                    <button className="w-full text-left px-4 py-3 rounded-xl bg-fleet-blue/10 text-fleet-blue font-bold flex items-center justify-between border border-fleet-blue/20">
-                        <div className="flex items-center gap-3">
-                            <Settings className="w-5 h-5" />
-                            Configuration Générale
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                {/* Theme & Appearance */}
+                <div className="bg-white dark:bg-slate-900 p-8 rounded-[32px] border border-slate-100 dark:border-slate-800 shadow-premium transition-all hover:shadow-2xl">
+                    <div className="flex items-center gap-3 mb-8">
+                        <div className="p-2 bg-purple-500/10 rounded-xl text-purple-600 dark:text-purple-400">
+                            <Palette className="w-5 h-5" />
                         </div>
-                        <ChevronRight className="w-4 h-4" />
-                    </button>
-                    <button className="w-full text-left px-4 py-3 rounded-xl text-slate-500 font-bold flex items-center justify-between hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors opacity-50 cursor-not-allowed">
-                        <div className="flex items-center gap-3">
-                            <Bell className="w-5 h-5" />
-                            Notifications (Bientôt)
-                        </div>
-                        <ChevronRight className="w-4 h-4" />
-                    </button>
-                </div>
-
-                {/* Content Section */}
-                <div className="lg:col-span-2 space-y-6">
-                    {/* Enterprise Identity */}
-                    <div className="bg-white dark:bg-slate-900 p-6 rounded-3xl border border-slate-100 dark:border-slate-800 shadow-sm transition-all hover:shadow-md">
-                        <h3 className="font-bold text-lg mb-6 border-b border-slate-50 dark:border-slate-800 pb-4">Identité de l'Entreprise</h3>
-                        
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                            <div className="space-y-2">
-                                <label className="text-xs font-black text-slate-400 uppercase tracking-widest">Nom de l'Organisation</label>
-                                <div className="relative">
-                                    <Building2 className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
-                                    <input 
-                                        type="text" 
-                                        value={settings.nomEntreprise || ""}
-                                        onChange={(e) => setSettings({...settings, nomEntreprise: e.target.value})}
-                                        className="w-full pl-10 pr-4 py-2.5 rounded-xl bg-slate-50 dark:bg-slate-800 border-none text-sm font-bold outline-none focus:ring-2 focus:ring-fleet-blue/20" 
-                                    />
+                        <h3 className="font-black text-sm uppercase tracking-widest text-slate-800 dark:text-white">Apparence</h3>
+                    </div>
+                    
+                    <div className="space-y-6">
+                        <div className="flex items-center justify-between p-4 bg-slate-50 dark:bg-slate-800/50 rounded-2xl border border-transparent hover:border-slate-200 dark:hover:border-slate-700 transition-all cursor-pointer group" onClick={toggleTheme}>
+                            <div className="flex items-center gap-4">
+                                <div className="w-12 h-12 flex items-center justify-center rounded-2xl bg-white dark:bg-slate-800 shadow-sm">
+                                    {theme === 'dark' ? <Moon className="w-6 h-6 text-indigo-400" /> : <Sun className="w-6 h-6 text-amber-500" />}
+                                </div>
+                                <div>
+                                    <p className="font-black text-slate-900 dark:text-white text-sm">Mode Sombre</p>
+                                    <p className="text-[10px] text-slate-500 dark:text-slate-400 font-bold uppercase tracking-tight">Interface {theme === 'dark' ? 'Obscure' : 'Claire'}</p>
                                 </div>
                             </div>
+                            <div className={cn(
+                                "w-14 h-8 rounded-full p-1 transition-colors duration-300 relative",
+                                theme === 'dark' ? "bg-fleet-blue" : "bg-slate-200 dark:bg-slate-700"
+                            )}>
+                                <div className={cn(
+                                    "w-6 h-6 bg-white rounded-full transition-transform duration-300 shadow-sm",
+                                    theme === 'dark' ? "translate-x-6" : "translate-x-0"
+                                )}></div>
+                            </div>
+                        </div>
 
-                            <div className="space-y-2">
-                                <label className="text-xs font-black text-slate-400 uppercase tracking-widest">Devise Principale</label>
-                                <div className="relative">
-                                    <DollarSign className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
-                                    <input 
-                                        type="text" 
-                                        value={settings.devise || "FCFA"}
-                                        onChange={(e) => setSettings({...settings, devise: e.target.value})}
-                                        className="w-full pl-10 pr-4 py-2.5 rounded-xl bg-slate-50 dark:bg-slate-800 border-none text-sm font-bold outline-none focus:ring-2 focus:ring-fleet-blue/20" 
-                                    />
-                                </div>
+                        <div className="p-4 bg-blue-50/50 dark:bg-blue-900/10 rounded-2xl border border-blue-100/50 dark:border-blue-900/20">
+                            <div className="flex gap-3">
+                                <ShieldCheck className="w-4 h-4 text-fleet-blue mt-0.5" />
+                                <p className="text-[11px] text-slate-600 dark:text-slate-400 font-medium leading-relaxed">Le mode sombre réduit la fatigue visuelle et économise l'énergie sur les écrans OLED.</p>
                             </div>
                         </div>
                     </div>
+                </div>
 
-                    {/* Thresholds & Maintenance */}
-                    <div className="bg-white dark:bg-slate-900 p-6 rounded-3xl border border-slate-100 dark:border-slate-800 shadow-sm transition-all hover:shadow-md">
-                        <h3 className="font-bold text-lg mb-6 border-b border-slate-50 dark:border-slate-800 pb-4">Seuils d'Alerte & Maintenance</h3>
-                        
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                            <div className="space-y-4">
-                                <div>
-                                    <div className="flex justify-between items-center mb-1">
-                                        <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Alerte Stock Carburant (L)</label>
-                                        <span className="text-xs font-black text-fleet-blue">{settings.alerteStockCarburant} L</span>
-                                    </div>
-                                    <input 
-                                        type="range" 
-                                        min="10" max="200" step="10"
-                                        value={settings.alerteStockCarburant || 50}
-                                        onChange={(e) => setSettings({...settings, alerteStockCarburant: parseInt(e.target.value)})}
-                                        className="w-full accent-fleet-blue cursor-pointer"
-                                    />
-                                </div>
+                {/* System Budgets */}
+                <div className="bg-white dark:bg-slate-900 p-8 rounded-[32px] border border-slate-100 dark:border-slate-800 shadow-premium transition-all hover:shadow-2xl">
+                    <div className="flex items-center gap-3 mb-8">
+                        <div className="p-2 bg-emerald-500/10 rounded-xl text-emerald-600 dark:text-emerald-400">
+                            <Wallet className="w-5 h-5" />
+                        </div>
+                        <h3 className="font-black text-sm uppercase tracking-widest text-slate-800 dark:text-white">Budgets Globaux</h3>
+                    </div>
 
-                                <div>
-                                    <div className="flex justify-between items-center mb-1">
-                                        <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Intervalle Vidange (KM)</label>
-                                        <span className="text-xs font-black text-fleet-blue">{settings.seuilVidangeKm} KM</span>
-                                    </div>
-                                    <input 
-                                        type="range" 
-                                        min="1000" max="15000" step="500"
-                                        value={settings.seuilVidangeKm || 5000}
-                                        onChange={(e) => setSettings({...settings, seuilVidangeKm: parseInt(e.target.value)})}
-                                        className="w-full accent-fleet-blue cursor-pointer"
-                                    />
+                    <div className="space-y-8">
+                        <div className="space-y-3">
+                            <div className="flex justify-between items-end mb-1">
+                                <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Budget Maintenance Annuel</label>
+                                <div className="text-right">
+                                    <span className="text-lg font-black text-emerald-600 dark:text-emerald-400 font-mono">
+                                        {(settings.budgetGlobalVehicules || 0).toLocaleString()} <span className="text-[10px]">{settings.devise}</span>
+                                    </span>
                                 </div>
                             </div>
-
-                            <div className="space-y-4">
-                                <div>
-                                    <div className="flex justify-between items-center mb-1">
-                                        <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Relance Assurance (Jours)</label>
-                                        <span className="text-xs font-black text-fleet-blue">{settings.relanceAssuranceJours} Jours</span>
-                                    </div>
-                                    <input 
-                                        type="range" 
-                                        min="1" max="60"
-                                        value={settings.relanceAssuranceJours || 15}
-                                        onChange={(e) => setSettings({...settings, relanceAssuranceJours: parseInt(e.target.value)})}
-                                        className="w-full accent-fleet-blue cursor-pointer"
-                                    />
-                                </div>
-
-                                <div>
-                                    <div className="flex justify-between items-center mb-1">
-                                        <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Relance Visite Tech. (Jours)</label>
-                                        <span className="text-xs font-black text-fleet-blue">{settings.relanceVisiteJours} Jours</span>
-                                    </div>
-                                    <input 
-                                        type="range" 
-                                        min="1" max="60"
-                                        value={settings.relanceVisiteJours || 15}
-                                        onChange={(e) => setSettings({...settings, relanceVisiteJours: parseInt(e.target.value)})}
-                                        className="w-full accent-fleet-blue cursor-pointer"
-                                    />
-                                </div>
+                            <div className="relative group">
+                                <input 
+                                    type="range" min="0" max="50000000" step="500000"
+                                    value={settings.budgetGlobalVehicules || 0}
+                                    onChange={(e) => setSettings({...settings, budgetGlobalVehicules: parseInt(e.target.value)})}
+                                    className="w-full h-2 bg-slate-100 dark:bg-slate-800 rounded-full appearance-none cursor-pointer accent-fleet-blue group-hover:h-3 transition-all"
+                                />
                             </div>
                         </div>
 
-                        <div className="mt-8 p-4 bg-amber-50 dark:bg-amber-900/10 border border-amber-100 dark:border-amber-900/30 rounded-2xl flex gap-3">
-                            <AlertTriangle className="w-5 h-5 text-amber-500 shrink-0" />
-                            <div>
-                                <p className="text-xs font-bold text-amber-800 dark:text-amber-400">Note sur les alertes</p>
-                                <p className="text-[10px] text-amber-700/70 dark:text-amber-500/70 font-medium">Ces seuils déterminent quand les pastilles de couleur et les notifications de rappel apparaîtront sur votre tableau de bord.</p>
+                        <div className="space-y-3">
+                            <div className="flex justify-between items-end mb-1">
+                                <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Budget Carburant Annuel</label>
+                                <div className="text-right">
+                                    <span className="text-lg font-black text-blue-600 dark:text-blue-400 font-mono">
+                                        {(settings.budgetGlobalCarburant || 0).toLocaleString()} <span className="text-[10px]">{settings.devise}</span>
+                                    </span>
+                                </div>
                             </div>
+                            <div className="relative group">
+                                <input 
+                                    type="range" min="0" max="100000000" step="1000000"
+                                    value={settings.budgetGlobalCarburant || 0}
+                                    onChange={(e) => setSettings({...settings, budgetGlobalCarburant: parseInt(e.target.value)})}
+                                    className="w-full h-2 bg-slate-100 dark:bg-slate-800 rounded-full appearance-none cursor-pointer accent-fleet-blue group-hover:h-3 transition-all"
+                                />
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                {/* Alerts & Thresholds */}
+                <div className="md:col-span-2 bg-white dark:bg-slate-900 p-8 rounded-[32px] border border-slate-100 dark:border-slate-800 shadow-premium">
+                    <div className="flex items-center gap-3 mb-10">
+                        <div className="p-2 bg-amber-500/10 rounded-xl text-amber-600 dark:text-amber-400">
+                            <AlertTriangle className="w-5 h-5" />
+                        </div>
+                        <h3 className="font-black text-sm uppercase tracking-widest text-slate-800 dark:text-white">Alertes & Seuils de Maintenance</h3>
+                    </div>
+
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-x-12 gap-y-10">
+                        <div className="space-y-3">
+                            <div className="flex justify-between items-center mb-1">
+                                <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Intervalle de Vidange (KM)</label>
+                                <span className="px-3 py-1 bg-slate-100 dark:bg-slate-800 rounded-full text-xs font-black text-fleet-blue">{settings.seuilVidangeKm} KM</span>
+                            </div>
+                            <input 
+                                type="range" min="1000" max="15000" step="500"
+                                value={settings.seuilVidangeKm || 5000}
+                                onChange={(e) => setSettings({...settings, seuilVidangeKm: parseInt(e.target.value)})}
+                                className="w-full h-1.5 bg-slate-100 dark:bg-slate-800 rounded-full appearance-none cursor-pointer accent-fleet-blue"
+                            />
+                        </div>
+
+                        <div className="space-y-3">
+                            <div className="flex justify-between items-center mb-1">
+                                <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Alerte Stock Carburant (%)</label>
+                                <span className="px-3 py-1 bg-slate-100 dark:bg-slate-800 rounded-full text-xs font-black text-fleet-blue">{settings.alerteStockCarburant}%</span>
+                            </div>
+                            <input 
+                                type="range" min="5" max="50" step="5"
+                                value={settings.alerteStockCarburant || 10}
+                                onChange={(e) => setSettings({...settings, alerteStockCarburant: parseInt(e.target.value)})}
+                                className="w-full h-1.5 bg-slate-100 dark:bg-slate-800 rounded-full appearance-none cursor-pointer accent-fleet-blue"
+                            />
+                        </div>
+
+                        <div className="space-y-3">
+                            <div className="flex justify-between items-center mb-1">
+                                <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Anticipation Assurance (Jours)</label>
+                                <span className="px-3 py-1 bg-slate-100 dark:bg-slate-800 rounded-full text-xs font-black text-fleet-blue">{settings.relanceAssuranceJours} Jours</span>
+                            </div>
+                            <input 
+                                type="range" min="5" max="60"
+                                value={settings.relanceAssuranceJours || 15}
+                                onChange={(e) => setSettings({...settings, relanceAssuranceJours: parseInt(e.target.value)})}
+                                className="w-full h-1.5 bg-slate-100 dark:bg-slate-800 rounded-full appearance-none cursor-pointer accent-fleet-blue"
+                            />
+                        </div>
+
+                        <div className="space-y-3">
+                            <div className="flex justify-between items-center mb-1">
+                                <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Anticipation Visite Tech (Jours)</label>
+                                <span className="px-3 py-1 bg-slate-100 dark:bg-slate-800 rounded-full text-xs font-black text-fleet-blue">{settings.relanceVisiteJours} Jours</span>
+                            </div>
+                            <input 
+                                type="range" min="5" max="60"
+                                value={settings.relanceVisiteJours || 15}
+                                onChange={(e) => setSettings({...settings, relanceVisiteJours: parseInt(e.target.value)})}
+                                className="w-full h-1.5 bg-slate-100 dark:bg-slate-800 rounded-full appearance-none cursor-pointer accent-fleet-blue"
+                            />
                         </div>
                     </div>
                 </div>
             </div>
+
+            <Toaster position="top-right" richColors />
+
             <Toaster position="top-right" richColors />
         </div>
     );

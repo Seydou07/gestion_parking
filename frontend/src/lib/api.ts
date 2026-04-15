@@ -14,7 +14,8 @@ async function request<T>(endpoint: string, options: RequestInit = {}): Promise<
         throw new Error(error.message || 'API request failed');
     }
 
-    return response.json();
+    const text = await response.text();
+    return text ? JSON.parse(text) : {} as T;
 }
 
 export const api = {
@@ -42,6 +43,7 @@ export const api = {
         updateCard: (id: number, data: any) => request(`/fuel/cards/${id}`, { method: 'PATCH', body: JSON.stringify(data) }),
         getVouchers: () => request('/fuel/vouchers'),
         createVoucher: (data: any) => request('/fuel/vouchers', { method: 'POST', body: JSON.stringify(data) }),
+        updateVoucher: (id: number, data: any) => request(`/fuel/vouchers/${id}`, { method: 'PATCH', body: JSON.stringify(data) }),
         getRecords: () => request('/fuel/records'),
         getVehicleConsumption: (vehicleId: number) => request(`/fuel/stats/vehicle/${vehicleId}`),
     },
@@ -69,6 +71,7 @@ export const api = {
         supplyGlobal: (data: any) => request('/budgets/global/supply', { method: 'POST', body: JSON.stringify(data) }),
         initializeGlobal: (data: any) => request('/budgets/global/initialize', { method: 'POST', body: JSON.stringify(data) }),
         getGlobalHistory: () => request('/budgets/global/history'),
+        getSummary: () => request<any>('/budgets/summary'),
     },
     stats: {
         getDashboard: () => request('/stats/dashboard'),
@@ -82,5 +85,12 @@ export const api = {
     settings: {
         get: () => request('/settings'),
         update: (data: any) => request('/settings', { method: 'PATCH', body: JSON.stringify(data) }),
+    },
+    users: {
+        getAll: () => request<any[]>('/users'),
+        create: (data: any) => request('/users', { method: 'POST', body: JSON.stringify(data) }),
+        updateRole: (id: number, role: string) => request(`/users/${id}/role`, { method: 'PATCH', body: JSON.stringify({ role }) }),
+        updatePassword: (id: number, password: string) => request(`/users/${id}/password`, { method: 'PATCH', body: JSON.stringify({ password }) }),
+        toggleActive: (id: number) => request(`/users/${id}/toggle-active`, { method: 'PATCH' }),
     }
 };

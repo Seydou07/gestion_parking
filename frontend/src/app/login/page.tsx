@@ -20,55 +20,34 @@ export default function LoginPage() {
     const [error, setError] = useState("");
     const router = useRouter();
 
-    const handleLogin = (e: React.FormEvent) => {
+    const handleLogin = async (e: React.FormEvent) => {
         e.preventDefault();
         setLoading(true);
         setError("");
-        
-        const form = e.currentTarget as HTMLFormElement;
-        const username = (form.elements[0] as HTMLInputElement).value;
-        const password = (form.elements[1] as HTMLInputElement).value;
 
-        // Simulate login for demo
-        setTimeout(() => {
-            setLoading(false);
-            
-            // 1. Check for Super Admin (Hardcoded)
-            if (username === "admin_fleet" && password === "Admin_123") {
-                const superUser = {
-                    id: 0,
-                    nom: "Guardian",
-                    prenom: "Super Admin",
-                    email: "admin@fleet.com",
-                    role: "ADMIN"
-                };
-                localStorage.setItem("fleet_user", JSON.stringify(superUser));
-                router.push('/dashboard');
-                return;
-            }
+        const formData = new FormData(e.currentTarget as HTMLFormElement);
+        const identifier = formData.get("identifier") as string;
+        const password = formData.get("password") as string;
 
-            // 2. Regular Mock Logic (or would be API call)
-            // For now, continue with the mock behavior for other inputs
-            const mockUser = {
-                id: 1,
-                nom: "Administrateur",
-                prenom: "Fleet",
-                email: username.includes("@") ? username : `${username}@fleet.com`,
-                role: "ADMIN" as any
-            };
+        try {
+            const { api } = await import('@/lib/api');
+            const response = await api.auth.login(identifier, password);
 
-            const lowerInput = username.toLowerCase();
-            if (lowerInput.includes("gestion")) {
-                mockUser.role = "GESTIONNAIRE";
-                mockUser.nom = "Gestionnaire";
-            } else if (lowerInput.includes("user") || lowerInput.includes("util")) {
-                mockUser.role = "UTILISATEUR";
-                mockUser.nom = "Utilisateur";
-            }
+            // Stocker le token JWT et les données utilisateur
+            localStorage.setItem("fleet_token", response.access_token);
+            localStorage.setItem("fleet_user", JSON.stringify(response.user));
 
-            localStorage.setItem("fleet_user", JSON.stringify(mockUser));
+            // Définir le cookie pour le middleware (7 jours d'expiration)
+            const expires = new Date();
+            expires.setDate(expires.getDate() + 7);
+            document.cookie = `fleet_token=${response.access_token}; Path=/; Expires=${expires.toUTCString()}; SameSite=Strict; Secure`;
+
             router.push('/dashboard');
-        }, 1500);
+        } catch (err: any) {
+            setError(err.message || "Identifiants invalides. Veuillez réessayer.");
+        } finally {
+            setLoading(false);
+        }
     };
 
     return (
@@ -161,6 +140,7 @@ export default function LoginPage() {
                                             <Mail className="w-5 h-5 text-slate-400 group-focus-within/field:text-fleet-blue-light transition-colors" />
                                         </div>
                                         <input
+                                            name="identifier"
                                             type="text"
                                             placeholder="Ex: admin_fleet"
                                             required
@@ -176,6 +156,7 @@ export default function LoginPage() {
                                             <Lock className="w-5 h-5 text-slate-400 group-focus-within/field:text-fleet-blue-light transition-colors" />
                                         </div>
                                         <input
+                                            name="password"
                                             type={showPassword ? "text" : "password"}
                                             placeholder="••••••••"
                                             required

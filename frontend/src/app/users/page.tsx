@@ -10,19 +10,24 @@ import {
     Key,
     ShieldAlert,
     Search,
-    Loader2
+    Loader2,
+    Trash2,
+    ShieldCheck
 } from "lucide-react";
-import { cn } from "@/lib/utils";
+import { ConfirmModal } from "@/components/ui/confirm-modal";
 import { api } from "@/lib/api";
 import { toast, Toaster } from "sonner";
 import { UserFormModal } from "@/components/users/UserFormModal";
 import { ChangePasswordModal } from "@/components/users/ChangePasswordModal";
 import { UserRole } from "@/types/api";
+import { cn } from "@/lib/utils";
 
 export default function UsersPage() {
     const [users, setUsers] = useState<any[]>([]);
     const [loading, setLoading] = useState(true);
     const [searchTerm, setSearchTerm] = useState("");
+    const [deleteModalOpen, setDeleteModalOpen] = useState(false);
+    const [userToDelete, setUserToDelete] = useState<any | null>(null);
     
     // Modal states
     const [isCreateOpen, setIsCreateOpen] = useState(false);
@@ -62,6 +67,25 @@ export default function UsersPage() {
             fetchUsers();
         } catch (error) {
             toast.error("Erreur lors du changement de rôle");
+        }
+    };
+
+    const handleDeleteUser = (user: any) => {
+        setUserToDelete(user);
+        setDeleteModalOpen(true);
+    };
+
+    const confirmDelete = async () => {
+        if (!userToDelete) return;
+
+        try {
+            await api.users.delete(userToDelete.id);
+            toast.success(`Le compte de ${userToDelete.prenom} a été supprimé`);
+            setDeleteModalOpen(false);
+            setUserToDelete(null);
+            fetchUsers();
+        } catch (error) {
+            toast.error("Erreur lors de la suppression de l'utilisateur");
         }
     };
 
@@ -139,10 +163,19 @@ export default function UsersPage() {
                                 </select>
                             </div>
 
-                            <h3 className="font-extrabold text-slate-900 dark:text-white text-lg tracking-tight uppercase leading-none">{user.prenom} {user.nom}</h3>
+                            <div className="flex items-center gap-2 mb-1">
+                                <h3 className="font-extrabold text-slate-900 dark:text-white text-lg tracking-tight uppercase leading-none">
+                                    {user.prenom} {user.nom}
+                                </h3>
+                                {(user.role === 'ADMIN' || user.role === 'ROOT_ADMIN') && (
+                                    <div className="w-5 h-5 rounded-full bg-rose-100 dark:bg-rose-900/30 flex items-center justify-center text-rose-500 shadow-sm border border-rose-200 dark:border-rose-800/50" title={user.role}>
+                                        <ShieldCheck className="w-3 h-3" />
+                                    </div>
+                                )}
+                            </div>
                             <div className="mt-1 mb-8 space-y-0.5">
-                                <p className="text-[10px] font-black text-fleet-blue uppercase tracking-widest">{user.username}</p>
-                                <p className="text-[10px] text-slate-400 font-bold">{user.email}</p>
+                                <p className="text-[10px] font-black text-fleet-blue uppercase tracking-widest leading-none">{user.username}</p>
+                                <p className="text-[10px] text-slate-400 font-bold leading-none">{user.email}</p>
                             </div>
 
                             <div className="pt-6 border-t border-slate-50 dark:border-slate-900/50 flex items-center justify-between">
@@ -172,6 +205,13 @@ export default function UsersPage() {
                                     >
                                         {user.actif ? <UserX className="w-4 h-4" /> : <UserCheck className="w-4 h-4" />}
                                     </button>
+                                    <button 
+                                        onClick={() => handleDeleteUser(user)}
+                                        className="p-2.5 bg-slate-50 dark:bg-slate-900 hover:bg-red-500 hover:text-white rounded-xl text-slate-400 transition-all shadow-sm group/del"
+                                        title="Supprimer définitivement"
+                                    >
+                                        <Trash2 className="w-4 h-4 group-hover/del:scale-110 transition-transform" />
+                                    </button>
                                 </div>
                             </div>
                         </div>
@@ -179,7 +219,17 @@ export default function UsersPage() {
                 </div>
             </div>
 
-            <div className="bg-amber-50 dark:bg-amber-900/10 p-6 rounded-[30px] border border-amber-100 dark:border-amber-800/20 flex items-start gap-4 shadow-sm">
+            <ConfirmModal
+                open={deleteModalOpen}
+                onOpenChange={setDeleteModalOpen}
+                onConfirm={confirmDelete}
+                title="Supprimer l'utilisateur"
+                description={`Êtes-vous sûr de vouloir supprimer définitivement le compte de ${userToDelete?.prenom} ${userToDelete?.nom} ? Cette action est irréversible.`}
+                confirmText="Supprimer"
+                variant="danger"
+            />
+
+            <div className="bg-amber-50 dark:bg-amber-900/10 p-6 rounded-[30px] border border-amber-100 dark:border-amber-800/20 flex items-start gap-4 shadow-sm mt-6">
                 <div className="p-3 bg-white dark:bg-amber-500/20 rounded-2xl shadow-sm">
                     <ShieldAlert className="w-6 h-6 text-amber-500" />
                 </div>

@@ -21,9 +21,12 @@ import { cn } from "@/lib/utils";
 import { api } from "@/lib/api";
 import { toast, Toaster } from "sonner";
 import { useTheme } from "@/context/ThemeContext";
+import { useAuth } from "@/hooks/useAuth";
+import { Key } from "lucide-react";
 
 export default function SettingsPage() {
     const { theme, toggleTheme } = useTheme();
+    const { user } = useAuth();
     const [settings, setSettings] = useState<any>(null);
     const [loading, setLoading] = useState(true);
     const [saving, setSaving] = useState(false);
@@ -89,6 +92,35 @@ export default function SettingsPage() {
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                {/* User Profile Section */}
+                <div className="md:col-span-2 bg-gradient-to-br from-fleet-blue to-indigo-900 p-8 rounded-[32px] text-white shadow-2xl relative overflow-hidden group">
+                    <div className="absolute top-0 right-0 w-64 h-64 bg-white/5 rounded-full -mr-32 -mt-32 blur-3xl transition-all group-hover:bg-white/10" />
+                    <div className="relative z-10 flex flex-col md:flex-row items-center gap-8">
+                        <div className="w-24 h-24 rounded-3xl bg-white/10 backdrop-blur-md flex items-center justify-center border border-white/20 shadow-inner">
+                            <Shield className="w-12 h-12 text-white/80" />
+                        </div>
+                        <div className="flex-1 text-center md:text-left space-y-2">
+                            <h2 className="text-2xl font-black">{user?.prenom} {user?.nom}</h2>
+                            <div className="flex flex-wrap justify-center md:justify-start gap-4">
+                                <p className="text-white/60 font-medium flex items-center gap-2">
+                                    <ShieldCheck className="w-4 h-4 text-emerald-400" />
+                                    <span className="uppercase tracking-widest text-[10px] font-black">{user?.role}</span>
+                                </p>
+                                <p className="text-white/60 font-medium flex items-center gap-2">
+                                    <Database className="w-4 h-4 text-blue-400" />
+                                    <span className="text-xs">{user?.email}</span>
+                                </p>
+                            </div>
+                        </div>
+                        <button 
+                            className="bg-white/10 hover:bg-white/20 backdrop-blur-md px-6 py-3 rounded-2xl border border-white/10 transition-all flex items-center gap-2 font-bold text-sm"
+                            onClick={() => toast.info("Fonctionnalité en cours de déploiement")}
+                        >
+                            <Key className="w-4 h-4" /> Modifier mot de passe
+                        </button>
+                    </div>
+                </div>
+
                 {/* Theme & Appearance */}
                 <div className="bg-white dark:bg-slate-900 p-8 rounded-[32px] border border-slate-100 dark:border-slate-800 shadow-premium transition-all hover:shadow-2xl">
                     <div className="flex items-center gap-3 mb-8">

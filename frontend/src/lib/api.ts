@@ -1,17 +1,43 @@
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL?.replace('/api', '') || 'http://localhost:3001';
 
+function getAuthHeaders(): Record<string, string> {
+    if (typeof window !== 'undefined') {
+        const token = localStorage.getItem('fleet_token');
+        if (token) {
+            return { Authorization: `Bearer ${token}` };
+        }
+    }
+    return {};
+}
+
 async function request<T>(endpoint: string, options: RequestInit = {}): Promise<T> {
+    console.log(`API Request: ${endpoint}`, options.body);
     const response = await fetch(`${API_BASE_URL}${endpoint}`, {
         ...options,
         headers: {
             'Content-Type': 'application/json',
+            ...getAuthHeaders(),
             ...options.headers,
         },
     });
 
     if (!response.ok) {
         const error = await response.json().catch(() => ({ message: 'An error occurred' }));
-        throw new Error(error.message || 'API request failed');
+        let errorMessage = error.message || 'API request failed';
+        
+        // Handle NestJS Validation Errors (Array of objects or strings)
+        if (Array.isArray(errorMessage)) {
+            const firstError = errorMessage[0];
+            if (typeof firstError === 'object' && firstError.constraints) {
+                errorMessage = Object.values(firstError.constraints).join(', ');
+            } else {
+                errorMessage = errorMessage.join(', ');
+            }
+        } else if (typeof errorMessage === 'object') {
+            errorMessage = JSON.stringify(errorMessage);
+        }
+        
+        throw new Error(errorMessage);
     }
 
     const text = await response.text();
@@ -19,6 +45,15 @@ async function request<T>(endpoint: string, options: RequestInit = {}): Promise<
 }
 
 export const api = {
+    auth: {
+        login: (identifier: string, password: string) =>
+            request<{ access_token: string; user: { id: number; nom: string; prenom: string; email: string; role: string } }>('/auth/login', {
+                method: 'POST',
+                body: JSON.stringify({ identifier, password }),
+            }),
+        getMe: () =>
+            request<any>('/auth/me'),
+    },
     vehicles: {
         getAll: () => request('/vehicles'),
         getOne: (id: number) => request(`/vehicles/${id}`),
@@ -92,5 +127,6 @@ export const api = {
         updateRole: (id: number, role: string) => request(`/users/${id}/role`, { method: 'PATCH', body: JSON.stringify({ role }) }),
         updatePassword: (id: number, password: string) => request(`/users/${id}/password`, { method: 'PATCH', body: JSON.stringify({ password }) }),
         toggleActive: (id: number) => request(`/users/${id}/toggle-active`, { method: 'PATCH' }),
+        delete: (id: number) => request(`/users/${id}`, { method: 'DELETE' }),
     }
 };

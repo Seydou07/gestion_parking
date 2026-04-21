@@ -1,4 +1,4 @@
-export type UserRole = 'ADMIN' | 'GESTIONNAIRE' | 'UTILISATEUR';
+export type UserRole = 'ROOT_ADMIN' | 'ADMIN' | 'GESTIONNAIRE' | 'USER';
 export type VehicleStatus = 'DISPONIBLE' | 'EN_MISSION' | 'EN_MAINTENANCE' | 'HORS_SERVICE';
 export type DriverStatus = 'DISPONIBLE' | 'EN_MISSION' | 'INACTIF';
 export type MissionStatus = 'PLANIFIEE' | 'EN_COURS' | 'TERMINEE' | 'ANNULEE';

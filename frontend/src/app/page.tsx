@@ -1,6 +1,7 @@
 import { redirect } from 'next/navigation';
 
 export default function RootPage() {
-    // Redirige automatiquement l'utilisateur vers le dashboard ou la page de connexion
-    redirect('/dashboard');
+    // La redirection est désormais gérée par le middleware (src/middleware.ts)
+    // pour garantir une sécurité côté serveur/edge.
+    return null;
 }

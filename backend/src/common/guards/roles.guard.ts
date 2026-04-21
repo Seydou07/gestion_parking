@@ -16,6 +16,13 @@ export class RolesGuard implements CanActivate {
             return true;
         }
         const { user } = context.switchToHttp().getRequest();
+        
+        // ROOT_ADMIN has all permissions by default
+        // We use a string literal check to avoid issues with Prisma Client generation lag
+        if (user.role === 'ROOT_ADMIN') {
+            return true;
+        }
+
         return requiredRoles.some((role) => user.role === role);
     }
 }

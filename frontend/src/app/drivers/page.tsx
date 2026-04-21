@@ -15,6 +15,7 @@ import StatCard from '@/components/dashboard/StatCard';
 import { useDrivers } from '@/hooks/useFleetStore';
 import { Loader2 } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
+import { exportToCSV } from '@/lib/table-utils';
 
 const statusConfig = {
     DISPONIBLE: { label: 'Disponible', className: 'badge-success' },
@@ -24,8 +25,9 @@ const statusConfig = {
 
 export default function DriversPage() {
     const { drivers: chauffeurs, loading, updateDriver, refresh } = useDrivers();
-    const { isUtilisateur, canEdit } = useAuth();
+    const { isUser, canEdit } = useAuth();
     const [searchTerm, setSearchTerm] = useState('');
+    const [statusFilter, setStatusFilter] = useState<string>('ALL');
 
     // Modal States
     const [isFormOpen, setIsFormOpen] = useState(false);
@@ -36,12 +38,30 @@ export default function DriversPage() {
     const [deleteModalOpen, setDeleteModalOpen] = useState(false);
     const [driverToDelete, setDriverToDelete] = useState<Driver | null>(null);
 
-    const filteredChauffeurs = chauffeurs.filter(c =>
-        c.nom.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        c.prenom.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        c.email?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        c.telephone.includes(searchTerm)
-    );
+    const filteredChauffeurs = chauffeurs.filter(c => {
+        const matchesSearch = c.nom.toLowerCase().includes(searchTerm.toLowerCase()) ||
+            c.prenom.toLowerCase().includes(searchTerm.toLowerCase()) ||
+            c.email?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+            c.telephone.includes(searchTerm);
+        
+        const matchesStatus = statusFilter === 'ALL' || c.statut === statusFilter;
+        
+        return matchesSearch && matchesStatus;
+    });
+
+    const handleExport = () => {
+        const exportData = filteredChauffeurs.map(c => ({
+            Nom: c.nom,
+            Prenom: c.prenom,
+            Telephone: c.telephone,
+            Email: c.email || '',
+            Statut: c.statut,
+            Permis_Numero: c.permisNumero,
+            Permis_Expiration: c.permisExpiration
+        }));
+        exportToCSV(exportData, 'personnel_chauffeurs');
+        toast.success('Export CSV généré');
+    };
 
     const columns = [
         {
@@ -166,8 +186,6 @@ export default function DriversPage() {
 
     return (
         <div className="space-y-6 animate-fade-in">
-            {/* Header */}
-            {/* Stats Cards Row */}
             <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
                 <StatCard 
                     title="Disponibles" 
@@ -192,7 +210,6 @@ export default function DriversPage() {
                 />
             </div>
 
-            {/* Main Table Area */}
             <div className="card-premium">
                 <div className="p-6 border-b border-slate-100 dark:border-slate-800 flex flex-col sm:flex-row gap-4 justify-between items-center bg-slate-50/50 dark:bg-slate-800/20">
                     <div className="relative w-full max-w-sm">
@@ -205,13 +222,24 @@ export default function DriversPage() {
                         />
                     </div>
                     <div className="flex gap-2 w-full sm:w-auto items-center justify-end">
-                        <Button variant="outline" className="h-10 px-4 gap-2 text-xs font-black uppercase tracking-widest rounded-xl">
-                            <Filter className="w-3.5 h-3.5" /> Filtrer
-                        </Button>
-                        <Button variant="outline" className="h-10 px-4 gap-2 text-xs font-black uppercase tracking-widest rounded-xl">
+                        <select 
+                            value={statusFilter}
+                            onChange={(e) => setStatusFilter(e.target.value)}
+                            className="h-10 px-3 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl text-[10px] font-black uppercase tracking-widest outline-none focus:ring-2 focus:ring-fleet-blue/20"
+                        >
+                            <option value="ALL">Tous les Statuts</option>
+                            <option value="DISPONIBLE">Disponible</option>
+                            <option value="EN_MISSION">En Mission</option>
+                            <option value="INACTIF">Inactif</option>
+                        </select>
+                        <Button 
+                            variant="outline" 
+                            className="h-10 px-4 gap-2 text-[10px] font-black uppercase tracking-widest rounded-xl hover:bg-fleet-blue hover:text-white transition-all"
+                            onClick={handleExport}
+                        >
                             <Download className="w-3.5 h-3.5" /> Export
                         </Button>
-                        {!isUtilisateur && (
+                        {!isUser && (
                             <Button className="h-10 px-6 flex items-center gap-2 shadow-xl shadow-fleet-blue/20 transition-all font-black text-xs uppercase tracking-widest shrink-0 rounded-xl" onClick={handleOpenCreate}>
                                 <Plus className="w-4 h-4" />
                                 Nouveau Chauffeur
@@ -241,7 +269,6 @@ export default function DriversPage() {
                 description={`Êtes-vous sûr de vouloir supprimer définitivement la fiche de ${driverToDelete?.prenom} ${driverToDelete?.nom} ? Cette action est irréversible.`}
             />
 
-            {/* Modals */}
             <DriverFormModal
                 open={isFormOpen}
                 onOpenChange={setIsFormOpen}

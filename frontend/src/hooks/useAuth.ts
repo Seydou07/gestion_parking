@@ -17,7 +17,8 @@ export function useAuth() {
 
     useEffect(() => {
         const storedUser = localStorage.getItem("fleet_user");
-        if (storedUser) {
+        const storedToken = localStorage.getItem("fleet_token");
+        if (storedUser && storedToken) {
             try {
                 setUser(JSON.parse(storedUser));
             } catch (e) {
@@ -27,28 +28,33 @@ export function useAuth() {
         setLoading(false);
     }, []);
 
-    const login = (userData: DashboardUser) => {
+    const login = (token: string, userData: DashboardUser) => {
+        localStorage.setItem("fleet_token", token);
         localStorage.setItem("fleet_user", JSON.stringify(userData));
         setUser(userData);
     };
 
     const logout = () => {
+        localStorage.removeItem("fleet_token");
         localStorage.removeItem("fleet_user");
+        document.cookie = "fleet_token=; Path=/; Expires=Thu, 01 Jan 1970 00:00:01 GMT;";
         setUser(null);
     };
 
-    const isAdmin = user?.role === "ADMIN";
+    const isRootAdmin = user?.role === "ROOT_ADMIN";
+    const isAdmin = user?.role === "ADMIN" || isRootAdmin;
     const isGestionnaire = user?.role === "GESTIONNAIRE";
-    const isUtilisateur = user?.role === "UTILISATEUR";
+    const isUser = user?.role === "USER";
 
     return {
         user,
         loading,
         login,
         logout,
+        isRootAdmin,
         isAdmin,
         isGestionnaire,
-        isUtilisateur,
+        isUser,
         canEdit: isAdmin || isGestionnaire,
         canViewBudget: isAdmin || isGestionnaire,
     };

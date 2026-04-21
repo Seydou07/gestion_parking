@@ -3,11 +3,12 @@
 import { createContext, useContext, useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { User } from '@/types/api';
+import { api } from '@/lib/api';
 
 interface AuthContextType {
     user: User | null;
     loading: boolean;
-    login: (token: string, userData: User) => void;
+    login: (token: string) => Promise<void>;
     logout: () => void;
 }
 
@@ -19,26 +20,38 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     const router = useRouter();
 
     useEffect(() => {
-        // Check for stored session
-        const storedUser = localStorage.getItem('fleet_user');
-        const storedToken = localStorage.getItem('fleet_token');
+        const initAuth = async () => {
+            const storedToken = localStorage.getItem('fleet_token');
 
-        if (storedUser && storedToken) {
-            setUser(JSON.parse(storedUser));
-        }
-        setLoading(false);
+            if (storedToken) {
+                try {
+                    const userData = await api.auth.getMe();
+                    setUser(userData);
+                } catch (error) {
+                    console.error("Failed to restore session", error);
+                    localStorage.removeItem('fleet_token');
+                }
+            }
+            setLoading(false);
+        };
+
+        initAuth();
     }, []);
 
-    const login = (token: string, userData: User) => {
+    const login = async (token: string) => {
         localStorage.setItem('fleet_token', token);
-        localStorage.setItem('fleet_user', JSON.stringify(userData));
-        setUser(userData);
-        router.push('/dashboard');
+        try {
+            const userData = await api.auth.getMe();
+            setUser(userData);
+            router.push('/dashboard');
+        } catch (error) {
+            localStorage.removeItem('fleet_token');
+            throw error;
+        }
     };
 
     const logout = () => {
         localStorage.removeItem('fleet_token');
-        localStorage.removeItem('fleet_user');
         setUser(null);
         router.push('/login');
     };

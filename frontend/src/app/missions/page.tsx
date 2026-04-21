@@ -10,6 +10,7 @@ import { cn, formatDate, formatSmartCurrency } from '@/lib/utils';
 import { toast, Toaster } from 'sonner';
 import { useMissions, useVehicles, useDrivers, useFuelCards, useFuelVouchers } from '@/hooks/useFleetStore';
 import { Loader2 } from 'lucide-react';
+import { exportToCSV } from '@/lib/table-utils';
 
 import { MissionCreateModal } from '@/components/missions/MissionCreateModal';
 import { MissionCheckOutModal } from '@/components/missions/MissionCheckOutModal';
@@ -38,11 +39,32 @@ export default function MissionsPage() {
     const [isDetailOpen, setIsDetailOpen] = useState(false);
     const [selectedMission, setSelectedMission] = useState<Mission | null>(null);
 
-    const filteredMissions = missions.filter(m =>
-        m.destination.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        m.vehicule?.immatriculation.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        m.chauffeur?.nom.toLowerCase().includes(searchTerm.toLowerCase())
-    );    const columns = [
+    const [statusFilter, setStatusFilter] = useState<string>('ALL');
+
+    const filteredMissions = missions.filter(m => {
+        const matchesSearch = m.destination.toLowerCase().includes(searchTerm.toLowerCase()) ||
+            m.vehicule?.immatriculation.toLowerCase().includes(searchTerm.toLowerCase()) ||
+            m.chauffeur?.nom.toLowerCase().includes(searchTerm.toLowerCase());
+        
+        const matchesStatus = statusFilter === 'ALL' || m.statut === statusFilter;
+        
+        return matchesSearch && matchesStatus;
+    });
+
+    const handleExport = () => {
+        const exportData = filteredMissions.map(m => ({
+            Destination: m.destination,
+            Vehicule: m.vehicule?.immatriculation || '',
+            Chauffeur: `${m.chauffeur?.prenom} ${m.chauffeur?.nom}`,
+            Date_Depart: m.dateDepart,
+            Date_Retour: m.dateRetour,
+            Statut: m.statut,
+            Dotation: m.typeCarburantDotation
+        }));
+        exportToCSV(exportData, 'registre_missions');
+        toast.success('Export CSV généré');
+    };
+    const columns = [
         {
             key: 'destination',
             header: 'Ordre de Mission',
@@ -277,10 +299,22 @@ export default function MissionsPage() {
                         />
                     </div>
                     <div className="flex gap-2 w-full sm:w-auto justify-end items-center">
-                        <Button variant="outline" className="h-10 px-4 gap-2 shrink-0 text-xs font-black uppercase tracking-widest rounded-xl">
-                            <Filter className="w-3.5 h-3.5" /> Filtres
-                        </Button>
-                        <Button variant="outline" className="h-10 px-4 gap-2 shrink-0 text-xs font-black uppercase tracking-widest rounded-xl">
+                        <select 
+                            value={statusFilter}
+                            onChange={(e) => setStatusFilter(e.target.value)}
+                            className="h-10 px-3 bg-slate-50 dark:bg-slate-800 border-transparent rounded-xl text-[10px] font-black uppercase tracking-widest outline-none focus:ring-2 focus:ring-fleet-blue/20"
+                        >
+                            <option value="ALL">Tous les Statuts</option>
+                            <option value="PLANIFIEE">Planifiée</option>
+                            <option value="EN_COURS">En Cours</option>
+                            <option value="TERMINEE">Terminée</option>
+                            <option value="ANNULEE">Annulée</option>
+                        </select>
+                        <Button 
+                            variant="outline" 
+                            className="h-10 px-4 gap-2 shrink-0 text-[10px] font-black uppercase tracking-widest rounded-xl hover:bg-fleet-blue hover:text-white transition-all"
+                            onClick={handleExport}
+                        >
                             <Download className="w-3.5 h-3.5" /> Export
                         </Button>
                         <Button className="h-10 px-6 flex items-center gap-2 shadow-xl shadow-fleet-blue/20 transition-all font-black text-xs uppercase tracking-widest shrink-0 rounded-xl" onClick={handleOpenCreate}>
@@ -329,6 +363,7 @@ export default function MissionsPage() {
                 open={isDetailOpen}
                 onOpenChange={setIsDetailOpen}
                 mission={selectedMission}
+                fuelCards={fuelCards}
             />
 
             <Toaster position="top-right" richColors />

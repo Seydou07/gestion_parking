@@ -56,4 +56,11 @@ export class UsersService {
             data: { actif: !user.actif },
         });
     }
+
+    async remove(id: number) {
+        await this.findOne(id); // Ensure user exists
+        return this.prisma.user.delete({
+            where: { id },
+        });
+    }
 }

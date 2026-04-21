@@ -5,7 +5,6 @@ import { Fuel, CreditCard, Ticket, Activity, TrendingUp, Filter, Search, Plus, L
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { DataTable } from '@/components/ui/data-table';
-import { mockFuelCards, mockFuelVouchers, mockMissions } from '@/data/mockData';
 import { cn, formatDate, formatCompactNumber, formatSmartCurrency, formatSmartNumber, formatCurrency } from '@/lib/utils';
 import { FuelCardModal } from '@/components/fuel/FuelCardModal';
 import { FuelCardDetailModal } from '@/components/fuel/FuelCardDetailModal';

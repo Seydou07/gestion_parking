@@ -1,10 +1,8 @@
 "use client";
 
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
-import { VisuallyHidden } from '@radix-ui/react-visually-hidden';
 import { Button } from '@/components/ui/button';
-import { Mission } from '@/types/api';
-import { mockFuelCards, mockFuelVouchers } from '@/data/mockData';
+import { Mission, FuelCard } from '@/types/api';
 import { formatDate, formatSmartCurrency, formatSmartNumber } from '@/lib/utils';
 import { Map, Calendar, Car, User, Fuel, Gauge, FileText, Download, Ticket } from 'lucide-react';
 
@@ -12,12 +10,13 @@ interface MissionDetailModalProps {
     open: boolean;
     onOpenChange: (open: boolean) => void;
     mission: Mission | null;
+    fuelCards?: FuelCard[];
 }
 
-export function MissionDetailModal({ open, onOpenChange, mission }: MissionDetailModalProps) {
+export function MissionDetailModal({ open, onOpenChange, mission, fuelCards = [] }: MissionDetailModalProps) {
     if (!mission) return null;
 
-    const usedCard = mockFuelCards.find(c => c.id === mission.carteCarburantId);
+    const usedCard = fuelCards.find(c => c.id === mission.carteCarburantId);
 
     return (
         <Dialog open={open} onOpenChange={onOpenChange}>

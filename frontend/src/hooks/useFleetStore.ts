@@ -2,7 +2,6 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import { Maintenance, Vehicle, Alert, MaintenanceFormData, Driver, Mission, FuelCard, FuelVoucher } from '@/types/api';
-import { mockVehicles, mockMissions, mockChauffeurs } from '@/data/mockData';
 
 
 import { api } from '@/lib/api';

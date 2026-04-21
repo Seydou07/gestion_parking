@@ -1,4 +1,4 @@
-import { Controller, Get, Patch, Post, Param, Body, ParseIntPipe } from '@nestjs/common';
+import { Controller, Get, Patch, Post, Delete, Param, Body, ParseIntPipe } from '@nestjs/common';
 import { ApiTags } from '@nestjs/swagger';
 import { UsersService } from './users.service';
 import { UserRole } from '@prisma/client';
@@ -31,5 +31,10 @@ export class UsersController {
     @Patch(':id/toggle-active')
     toggleActive(@Param('id', ParseIntPipe) id: number) {
         return this.usersService.toggleActive(id);
+    }
+
+    @Delete(':id')
+    remove(@Param('id', ParseIntPipe) id: number) {
+        return this.usersService.remove(id);
     }
 }

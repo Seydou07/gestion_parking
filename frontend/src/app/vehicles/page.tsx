@@ -5,7 +5,6 @@ import { Plus, Search, Filter, Download, ListFilter } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { DataTable } from '@/components/ui/data-table';
-import { mockVehicles } from '@/data/mockData';
 import { Vehicle, VehicleFormData } from '@/types/api';
 import { cn, formatDate } from '@/lib/utils';
 import { VehicleFormModal } from '@/components/vehicles/VehicleFormModal';
@@ -18,6 +17,7 @@ import StatCard from '@/components/dashboard/StatCard';
 import { useVehicles } from '@/hooks/useFleetStore';
 import { Loader2 } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
+import { exportToCSV } from '@/lib/table-utils';
 
 const statusConfig = {
     DISPONIBLE: { label: 'Disponible', variant: 'success' as const },
@@ -28,7 +28,7 @@ const statusConfig = {
 
 export default function Vehicules() {
     const { vehicles, loading, updateVehicle, refresh } = useVehicles();
-    const { isUtilisateur, canEdit, canViewBudget } = useAuth();
+    const { isUser, canEdit, canViewBudget } = useAuth();
     const [searchTerm, setSearchTerm] = useState('');
     const [formModalOpen, setFormModalOpen] = useState(false);
     const [detailModalOpen, setDetailModalOpen] = useState(false);
@@ -38,11 +38,33 @@ export default function Vehicules() {
     const [formMode, setFormMode] = useState<'create' | 'edit'>('create');
     const [budgetAllocationOpen, setBudgetAllocationOpen] = useState(false);
 
-    const filteredVehicles = vehicles.filter(v =>
-        v.immatriculation.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        v.marque.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        v.modele.toLowerCase().includes(searchTerm.toLowerCase())
-    );
+    const [statusFilter, setStatusFilter] = useState<string>('ALL');
+
+    const filteredVehicles = vehicles.filter(v => {
+        const matchesSearch = v.immatriculation.toLowerCase().includes(searchTerm.toLowerCase()) ||
+            v.marque.toLowerCase().includes(searchTerm.toLowerCase()) ||
+            v.modele.toLowerCase().includes(searchTerm.toLowerCase());
+        
+        const matchesStatus = statusFilter === 'ALL' || v.statut === statusFilter;
+        
+        return matchesSearch && matchesStatus;
+    });
+
+    const handleExport = () => {
+        const exportData = filteredVehicles.map(v => ({
+            Immatriculation: v.immatriculation,
+            Marque: v.marque,
+            Modele: v.modele,
+            Annee: v.annee,
+            Kilometrage: v.kilometrage,
+            Statut: v.statut,
+            Carburant: v.typeCarburant,
+            Budget_Initial: v.budgetAlloue,
+            Budget_Consomme: v.budgetConsomme
+        }));
+        exportToCSV(exportData, 'flotte_vehicules');
+        toast.success('Export CSV généré');
+    };
 
     const columns = [
         {
@@ -225,13 +247,25 @@ export default function Vehicules() {
                         />
                     </div>
                     <div className="flex gap-2 w-full sm:w-auto items-center justify-end">
-                        <Button variant="outline" className="h-10 px-4 gap-2 shrink-0 text-xs font-black uppercase tracking-widest rounded-xl">
-                            <ListFilter className="w-3.5 h-3.5" /> Statut
-                        </Button>
-                        <Button variant="outline" className="h-10 px-4 gap-2 shrink-0 text-xs font-black uppercase tracking-widest rounded-xl">
+                        <select 
+                            value={statusFilter}
+                            onChange={(e) => setStatusFilter(e.target.value)}
+                            className="h-10 px-3 bg-slate-50 dark:bg-slate-800 border border-slate-100 dark:border-slate-700 rounded-xl text-[10px] font-black uppercase tracking-widest outline-none focus:ring-2 focus:ring-fleet-blue/20"
+                        >
+                            <option value="ALL">Tous les Statuts</option>
+                            <option value="DISPONIBLE">Disponible</option>
+                            <option value="EN_MISSION">En Mission</option>
+                            <option value="EN_MAINTENANCE">Maintenance</option>
+                            <option value="HORS_SERVICE">Hors Service</option>
+                        </select>
+                        <Button 
+                            variant="outline" 
+                            className="h-10 px-4 gap-2 shrink-0 text-[10px] font-black uppercase tracking-widest rounded-xl hover:bg-fleet-blue hover:text-white transition-all"
+                            onClick={handleExport}
+                        >
                             <Download className="w-3.5 h-3.5" /> Export
                         </Button>
-                        {!isUtilisateur && (
+                        {!isUser && (
                             <Button className="h-10 px-6 flex items-center gap-2 shadow-xl shadow-fleet-blue/20 transition-all font-black text-xs uppercase tracking-widest shrink-0 rounded-xl" onClick={handleAdd}>
                                 <Plus className="w-4 h-4" /> Nouveau Véhicule
                             </Button>

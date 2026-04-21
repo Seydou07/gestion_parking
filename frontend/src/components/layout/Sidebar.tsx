@@ -28,7 +28,7 @@ interface SidebarProps {
 
 const Sidebar = ({ isOpen }: SidebarProps) => {
     const pathname = usePathname();
-    const { isUtilisateur } = useAuth();
+    const { isUser } = useAuth();
 
     const menuItems = [
         { name: "Dashboard", icon: LayoutDashboard, href: "/dashboard" },
@@ -44,7 +44,7 @@ const Sidebar = ({ isOpen }: SidebarProps) => {
     ];
 
     const isAllowed = (name: string) => {
-        if (!isUtilisateur) return true;
+        if (!isUser) return true;
         return name === "Véhicules" || name === "Chauffeurs";
     };
 

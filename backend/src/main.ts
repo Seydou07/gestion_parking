@@ -2,6 +2,7 @@ import { NestFactory } from '@nestjs/core';
 import { ValidationPipe, BadRequestException } from '@nestjs/common';
 import { SwaggerModule, DocumentBuilder } from '@nestjs/swagger';
 import { AppModule } from './app.module';
+import { PrismaService } from './prisma/prisma.service';
 
 async function bootstrap() {
     const app = await NestFactory.create(AppModule);
@@ -66,6 +67,29 @@ async function bootstrap() {
 
     const port = process.env.PORT || 3001;
     await app.listen(port, '0.0.0.0');
+
+    // --- SEED DE SECOURS (Startup Seed) ---
+    // Si aucun utilisateur n'existe, on crée l'admin par défaut
+    const prisma = app.get(PrismaService);
+    const userCount = await prisma.user.count();
+    if (userCount === 0) {
+        console.log('🏁 [Startup Seed] Database empty. Creating default admin...');
+        const bcrypt = await import('bcrypt');
+        const hashedPassword = await bcrypt.hash('admin_123', 10);
+        await prisma.user.create({
+            data: {
+                email: 'admin@admin.com',
+                username: 'admin_fleet',
+                nom: 'SYSTEM',
+                prenom: 'ADMIN',
+                password: hashedPassword,
+                role: 'ROOT_ADMIN' as any,
+                actif: true
+            }
+        });
+        console.log('✅ [Startup Seed] Admin user created: admin_fleet / admin_123');
+    }
+
     console.log('--- FLEET GUARDIAN SERVER IS RUNNING (VER 2.0) ---');
     console.log(`Application is running on port: ${port}`);
     console.log(`📚 Swagger docs at http://localhost:${port}/api`);

@@ -10,14 +10,15 @@ async function bootstrap() {
     const frontendUrl = process.env.FRONTEND_URL;
     const allowedOrigins: (string | RegExp)[] = [
         /http:\/\/localhost:\d+/,
+        /https:\/\/.*\.vercel\.app/, // Autorise tous les domaines Vercel par précaution
     ];
 
     if (frontendUrl) {
-        // Handle comma-separated list of URLs and trailing slashes
         const origins = frontendUrl.split(',').map(url => url.trim());
         origins.forEach(url => {
             const cleanUrl = url.replace(/\/$/, '');
-            // Allow both exact match and match with trailing slash
+            allowedOrigins.push(cleanUrl); // Ajout direct de la chaîne pour plus de fiabilité
+            // Conserver aussi le regex pour gérer le slash final optionnel
             allowedOrigins.push(new RegExp(`^${cleanUrl.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}/?$`));
         });
     }
@@ -26,6 +27,7 @@ async function bootstrap() {
         origin: allowedOrigins,
         methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE'],
         credentials: true,
+        allowedHeaders: ['Content-Type', 'Authorization', 'Accept'],
     });
 
 

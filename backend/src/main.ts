@@ -57,9 +57,9 @@ async function bootstrap() {
     SwaggerModule.setup('api', app, document);
 
     const port = process.env.PORT || 3001;
-    await app.listen(port);
+    await app.listen(port, '0.0.0.0');
     console.log('--- FLEET GUARDIAN SERVER IS RUNNING (VER 2.0) ---');
-    console.log(`Application is running on: ${await app.getUrl()}`);
+    console.log(`Application is running on port: ${port}`);
     console.log(`📚 Swagger docs at http://localhost:${port}/api`);
 }
 bootstrap();

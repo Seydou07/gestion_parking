@@ -255,10 +255,36 @@ export default function FuelPage() {
             {activeTab === 'VUE_DENSEMBLE' && (
                 <div className="space-y-12 animate-fade-in">
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-                        <StatCard title="Budget Total Disponible" value={budgetTotal} icon={Wallet} variant="success" />
-                        <StatCard title="Total Consommé" value={totalConsomme} icon={ArrowUpRight} variant="danger" />
-                        <StatCard title="Cartes Actives" value={cards.length} icon={CreditCard} variant="info" isCurrency={false} />
-                        <StatCard title="Bons en Stock" value={vouchers.filter(v => v.statut === 'DISPONIBLE').length} icon={Ticket} variant="warning" isCurrency={false} />
+                        <StatCard 
+                            title="Budget Total Disponible" 
+                            value={budgetTotal} 
+                            exactValue={`${formatCurrency(budgetTotal)} disponibles au total`}
+                            icon={Wallet} 
+                            variant="success" 
+                        />
+                        <StatCard 
+                            title="Total Consommé" 
+                            value={totalConsomme} 
+                            exactValue={`${formatCurrency(totalConsomme)} consommés ce mois-ci`}
+                            icon={ArrowUpRight} 
+                            variant="danger" 
+                        />
+                        <StatCard 
+                            title="Cartes Actives" 
+                            value={cards.length} 
+                            exactValue={`${cards.length} cartes enregistrées`}
+                            icon={CreditCard} 
+                            variant="info" 
+                            isCurrency={false} 
+                        />
+                        <StatCard 
+                            title="Bons en Stock" 
+                            value={vouchers.filter(v => v.statut === 'DISPONIBLE').length} 
+                            exactValue={`${vouchers.filter(v => v.statut === 'DISPONIBLE').length} bons disponibles immédiatement`}
+                            icon={Ticket} 
+                            variant="warning" 
+                            isCurrency={false} 
+                        />
                     </div>
 
                     {/* Section: MONITORING DES CARTES (MASTER CLASS) */}

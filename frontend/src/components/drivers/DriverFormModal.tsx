@@ -23,11 +23,10 @@ export function DriverFormModal({ open, onOpenChange, onSubmit, initialData, mod
         nom: '',
         prenom: '',
         telephone: '',
-        email: '',
         statut: 'DISPONIBLE',
         permisNumero: '',
         permisExpiration: '',
-        dateEmbauche: '',
+        permisCategories: '',
         notes: '',
     });
 
@@ -39,11 +38,10 @@ export function DriverFormModal({ open, onOpenChange, onSubmit, initialData, mod
                 nom: '',
                 prenom: '',
                 telephone: '',
-                email: '',
                 statut: 'DISPONIBLE',
                 permisNumero: '',
                 permisExpiration: '',
-                dateEmbauche: '',
+                permisCategories: '',
                 notes: '',
             });
         }
@@ -117,17 +115,6 @@ export function DriverFormModal({ open, onOpenChange, onSubmit, initialData, mod
                                         />
                                     </div>
                                 </div>
-                                <div className="space-y-1.5">
-                                    <Label htmlFor="email" className="text-[10px] font-black uppercase text-slate-400 ml-1">Email Professionnel</Label>
-                                    <Input
-                                        id="email"
-                                        type="email"
-                                        value={formData.email}
-                                        onChange={(e) => updateField('email', e.target.value)}
-                                        placeholder="agent@fleet.com"
-                                        className="h-9 px-4 rounded-xl border-slate-200 focus:border-fleet-blue font-bold text-xs"
-                                    />
-                                </div>
                             </div>
                         </div>
 
@@ -160,12 +147,12 @@ export function DriverFormModal({ open, onOpenChange, onSubmit, initialData, mod
                                     />
                                 </div>
                                 <div className="space-y-1.5">
-                                    <Label htmlFor="dateEmbauche" className="text-[10px] font-black uppercase text-slate-400 ml-1">Date d'embauche</Label>
+                                    <Label htmlFor="permisCategories" className="text-[10px] font-black uppercase text-slate-400 ml-1">Catégories Permis</Label>
                                     <Input
-                                        id="dateEmbauche"
-                                        type="date"
-                                        value={formData.dateEmbauche}
-                                        onChange={(e) => updateField('dateEmbauche', e.target.value)}
+                                        id="permisCategories"
+                                        value={formData.permisCategories}
+                                        onChange={(e) => updateField('permisCategories', e.target.value)}
+                                        placeholder="Ex: A, B, C1"
                                         className="h-9 px-4 rounded-xl border-slate-200 focus:border-fleet-blue font-bold text-xs"
                                     />
                                 </div>

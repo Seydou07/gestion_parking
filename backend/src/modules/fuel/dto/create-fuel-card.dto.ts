@@ -24,6 +24,14 @@ export class CreateFuelCardDto {
     @IsOptional()
     prixLitre?: number;
 
+    @IsNumber()
+    @IsOptional()
+    prixDiesel?: number;
+
+    @IsNumber()
+    @IsOptional()
+    prixSuper?: number;
+
     @Type(() => Date)
     @IsDate()
     @IsNotEmpty()

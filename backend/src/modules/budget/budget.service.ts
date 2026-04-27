@@ -379,7 +379,6 @@ export class BudgetService {
       maintenances: maintenances.sort((a, b) => b.dateDebut.getTime() - a.dateDebut.getTime()),
       fuelRecords: fuelRecords.sort((a, b) => b.date.getTime() - a.date.getTime()),
     };
-    console.log('DEBUG Budget Response for vehicle', vehicleId, ':', JSON.stringify(response).substring(0, 100) + '...');
     return response;
   }
 }

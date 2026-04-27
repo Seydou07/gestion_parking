@@ -44,8 +44,8 @@ async function bootstrap() {
 
     // Swagger API Documentation
     const config = new DocumentBuilder()
-        .setTitle('CCVA Fleet Management API')
-        .setDescription('API de gestion de flotte automobile du CCVA')
+        .setTitle('FleetGuardian API')
+        .setDescription('API de gestion de flotte automobile')
         .setVersion('1.0')
         .addBearerAuth()
         .build();

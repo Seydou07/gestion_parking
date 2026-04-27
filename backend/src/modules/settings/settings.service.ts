@@ -24,7 +24,7 @@ export class SettingsService implements OnModuleInit {
         const settings = await this.prisma.systemSettings.findUnique({ where: { id: 1 } });
         return settings || { 
             id: 1, 
-            nomEntreprise: "CCVA Fleet", 
+            nomEntreprise: "Fleet Management", 
             devise: "FCFA",
             alerteStockCarburant: 10,
             seuilVidangeKm: 5000,

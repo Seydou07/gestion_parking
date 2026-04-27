@@ -15,7 +15,6 @@ export class DriversService {
         const data: any = { ...createDriverDto };
         if (data.permisExpiration) data.permisExpiration = new Date(data.permisExpiration);
         if (data.dateNaissance) data.dateNaissance = new Date(data.dateNaissance);
-        if (data.dateEmbauche) data.dateEmbauche = new Date(data.dateEmbauche);
         
         const driver = await this.prisma.driver.create({ data });
         await this.historyService.log(
@@ -51,7 +50,6 @@ export class DriversService {
         const data: any = { ...updateDriverDto };
         if (data.permisExpiration) data.permisExpiration = new Date(data.permisExpiration);
         if (data.dateNaissance) data.dateNaissance = new Date(data.dateNaissance);
-        if (data.dateEmbauche) data.dateEmbauche = new Date(data.dateEmbauche);
         
         const driver = await this.prisma.driver.update({
             where: { id },

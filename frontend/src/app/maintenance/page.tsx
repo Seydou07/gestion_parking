@@ -211,7 +211,7 @@ export default function MaintenancePage() {
                 <StatCard
                     title="Coûts de Maintenance"
                     value={totalCouts}
-                    exactValue={formatCurrency(totalCouts)}
+                    exactValue={`${formatCurrency(totalCouts)} dépensés en entretien au total`}
                     icon={TrendingUp}
                     trend={{ value: 12, isPositive: true }}
                     variant="info"
@@ -220,7 +220,7 @@ export default function MaintenancePage() {
                 <StatCard
                     title="Alertes Actives"
                     value={maintenanceAlerts.length}
-                    exactValue={maintenanceAlerts.length}
+                    exactValue={`${maintenanceAlerts.length} véhicules nécessitant une vidange ou révision`}
                     icon={AlertTriangle}
                     variant="warning"
                     isCurrency={false}
@@ -229,7 +229,7 @@ export default function MaintenancePage() {
                 <StatCard
                     title="Véhicules Immobilisés"
                     value={vehiculesEnMaintenance}
-                    exactValue={vehiculesEnMaintenance}
+                    exactValue={`${vehiculesEnMaintenance} véhicules actuellement au garage`}
                     icon={Wrench}
                     variant="danger"
                     isCurrency={false}

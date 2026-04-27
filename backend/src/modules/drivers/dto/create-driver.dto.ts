@@ -33,9 +33,6 @@ export class CreateDriverDto {
     @IsNotEmpty()
     telephone: string;
 
-    @ApiProperty({ example: 'issa.traore@ccva.bf' })
-    @IsEmail()
-    email: string;
 
     @ApiProperty({ enum: DriverStatus })
     @IsEnum(DriverStatus)
@@ -52,10 +49,6 @@ export class CreateDriverDto {
     @IsOptional()
     adresse?: string;
 
-    @ApiProperty()
-    @IsDateString()
-    @IsOptional()
-    dateEmbauche?: string;
 
     @ApiProperty()
     @IsString()

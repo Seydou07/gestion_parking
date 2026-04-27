@@ -80,11 +80,9 @@ model Driver {
   permisExpiration DateTime
   permisCategories String?
   telephone        String
-  email            String       @unique
   statut           DriverStatus @default(DISPONIBLE)
   dateNaissance    DateTime?
   adresse          String?
-  dateEmbauche     DateTime?
   notes            String?      @db.Text
   createdAt        DateTime     @default(now())
   updatedAt        DateTime     @updatedAt
@@ -270,7 +268,7 @@ model HistoryLog {
 
 model SystemSettings {
   id                    Int      @id @default(1)
-  nomEntreprise         String   @default("CCVA Fleet")
+  nomEntreprise         String   @default("Fleet Guardian")
   devise                String   @default("FCFA")
   alerteStockCarburant  Int      @default(10000)
   seuilVidangeKm        Int      @default(5000)

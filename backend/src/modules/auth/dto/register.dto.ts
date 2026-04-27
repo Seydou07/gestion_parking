@@ -11,7 +11,7 @@ export class RegisterDto {
     @IsNotEmpty()
     prenom: string;
 
-    @ApiProperty({ example: 'j.doe@ccva.bf' })
+    @ApiProperty({ example: 'nom@entreprise.com' })
     @IsEmail()
     email: string;
 

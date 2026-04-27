@@ -98,7 +98,7 @@ export function UserFormModal({ isOpen, onClose, onSuccess, user }: UserFormModa
                             <UserPlus className="w-8 h-8" /> Nouveau Compte
                         </DialogTitle>
                         <DialogDescription className="text-blue-100 font-medium">
-                            Enregistrez un nouvel utilisateur pour accéder à la plateforme.
+                            Enregistrez un nouvel utilisateur pour accéder à la plateforme de gestion de flotte.
                         </DialogDescription>
                     </DialogHeader>
                 </div>
@@ -155,7 +155,7 @@ export function UserFormModal({ isOpen, onClose, onSuccess, user }: UserFormModa
                                 <Input
                                     id="email"
                                     type="email"
-                                    placeholder="amadou.s@ccva.bf"
+                                    placeholder="nom.prenom@entreprise.com"
                                     className="pl-12 h-12 bg-white dark:bg-slate-950 border-slate-100 dark:border-slate-800 rounded-2xl font-bold text-xs"
                                     value={formData.email}
                                     onChange={(e) => setFormData({ ...formData, email: e.target.value })}

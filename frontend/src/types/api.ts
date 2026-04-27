@@ -77,6 +77,7 @@ export interface Driver {
     statut: DriverStatus;
     permisNumero: string;
     permisExpiration: string;
+    permisCategories?: string;
     dateEmbauche?: string;
     notes?: string;
     missions?: Mission[];
@@ -86,11 +87,10 @@ export interface DriverFormData {
     nom: string;
     prenom: string;
     telephone: string;
-    email: string;
     statut: DriverStatus;
     permisNumero: string;
     permisExpiration: string;
-    dateEmbauche?: string;
+    permisCategories?: string;
     notes?: string;
 }
 

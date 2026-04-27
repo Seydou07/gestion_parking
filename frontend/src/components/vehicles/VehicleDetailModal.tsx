@@ -48,7 +48,7 @@ const statusConfig = {
 };
 
 export function VehicleDetailModal({ open, onOpenChange, vehicle, onEdit, onRenewInsurance, onRenewControl }: VehicleDetailModalProps) {
-    const { isUtilisateur, canViewBudget } = useAuth();
+    const { isUser, canViewBudget } = useAuth();
     const [budgetData, setBudgetData] = useState<VehicleBudget | null>(null);
     const [analyticsData, setAnalyticsData] = useState<any>(null);
     const [loadingBudget, setLoadingBudget] = useState(false);
@@ -298,7 +298,7 @@ export function VehicleDetailModal({ open, onOpenChange, vehicle, onEdit, onRene
                                                 {formatDate(vehicle.assuranceExpiration)}
                                             </p>
                                         </div>
-                                        {onRenewInsurance && !isUtilisateur && (
+                                        {onRenewInsurance && !isUser && (
                                             <Button size="sm" variant="outline" className="h-7 text-[9px] px-3 font-black uppercase border-amber-200 text-amber-600 hover:bg-amber-50" onClick={() => onRenewInsurance(vehicle)}>
                                                 Renouveler
                                             </Button>
@@ -311,7 +311,7 @@ export function VehicleDetailModal({ open, onOpenChange, vehicle, onEdit, onRene
                                                 {formatDate(vehicle.prochainControle)}
                                             </p>
                                         </div>
-                                        {onRenewControl && !isUtilisateur && (
+                                        {onRenewControl && !isUser && (
                                             <Button size="sm" variant="outline" className="h-7 text-[9px] px-3 font-black uppercase border-amber-200 text-amber-600 hover:bg-amber-50" onClick={() => onRenewControl(vehicle)}>
                                                 Renouveler
                                             </Button>

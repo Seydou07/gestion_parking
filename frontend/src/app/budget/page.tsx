@@ -171,11 +171,11 @@ export default function BudgetPage() {
         <div className="space-y-10 pb-20 animate-fade-in">
             {/* Header / Stats Grid */}
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 xl:grid-cols-5 gap-6">
-                <StatCard title="Budget Total" value={maintenance.initialEnvelope} icon={Wallet} variant="info" />
-                <StatCard title="Budget Consommé" value={maintenance.totalAllocatedToVehicles} icon={TrendingUp} variant="warning" />
-                <StatCard title="Budget Restant" value={maintenance.currentPool} icon={ShieldCheck} variant="success" />
-                <StatCard title="Bons d'essence" value={fuelVouchers.totalValue} icon={Ticket} variant="default" extraValue={`${fuelVouchers.count} bons`} />
-                <StatCard title="Cartes Carburant" value={fuelCards.totalBalance} icon={CreditCard} variant="default" extraValue={`${fuelCards.count} cartes`} />
+                <StatCard title="Budget Total" value={maintenance.initialEnvelope} exactValue={`${formatCurrency(maintenance.initialEnvelope)} alloués pour l'année`} icon={Wallet} variant="info" />
+                <StatCard title="Budget Consommé" value={maintenance.totalAllocatedToVehicles} exactValue={`${formatCurrency(maintenance.totalAllocatedToVehicles)} consommés par les véhicules`} icon={TrendingUp} variant="warning" />
+                <StatCard title="Budget Restant" value={maintenance.currentPool} exactValue={`${formatCurrency(maintenance.currentPool)} disponibles dans le pool`} icon={ShieldCheck} variant="success" />
+                <StatCard title="Bons d'essence" value={fuelVouchers.totalValue} exactValue={`${formatCurrency(fuelVouchers.totalValue)} en stock (${fuelVouchers.count} bons)`} icon={Ticket} variant="default" extraValue={`${fuelVouchers.count} bons`} />
+                <StatCard title="Cartes Carburant" value={fuelCards.totalBalance} exactValue={`${formatCurrency(fuelCards.totalBalance)} total sur les cartes (${fuelCards.count} cartes)`} icon={CreditCard} variant="default" extraValue={`${fuelCards.count} cartes`} />
             </div>
 
             {/* SECTIONS ANALYTIQUES (INTELLIGENCE FLOTTE) */}

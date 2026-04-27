@@ -66,7 +66,7 @@ async function seedDemographics() {
     console.log('📦 [Demo] Seeding organizational data...');
 
     // Demo Gestionnaire
-    const gestEmail = 'gestionnaire@ccva.bf';
+    const gestEmail = 'gestionnaire@fleetguardian.com';
     const existingGest = await prisma.user.findUnique({ where: { email: gestEmail } });
     
     if (!existingGest) {
@@ -87,51 +87,60 @@ async function seedDemographics() {
     }
 
     // Demo Vehicles
-    console.log('🚗 [Demo] Seeding vehicles...');
+    console.log('--- 🛡️ FLEET GUARDIAN SEEDING INITIALIZED ---');
+    // --- Véhicules ---
     const vehiclesData = [
-        {
-            immatriculation: '11 HJ 4567',
-            marque: 'Toyota',
-            modele: 'Land Cruiser',
-            annee: 2021,
-            kilometrage: 12500,
-            statut: VehicleStatus.DISPONIBLE,
-            typeCarburant: FuelType.DIESEL,
-            assuranceExpiration: new Date('2026-12-31'),
-            prochainControle: new Date('2026-06-30'),
-            budgetAlloue: 5000000,
-        },
-        {
-            immatriculation: '22 KK 7890',
-            marque: 'Mitsubishi',
-            modele: 'L200',
-            annee: 2022,
-            kilometrage: 8400,
-            statut: VehicleStatus.DISPONIBLE,
-            typeCarburant: FuelType.DIESEL,
-            assuranceExpiration: new Date('2026-10-15'),
-            prochainControle: new Date('2026-04-15'),
-            budgetAlloue: 3000000,
-        }
+        { immatriculation: '5283D4 03', marque: 'TOYOTA', modele: 'HILUX', annee: 2022, typeCarburant: FuelType.DIESEL, couleur: 'Blanc', transmission: 'MANUELLE' },
+        { immatriculation: '1459F2 03', marque: 'MITSUBISHI', modele: 'L200', annee: 2021, typeCarburant: FuelType.DIESEL, couleur: 'Gris', transmission: 'MANUELLE' },
+        { immatriculation: '8921G5 03', marque: 'FORD', modele: 'RANGER', annee: 2023, typeCarburant: FuelType.DIESEL, couleur: 'Noir', transmission: 'AUTOMATIQUE' },
+        { immatriculation: '3372K1 03', marque: 'ISUZU', modele: 'D-MAX', annee: 2020, typeCarburant: FuelType.DIESEL, couleur: 'Bleu', transmission: 'MANUELLE' },
+        { immatriculation: '6610H8 03', marque: 'TOYOTA', modele: 'PRADO', annee: 2022, typeCarburant: FuelType.DIESEL, couleur: 'Blanc', transmission: 'AUTOMATIQUE' },
+        { immatriculation: '7723M4 03', marque: 'HYUNDAI', modele: 'TUCSON', annee: 2021, typeCarburant: FuelType.ESSENCE, couleur: 'Rouge', transmission: 'AUTOMATIQUE' },
+        { immatriculation: '2288L9 03', marque: 'KIA', modele: 'SPORTAGE', annee: 2022, typeCarburant: FuelType.ESSENCE, couleur: 'Argent', transmission: 'AUTOMATIQUE' },
+        { immatriculation: '1144J2 03', marque: 'SUZUKI', modele: 'GRAND VITARA', annee: 2019, typeCarburant: FuelType.ESSENCE, couleur: 'Marron', transmission: 'MANUELLE' },
+        { immatriculation: '9955P7 03', marque: 'NISSAN', modele: 'PATROL', annee: 2023, typeCarburant: FuelType.DIESEL, couleur: 'Blanc', transmission: 'AUTOMATIQUE' },
+        { immatriculation: '4433E1 03', marque: 'RENAULT', modele: 'DUSTER', annee: 2021, typeCarburant: FuelType.ESSENCE, couleur: 'Orange', transmission: 'MANUELLE' },
+        { immatriculation: '5566T8 03', marque: 'TOYOTA', modele: 'LAND CRUISER', annee: 2024, typeCarburant: FuelType.DIESEL, couleur: 'Noir', transmission: 'AUTOMATIQUE' },
+        { immatriculation: '8899W3 03', marque: 'MERCEDES', modele: 'G-CLASS', annee: 2022, typeCarburant: FuelType.DIESEL, couleur: 'Vert Mat', transmission: 'AUTOMATIQUE' },
+        { immatriculation: '1234X5 03', marque: 'VOLVO', modele: 'XC90', annee: 2023, typeCarburant: FuelType.HYBRIDE, couleur: 'Bleu Marine', transmission: 'AUTOMATIQUE' },
+        { immatriculation: '6789Y2 03', marque: 'TESLA', modele: 'MODEL X', annee: 2023, typeCarburant: FuelType.ELECTRIQUE, couleur: 'Blanc Perle', transmission: 'AUTOMATIQUE' },
+        { immatriculation: '1010Z0 03', marque: 'PEUGEOT', modele: '3008', annee: 2021, typeCarburant: FuelType.ESSENCE, couleur: 'Gris Platinium', transmission: 'AUTOMATIQUE' },
     ];
 
-    for (const v of vehiclesData) {
+    for (const vData of vehiclesData) {
+        const enrichedData = {
+            ...vData,
+            kilometrage: Math.floor(Math.random() * 100000),
+            capaciteReservoir: vData.typeCarburant === 'DIESEL' ? 80 : 60,
+            numeroChassis: `CHAS${Math.random().toString(36).substring(2, 12).toUpperCase()}`,
+            dateAcquisition: new Date(vData.annee, 0, 1),
+            prixAcquisition: 12000000 + Math.floor(Math.random() * 20000000),
+            notes: 'Véhicule de service actif - État général bon',
+            assuranceNumero: `POL-${Math.random().toString(36).substring(2, 8).toUpperCase()}`,
+            assuranceCompagnie: 'SONAR',
+            assuranceExpiration: new Date('2025-12-31'),
+            prochainControle: new Date('2025-08-15'),
+            budgetAlloue: 1000000,
+            budgetConsomme: 0,
+            derniereVidangeKilometrage: 0,
+            frequenceVidange: 5000,
+        };
+
         await prisma.vehicle.upsert({
-            where: { immatriculation: v.immatriculation },
-            update: {},
-            create: v,
+            where: { immatriculation: vData.immatriculation },
+            update: enrichedData,
+            create: enrichedData,
         });
     }
 
     // Demo Drivers
     console.log('👨‍✈️ [Demo] Seeding drivers...');
     await prisma.driver.upsert({
-        where: { email: 'chauffeur1@ccva.bf' },
+        where: { permisNumero: 'P1234567' },
         update: {},
         create: {
             nom: 'Ouédraogo',
             prenom: 'Salif',
-            email: 'chauffeur1@ccva.bf',
             telephone: '+226 70 12 34 56',
             permisNumero: 'P1234567',
             permisExpiration: new Date('2028-01-01'),
@@ -142,14 +151,16 @@ async function seedDemographics() {
     // Demo Fuel Card
     console.log('💳 [Demo] Seeding fuel cards...');
     await prisma.fuelCard.upsert({
-        where: { numero: 'CARD-CCVA-001' },
+        where: { numero: 'CARD-FLEET-001' },
         update: {},
         create: {
-            numero: 'CARD-CCVA-001',
+            numero: 'CARD-FLEET-001',
             soldeInitial: 1000000,
             solde: 850000,
             dateExpiration: new Date('2027-01-01'),
             fournisseur: 'TOTAL',
+            prixDiesel: 675,
+            prixSuper: 750,
         },
     });
 }

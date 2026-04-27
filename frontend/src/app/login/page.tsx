@@ -56,13 +56,14 @@ export default function LoginPage() {
             <div className="hidden lg:flex lg:w-1/2 relative overflow-hidden items-center justify-center p-20">
                 <div className="absolute inset-0 z-0 bg-slate-900">
                     <div className="absolute inset-0 bg-gradient-to-br from-fleet-blue/90 via-slate-900/80 to-black/90 z-10"></div>
-                    <Image 
-                        src="https://images.unsplash.com/photo-1506521781263-d8422e82f27a?q=80&w=2070&auto=format&fit=crop" 
-                        alt="Parking Background" 
-                        fill 
-                        className="object-cover"
-                        priority
-                    />
+                        <Image 
+                            src="https://images.unsplash.com/photo-1506521781263-d8422e82f27a?q=80&w=2070&auto=format&fit=crop" 
+                            alt="Parking Background" 
+                            fill 
+                            className="object-cover"
+                            priority
+                            sizes="(max-width: 1024px) 100vw, 50vw"
+                        />
                 </div>
 
                 <div className="relative z-10 text-white max-w-lg">

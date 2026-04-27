@@ -24,7 +24,7 @@ const statusConfig = {
 };
 
 export function DriverDetailModal({ open, onOpenChange, driver, onEdit }: DriverDetailModalProps) {
-    const { isUtilisateur } = useAuth();
+    const { isUser } = useAuth();
     if (!driver) return null;
 
     const today = new Date();
@@ -33,6 +33,13 @@ export function DriverDetailModal({ open, onOpenChange, driver, onEdit }: Driver
     const permisWarning = !permisExpired && (permisDate.getTime() - today.getTime()) / (1000 * 60 * 60 * 24) <= 30;
 
     const status = statusConfig[driver.statut];
+    
+    // Mission counts
+    const startOfMonth = new Date(today.getFullYear(), today.getMonth(), 1);
+    const missionsThisMonth = driver.missions?.filter(m => {
+        const missionDate = new Date(m.dateDepart);
+        return missionDate >= startOfMonth;
+    }).length || 0;
 
     return (
         <Dialog open={open} onOpenChange={onOpenChange}>
@@ -108,38 +115,49 @@ export function DriverDetailModal({ open, onOpenChange, driver, onEdit }: Driver
                                             <p className="text-sm font-bold">{driver.telephone}</p>
                                         </div>
                                     </div>
-                                    {driver.email && (
-                                        <div className="flex items-center gap-3">
-                                            <div className="p-1.5 rounded-lg bg-slate-50 dark:bg-slate-800 text-slate-400"><Mail className="w-3.5 h-3.5" /></div>
-                                            <div>
-                                                <p className="text-[9px] font-black uppercase text-slate-400">Email PRO</p>
-                                                <p className="text-sm font-bold truncate max-w-[150px]">{driver.email}</p>
-                                            </div>
-                                        </div>
-                                    )}
+                                </div>
+                            </div>
+
+                            {/* Flux Mensuel */}
+                            <div className="p-5 bg-gradient-to-br from-indigo-600 to-fleet-blue rounded-2xl shadow-lg border border-white/10 text-white overflow-hidden relative group">
+                                <div className="absolute top-0 right-0 p-4 opacity-10 group-hover:scale-110 transition-transform">
+                                    <Car className="w-20 h-20" />
+                                </div>
+                                <h4 className="text-[9px] font-black uppercase tracking-[0.2em] mb-4 flex items-center gap-2 text-white/70">
+                                    <CalendarDays className="w-3.5 h-3.5" />
+                                    Flux Mensuel
+                                </h4>
+                                <div className="flex items-end gap-3">
+                                    <div className="text-4xl font-black leading-none">{missionsThisMonth}</div>
+                                    <div className="mb-1">
+                                        <p className="text-[10px] font-black uppercase leading-none opacity-70">Missions</p>
+                                        <p className="text-[8px] font-medium opacity-50 mt-1 italic capitalize">Enregistrées ce mois</p>
+                                    </div>
+                                </div>
+                                <div className="mt-6 flex items-center gap-2">
+                                    <div className="h-1.5 flex-1 bg-white/10 rounded-full overflow-hidden">
+                                        <div 
+                                            className="h-full bg-white shadow-[0_0_10px_rgba(255,255,255,0.5)] transition-all duration-1000" 
+                                            style={{ width: `${Math.min((missionsThisMonth / 10) * 100, 100)}%` }}
+                                        ></div>
+                                    </div>
+                                    <span className="text-[9px] font-black opacity-70">{missionsThisMonth}/10</span>
                                 </div>
                             </div>
 
                             {/* HR Info */}
-                            {!isUtilisateur && (
+                            {!isUser && (
                                 <div className="p-5 bg-white dark:bg-slate-900 rounded-2xl shadow-sm border border-slate-100 dark:border-slate-800">
                                     <h4 className="text-[9px] font-black text-slate-400 uppercase tracking-[0.2em] mb-4 flex items-center gap-2">
-                                        <CalendarDays className="w-3.5 h-3.5 text-emerald-500" />
+                                        <IdCard className="w-3.5 h-3.5 text-indigo-500" />
                                         Administration
                                     </h4>
                                     <div className="space-y-3">
                                         <div className="flex items-center gap-3">
-                                            <div className="p-1.5 rounded-lg bg-slate-50 dark:bg-slate-800 text-slate-400"><CalendarDays className="w-3.5 h-3.5" /></div>
+                                            <div className="p-1.5 rounded-lg bg-slate-50 dark:bg-slate-800 text-slate-400"><IdCard className="w-3.5 h-3.5" /></div>
                                             <div>
-                                                <p className="text-[9px] font-black uppercase text-slate-400">Date d'embauche</p>
-                                                <p className="text-sm font-bold">{driver.dateEmbauche ? formatDate(driver.dateEmbauche) : 'N/A'}</p>
-                                            </div>
-                                        </div>
-                                        <div className="flex items-center gap-3">
-                                            <div className="p-1.5 rounded-lg bg-slate-50 dark:bg-slate-800 text-slate-400"><Droplet className="w-3.5 h-3.5 text-rose-400" /></div>
-                                            <div>
-                                                <p className="text-[9px] font-black uppercase text-slate-400">Groupe Sanguin</p>
-                                                <p className="text-sm font-bold">A+</p> {/* Example static, if not in type */}
+                                                <p className="text-[9px] font-black uppercase text-slate-400">Catégories de Permis</p>
+                                                <p className="text-sm font-bold">{driver.permisCategories || 'Non spécifié'}</p>
                                             </div>
                                         </div>
                                     </div>

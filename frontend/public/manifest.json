@@ -1,7 +1,7 @@
 {
   "name": "Fleet Guardian - Gestion de Flotte",
   "short_name": "FleetGuardian",
-  "description": "Système professionnel de gestion de flotte automobile (CCVA)",
+  "description": "Système professionnel de gestion de flotte automobile",
   "start_url": "/",
   "display": "standalone",
   "background_color": "#ffffff",

@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from 'react';
-import { Plus, Search, Filter, Download } from 'lucide-react';
+import { Plus, Search, Filter, Download, Users, CheckCircle2, Clock } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { DataTable } from '@/components/ui/data-table';
@@ -41,7 +41,6 @@ export default function DriversPage() {
     const filteredChauffeurs = chauffeurs.filter(c => {
         const matchesSearch = c.nom.toLowerCase().includes(searchTerm.toLowerCase()) ||
             c.prenom.toLowerCase().includes(searchTerm.toLowerCase()) ||
-            c.email?.toLowerCase().includes(searchTerm.toLowerCase()) ||
             c.telephone.includes(searchTerm);
         
         const matchesStatus = statusFilter === 'ALL' || c.statut === statusFilter;
@@ -54,10 +53,10 @@ export default function DriversPage() {
             Nom: c.nom,
             Prenom: c.prenom,
             Telephone: c.telephone,
-            Email: c.email || '',
             Statut: c.statut,
             Permis_Numero: c.permisNumero,
-            Permis_Expiration: c.permisExpiration
+            Permis_Expiration: c.permisExpiration,
+            Permis_Categories: c.permisCategories || ''
         }));
         exportToCSV(exportData, 'personnel_chauffeurs');
         toast.success('Export CSV généré');
@@ -76,7 +75,6 @@ export default function DriversPage() {
                     </div>
                     <div>
                         <p className="font-bold text-slate-900 dark:text-white uppercase">{c.nom} <span className="hidden sm:inline capitalize font-medium text-slate-600 dark:text-slate-300">{c.prenom}</span></p>
-                        <p className="hidden md:block text-xs text-slate-400 font-medium">{c.email || 'Aucun email'}</p>
                     </div>
                 </div>
             ),
@@ -96,6 +94,16 @@ export default function DriversPage() {
             render: (c: Driver) => (
                 <span className="font-mono text-xs font-bold px-2 py-1 bg-slate-100 dark:bg-slate-800 rounded text-slate-600 dark:text-slate-300">
                     {c.permisNumero}
+                </span>
+            ),
+        },
+        {
+            key: 'permisCategories',
+            header: 'Catégorie',
+            className: "hidden lg:table-cell",
+            render: (c: Driver) => (
+                <span className="font-black text-sm px-3 py-1.5 bg-fleet-blue/10 text-fleet-blue rounded-xl uppercase tracking-widest border border-fleet-blue/20 shadow-sm inline-flex items-center justify-center min-w-[3rem]">
+                    {c.permisCategories || 'N/A'}
                 </span>
             ),
         },
@@ -190,23 +198,29 @@ export default function DriversPage() {
                 <StatCard 
                     title="Disponibles" 
                     value={chauffeurs.filter(c => c.statut === 'DISPONIBLE').length} 
+                    exactValue={`${chauffeurs.filter(c => c.statut === 'DISPONIBLE').length} chauffeurs disponibles`}
                     isCurrency={false}
                     extraValue="0 FCFA"
                     variant="success" 
+                    icon={CheckCircle2}
                 />
                 <StatCard 
                     title="En mission" 
                     value={chauffeurs.filter(c => c.statut === 'EN_MISSION').length} 
+                    exactValue={`${chauffeurs.filter(c => c.statut === 'EN_MISSION').length} chauffeurs en mission`}
                     isCurrency={false}
                     extraValue="0 FCFA"
                     variant="info" 
+                    icon={Clock}
                 />
                 <StatCard 
                     title="Inactifs / Congés" 
                     value={chauffeurs.filter(c => c.statut === 'INACTIF').length} 
+                    exactValue={`${chauffeurs.filter(c => c.statut === 'INACTIF').length} chauffeurs inactifs ou en congés`}
                     isCurrency={false}
                     extraValue="0 FCFA"
                     variant="danger" 
+                    icon={Users}
                 />
             </div>
 

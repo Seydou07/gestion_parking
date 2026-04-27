@@ -1,7 +1,7 @@
 {
-  "name": "ccva-fleet-backend",
+  "name": "fleet-guardian-backend",
   "version": "1.0.0",
-  "description": "CCVA Fleet Management Backend - NestJS API",
+  "description": "FleetGuardian Management Backend - NestJS API",
   "private": true,
   "scripts": {
     "build": "nest build",

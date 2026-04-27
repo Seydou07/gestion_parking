@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from 'react';
-import { Plus, Search, Filter, Download, Route, PlaneTakeoff, PlaneLanding, MapPin, Eye } from 'lucide-react';
+import { Plus, Search, Filter, Download, Route, PlaneTakeoff, PlaneLanding, MapPin, Eye, CheckCircle2, Clock } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { DataTable } from '@/components/ui/data-table';
@@ -11,6 +11,7 @@ import { toast, Toaster } from 'sonner';
 import { useMissions, useVehicles, useDrivers, useFuelCards, useFuelVouchers } from '@/hooks/useFleetStore';
 import { Loader2 } from 'lucide-react';
 import { exportToCSV } from '@/lib/table-utils';
+import StatCard from '@/components/dashboard/StatCard';
 
 import { MissionCreateModal } from '@/components/missions/MissionCreateModal';
 import { MissionCheckOutModal } from '@/components/missions/MissionCheckOutModal';
@@ -271,19 +272,38 @@ export default function MissionsPage() {
     return (
         <div className="space-y-8 animate-fade-in pb-10">            {/* KPI Cards */}
             <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-                {[
-                    { label: 'En Cours (Sur route)', count: missions.filter(m => m.statut === 'EN_COURS').length, border: 'border-fleet-blue', bg: 'bg-fleet-blue/5 text-fleet-blue' },
-                    { label: 'Planifiées', count: missions.filter(m => m.statut === 'PLANIFIEE').length, border: 'border-slate-300', bg: 'bg-slate-100 dark:bg-slate-800 text-slate-600' },
-                    { label: 'Terminées', count: missions.filter(m => m.statut === 'TERMINEE').length, border: 'border-emerald-500', bg: 'bg-emerald-50/50 text-emerald-600' },
-                    { label: 'Total Missions', count: missions.length, border: 'border-indigo-500', bg: 'bg-indigo-50/50 text-indigo-600' },
-                ].map((stat, i) => (
-                    <div key={i} className={cn("p-5 rounded-2xl border-l-4 bg-white dark:bg-slate-900 shadow-sm transition-all hover:-translate-y-1 hover:shadow-md", stat.border)}>
-                        <p className={cn("text-3xl font-black mb-1", stat.bg.split(' ')[1])}>
-                            {stat.count}
-                        </p>
-                        <p className="text-[10px] font-black uppercase text-slate-400 tracking-widest">{stat.label}</p>
-                    </div>
-                ))}
+                <StatCard 
+                    title="En Cours" 
+                    value={missions.filter(m => m.statut === 'EN_COURS').length} 
+                    exactValue={`${missions.filter(m => m.statut === 'EN_COURS').length} missions en cours de route`}
+                    isCurrency={false} 
+                    variant="default" 
+                    icon={PlaneTakeoff} 
+                />
+                <StatCard 
+                    title="Planifiées" 
+                    value={missions.filter(m => m.statut === 'PLANIFIEE').length} 
+                    exactValue={`${missions.filter(m => m.statut === 'PLANIFIEE').length} missions planifiées à venir`}
+                    isCurrency={false} 
+                    variant="warning" 
+                    icon={Clock} 
+                />
+                <StatCard 
+                    title="Terminées" 
+                    value={missions.filter(m => m.statut === 'TERMINEE').length} 
+                    exactValue={`${missions.filter(m => m.statut === 'TERMINEE').length} missions clôturées`}
+                    isCurrency={false} 
+                    variant="success" 
+                    icon={CheckCircle2} 
+                />
+                <StatCard 
+                    title="Total Missions" 
+                    value={missions.length} 
+                    exactValue={`${missions.length} missions enregistrées dans le registre`}
+                    isCurrency={false} 
+                    variant="info" 
+                    icon={Route} 
+                />
             </div>
 
             {/* Main Table Area */}

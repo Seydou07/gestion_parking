@@ -29,7 +29,7 @@ module.exports = {
                 }
             },
             backgroundImage: {
-                'gradient-ccva': 'linear-gradient(135deg, #0077B6 0%, #00B4D8 100%)',
+                'gradient-fleet': 'linear-gradient(135deg, #0077B6 0%, #00B4D8 100%)',
             },
             boxShadow: {
                 'premium': '0 4px 20px -2px rgba(0, 119, 182, 0.15), 0 2px 10px -2px rgba(0, 180, 216, 0.1)',

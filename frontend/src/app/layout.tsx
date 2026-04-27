@@ -27,7 +27,7 @@ export default function RootLayout({
     children: React.ReactNode;
 }>) {
     return (
-        <html lang="fr" className="h-full">
+        <html lang="fr" className="h-full" suppressHydrationWarning>
             <body className={`${inter.className} h-full`}>
                 <ThemeProvider>
                     <AppLayout>

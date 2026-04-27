@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from 'react';
-import { Plus, Search, Filter, Download, ListFilter } from 'lucide-react';
+import { Plus, Search, Filter, Download, ListFilter, Car, MapPin, Activity, AlertTriangle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { DataTable } from '@/components/ui/data-table';
@@ -228,10 +228,38 @@ export default function Vehicules() {
     return (
         <div className="space-y-8 animate-fade-in pb-10">            {/* Stats Cards Row */}
             <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-                <StatCard title="Disponibles" value={vehicles.filter(v => v.statut === 'DISPONIBLE').length} exactValue={vehicles.filter(v => v.statut === 'DISPONIBLE').length} variant="success" isCurrency={false} />
-                <StatCard title="En mission" value={vehicles.filter(v => v.statut === 'EN_MISSION').length} exactValue={vehicles.filter(v => v.statut === 'EN_MISSION').length} variant="info" isCurrency={false} />
-                <StatCard title="En maintenance" value={vehicles.filter(v => v.statut === 'EN_MAINTENANCE').length} exactValue={vehicles.filter(v => v.statut === 'EN_MAINTENANCE').length} variant="warning" isCurrency={false} />
-                <StatCard title="Hors service" value={vehicles.filter(v => v.statut === 'HORS_SERVICE').length} exactValue={vehicles.filter(v => v.statut === 'HORS_SERVICE').length} variant="danger" isCurrency={false} />
+                <StatCard 
+                    title="Disponibles" 
+                    value={vehicles.filter(v => v.statut === 'DISPONIBLE').length} 
+                    exactValue={`${vehicles.filter(v => v.statut === 'DISPONIBLE').length} véhicules disponibles`} 
+                    variant="success" 
+                    isCurrency={false} 
+                    icon={Car} 
+                />
+                <StatCard 
+                    title="En mission" 
+                    value={vehicles.filter(v => v.statut === 'EN_MISSION').length} 
+                    exactValue={`${vehicles.filter(v => v.statut === 'EN_MISSION').length} véhicules en mission`} 
+                    variant="info" 
+                    isCurrency={false} 
+                    icon={MapPin} 
+                />
+                <StatCard 
+                    title="En maintenance" 
+                    value={vehicles.filter(v => v.statut === 'EN_MAINTENANCE').length} 
+                    exactValue={`${vehicles.filter(v => v.statut === 'EN_MAINTENANCE').length} véhicules en entretien`} 
+                    variant="warning" 
+                    isCurrency={false} 
+                    icon={Activity} 
+                />
+                <StatCard 
+                    title="Hors service" 
+                    value={vehicles.filter(v => v.statut === 'HORS_SERVICE').length} 
+                    exactValue={`${vehicles.filter(v => v.statut === 'HORS_SERVICE').length} véhicules hors service`} 
+                    variant="danger" 
+                    isCurrency={false} 
+                    icon={AlertTriangle} 
+                />
             </div>
 
             {/* Main Data Table Card */}

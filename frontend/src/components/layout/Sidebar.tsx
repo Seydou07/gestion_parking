@@ -28,7 +28,13 @@ interface SidebarProps {
 
 const Sidebar = ({ isOpen }: SidebarProps) => {
     const pathname = usePathname();
-    const { isUser } = useAuth();
+    const { isUser, logout } = useAuth();
+    
+    const handleLogout = (e: React.MouseEvent) => {
+        e.preventDefault();
+        logout();
+        window.location.href = "/login";
+    };
 
     const menuItems = [
         { name: "Dashboard", icon: LayoutDashboard, href: "/dashboard" },
@@ -121,17 +127,17 @@ const Sidebar = ({ isOpen }: SidebarProps) => {
 
             {/* Sidebar Footer LogOut */}
             <div className="p-4 border-t border-slate-200 dark:border-slate-800 flex-shrink-0">
-                <Link
-                    href="/login"
+                <button
+                    onClick={handleLogout}
                     className={cn(
-                        "flex items-center gap-3 rounded-xl hover:bg-rose-50 dark:hover:bg-rose-900/10 text-rose-600 transition-all font-bold",
+                        "flex items-center gap-3 w-full rounded-xl hover:bg-rose-50 dark:hover:bg-rose-900/10 text-rose-600 transition-all font-bold",
                         isOpen ? "px-4 py-3" : "justify-center p-3"
                     )}
                     title={!isOpen ? "Déconnexion" : undefined}
                 >
                     <LogOut className="w-5 h-5 transition-transform group-hover:scale-110 flex-shrink-0" />
                     {isOpen && <span className="text-[9px] font-black uppercase tracking-[0.2em] bg-rose-50 dark:bg-rose-900/20 px-3 py-1.5 rounded-lg border border-rose-100 dark:border-rose-900/30">Déconnexion</span>}
-                </Link>
+                </button>
             </div>
         </aside>
     );

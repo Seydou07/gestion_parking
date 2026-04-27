@@ -74,8 +74,8 @@ export class FuelService {
     // --- Fuel Cards ---
     async createCard(dto: CreateFuelCardDto) {
         const qty = dto.quantite || 1;
-        const litresEstimes = dto.prixLitre && dto.prixLitre > 0 
-            ? Math.round((dto.soldeInitial / dto.prixLitre) * 100) / 100 
+        const litresEstimes = (dto.prixLitre || dto.prixDiesel) && (dto.prixLitre || dto.prixDiesel || 0) > 0 
+            ? Math.round((dto.soldeInitial / (dto.prixLitre || dto.prixDiesel || 1)) * 100) / 100 
             : null;
         
         if (qty > 1) {
@@ -109,7 +109,7 @@ export class FuelService {
         if (!card) throw new NotFoundException('Carte introuvable');
 
         // Only pick fields that exist on the Prisma FuelCard model
-        const allowed = ['numero', 'solde', 'soldeInitial', 'prixLitre', 'dateExpiration', 'statut', 'fournisseur', 'notes', 'litresEstimes'];
+        const allowed = ['numero', 'solde', 'soldeInitial', 'prixLitre', 'prixDiesel', 'prixSuper', 'dateExpiration', 'statut', 'fournisseur', 'notes', 'litresEstimes'];
         const updateData: any = {};
         for (const key of allowed) {
             if (dto[key] !== undefined) updateData[key] = dto[key];
@@ -122,7 +122,7 @@ export class FuelService {
 
         // Recalculate litresEstimes if prixLitre or soldeInitial changed
         const newSoldeInitial = updateData.soldeInitial ?? card.soldeInitial;
-        const newPrixLitre = updateData.prixLitre ?? card.prixLitre;
+        const newPrixLitre = updateData.prixLitre ?? updateData.prixDiesel ?? card.prixLitre ?? card.prixDiesel;
         if (newPrixLitre && newPrixLitre > 0) {
             updateData.litresEstimes = Math.round((newSoldeInitial / newPrixLitre) * 100) / 100;
         }

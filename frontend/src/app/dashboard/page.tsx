@@ -79,7 +79,7 @@ export default function DashboardPage() {
                 <StatCard
                     title="Dépenses Mensuelles"
                     value={stats.totalDepenses}
-                    exactValue={formatCurrency(stats.totalDepenses)}
+                    exactValue={`${formatCurrency(stats.totalDepenses)} dépensés ces 30 derniers jours`}
                     icon={ArrowUpRight}
                     trend={{ value: 5, isPositive: false }}
                     variant="default"
@@ -87,7 +87,7 @@ export default function DashboardPage() {
                 <StatCard
                     title="Total Véhicules"
                     value={stats.totalVehicules}
-                    exactValue={stats.totalVehicules}
+                    exactValue={`${stats.totalVehicules} véhicules enregistrés au total`}
                     icon={Car}
                     subtitle={`${stats.disponibles} disponibles`}
                     variant="info"
@@ -96,7 +96,7 @@ export default function DashboardPage() {
                 <StatCard
                     title="Missions en cours"
                     value={stats.missionsEnCours}
-                    exactValue={stats.missionsEnCours}
+                    exactValue={`${stats.missionsEnCours} missions actives actuellement`}
                     icon={MapPin}
                     trend={{ value: 12, isPositive: true }}
                     variant="success"
@@ -105,7 +105,7 @@ export default function DashboardPage() {
                 <StatCard
                     title="Alertes Critiques"
                     value={stats.alertesCritiques}
-                    exactValue={stats.alertesCritiques}
+                    exactValue={`${stats.alertesCritiques} alertes nécessitant votre attention`}
                     icon={AlertTriangle}
                     variant="danger"
                     subtitle="Actions requises"

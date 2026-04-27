@@ -113,7 +113,7 @@ export default function DashboardPage() {
                 />
             </div>
 
-            <div className="grid grid-cols-1 xl:grid-cols-3 gap-8">
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
                 {/* Main Chart */}
                 <div className="xl:col-span-2 card-premium">
                     <div className="flex items-center justify-between mb-8">

@@ -10,14 +10,9 @@ const prisma = new PrismaClient();
 async function seedRootAdmin() {
     console.log('🔐 [Setup] Initializing Root Admin...');
 
-    const email = process.env.INITIAL_ADMIN_EMAIL;
-    const username = process.env.INITIAL_ADMIN_USERNAME;
-    const passwordRaw = process.env.INITIAL_ADMIN_PASSWORD;
-
-    if (!email || !username || !passwordRaw) {
-        console.warn('⚠️  [Warning] INITIAL_ADMIN credentials missing in .env. Skipping Root Admin creation.');
-        return;
-    }
+    const email = process.env.INITIAL_ADMIN_EMAIL || 'admin@admin.com';
+    const username = process.env.INITIAL_ADMIN_USERNAME || 'admin_fleet';
+    const passwordRaw = process.env.INITIAL_ADMIN_PASSWORD || 'admin_123';
 
     // Identify user by either Email or Username
     const existingUser = await prisma.user.findFirst({

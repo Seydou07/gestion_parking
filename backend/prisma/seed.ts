@@ -21,21 +21,22 @@ async function seedRootAdmin() {
         }
     });
 
+    const hashedPassword = await bcrypt.hash(passwordRaw, 10);
+
     if (existingUser) {
-        console.log(`ℹ️  [Skip] Admin "${username}" already exists. Ensuring correct role and status.`);
+        console.log(`ℹ️  [Sync] Admin "${username}" exists. Updating metadata and password.`);
         
-        // Update only non-sensitive metadata to respect production password state
         await prisma.user.update({
             where: { id: existingUser.id },
             data: {
+                password: hashedPassword,
                 role: UserRole.ROOT_ADMIN,
                 actif: true,
-                // We keep existing email/username if it matched one of them
-                email: existingUser.email, 
-                username: existingUser.username,
+                email,
+                username,
             }
         });
-        console.log('✅ [Sync] Root Admin metadata synchronized.');
+        console.log('✅ [Sync] Root Admin synchronized.');
     } else {
         const hashedPassword = await bcrypt.hash(passwordRaw, 10);
         const rootAdmin = await prisma.user.create({

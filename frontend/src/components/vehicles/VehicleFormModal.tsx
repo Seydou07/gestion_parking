@@ -198,7 +198,7 @@ export function VehicleFormModal({ open, onOpenChange, onSubmit, initialData, mo
                                     <Input
                                         id="annee"
                                         type="number"
-                                        value={formData.annee || ''}
+                                        value={formData.annee ?? ''}
                                         onChange={(e) => updateField('annee', e.target.value === '' ? 0 : parseInt(e.target.value))}
                                         required
                                         className="h-9 px-4 rounded-xl border-slate-200 focus:border-fleet-blue font-bold text-xs"
@@ -239,7 +239,7 @@ export function VehicleFormModal({ open, onOpenChange, onSubmit, initialData, mo
                                     <Input
                                         id="kilometrage"
                                         type="number"
-                                        value={formData.kilometrage || ''}
+                                        value={formData.kilometrage ?? ''}
                                         onChange={(e) => updateField('kilometrage', e.target.value === '' ? 0 : parseInt(e.target.value))}
                                         required
                                         className="h-9 px-4 rounded-xl border-slate-200 focus:border-fleet-blue font-bold text-xs"
@@ -264,7 +264,7 @@ export function VehicleFormModal({ open, onOpenChange, onSubmit, initialData, mo
                                     <Input
                                         id="capaciteReservoir"
                                         type="number"
-                                        value={formData.capaciteReservoir || ''}
+                                        value={formData.capaciteReservoir ?? ''}
                                         onChange={(e) => updateField('capaciteReservoir', e.target.value === '' ? undefined : parseInt(e.target.value))}
                                         className="h-9 px-4 rounded-xl border-slate-200 focus:border-fleet-blue font-bold text-xs"
                                     />
@@ -299,7 +299,7 @@ export function VehicleFormModal({ open, onOpenChange, onSubmit, initialData, mo
                                     <Input
                                         id="budgetInitial"
                                         type="number"
-                                        value={formData.budgetInitial || ''}
+                                        value={formData.budgetInitial ?? ''}
                                         onChange={(e) => updateField('budgetInitial', e.target.value === '' ? undefined : parseInt(e.target.value))}
                                         className={cn(
                                             "h-10 px-4 rounded-xl font-black text-sm transition-all",
@@ -334,7 +334,7 @@ export function VehicleFormModal({ open, onOpenChange, onSubmit, initialData, mo
                                     <Input
                                         id="frequenceVidange"
                                         type="number"
-                                        value={formData.frequenceVidange || ''}
+                                        value={formData.frequenceVidange ?? ''}
                                         onChange={(e) => updateField('frequenceVidange', e.target.value === '' ? 0 : parseInt(e.target.value))}
                                         className="h-10 px-4 rounded-xl border-slate-200 focus:border-fleet-blue font-bold text-sm"
                                     />

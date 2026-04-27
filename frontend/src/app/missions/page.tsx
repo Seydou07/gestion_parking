@@ -52,6 +52,13 @@ export default function MissionsPage() {
         return matchesSearch && matchesStatus;
     });
 
+    const sortedMissions = [...filteredMissions].sort((a, b) => {
+        const dateA = new Date(a.dateDepart || 0).getTime();
+        const dateB = new Date(b.dateDepart || 0).getTime();
+        if (dateB !== dateA) return dateB - dateA;
+        return (b.id || 0) - (a.id || 0);
+    });
+
     const handleExport = () => {
         const exportData = filteredMissions.map(m => ({
             Destination: m.destination,
@@ -346,7 +353,7 @@ export default function MissionsPage() {
 
                 <div className="p-0">
                     <DataTable
-                        data={filteredMissions}
+                        data={sortedMissions}
                         columns={columns}
                         keyExtractor={(m) => m.id}
                         emptyMessage="Aucune mission trouvée."

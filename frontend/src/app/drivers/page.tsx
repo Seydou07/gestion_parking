@@ -48,8 +48,15 @@ export default function DriversPage() {
         return matchesSearch && matchesStatus;
     });
 
+    const sortedChauffeurs = [...filteredChauffeurs].sort((a, b) => {
+        const dateA = new Date(a.createdAt || 0).getTime();
+        const dateB = new Date(b.createdAt || 0).getTime();
+        if (dateB !== dateA) return dateB - dateA;
+        return (b.id || 0) - (a.id || 0);
+    });
+
     const handleExport = () => {
-        const exportData = filteredChauffeurs.map(c => ({
+        const exportData = sortedChauffeurs.map(c => ({
             Nom: c.nom,
             Prenom: c.prenom,
             Telephone: c.telephone,
@@ -264,7 +271,7 @@ export default function DriversPage() {
 
                 <div className="p-0">
                     <DataTable
-                        data={filteredChauffeurs}
+                        data={sortedChauffeurs}
                         columns={columns}
                         keyExtractor={(c) => c.id}
                         onView={handleView}

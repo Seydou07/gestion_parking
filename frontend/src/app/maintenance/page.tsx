@@ -71,6 +71,13 @@ export default function MaintenancePage() {
         );
     });
 
+    const sortedMaintenances = [...filteredMaintenances].sort((a, b) => {
+        const dateA = new Date(a.dateDebut || 0).getTime();
+        const dateB = new Date(b.dateDebut || 0).getTime();
+        if (dateB !== dateA) return dateB - dateA;
+        return (b.id || 0) - (a.id || 0);
+    });
+
     const totalCouts = maintenances.reduce((acc, m) => acc + (m.montant || 0), 0);
     const vehiculesEnMaintenance = vehicles.filter(v => v.statut === 'EN_MAINTENANCE').length;
 
@@ -266,7 +273,7 @@ export default function MaintenancePage() {
                 </div>
 
                 <DataTable 
-                    data={filteredMaintenances} 
+                    data={sortedMaintenances} 
                     columns={columns} 
                     keyExtractor={(m) => m.id} 
                     onView={handleView}

@@ -47,8 +47,18 @@ export default function FuelPage() {
                 api.missions.getAll(),
                 api.budgets.getSummary()
             ]);
-            setCards(cardsData as FuelCard[]);
-            setVouchers(vouchersData as FuelVoucher[]);
+            setCards((cardsData as FuelCard[]).sort((a, b) => {
+                const dateA = new Date(a.createdAt || 0).getTime();
+                const dateB = new Date(b.createdAt || 0).getTime();
+                if (dateB !== dateA) return dateB - dateA;
+                return b.id - a.id;
+            }));
+            setVouchers((vouchersData as FuelVoucher[]).sort((a, b) => {
+                const dateA = new Date(a.createdAt || 0).getTime();
+                const dateB = new Date(b.createdAt || 0).getTime();
+                if (dateB !== dateA) return dateB - dateA;
+                return b.id - a.id;
+            }));
             setMissions(missionsData as any[]);
             setSummary(summaryData);
         } catch (error) {

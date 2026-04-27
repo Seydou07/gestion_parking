@@ -15,6 +15,8 @@ export interface User {
     email: string;
     role: UserRole;
     actif: boolean;
+    createdAt: string;
+    updatedAt: string;
 }
 
 export interface Vehicle {
@@ -42,6 +44,8 @@ export interface Vehicle {
     transmission: 'MANUELLE' | 'AUTOMATIQUE';
     derniereVidangeKilometrage: number;
     frequenceVidange: number;
+    createdAt: string;
+    updatedAt: string;
 }
 
 export interface VehicleFormData {
@@ -81,6 +85,8 @@ export interface Driver {
     dateEmbauche?: string;
     notes?: string;
     missions?: Mission[];
+    createdAt: string;
+    updatedAt: string;
 }
 
 export interface DriverFormData {
@@ -140,6 +146,7 @@ export interface FuelCard {
     description?: string;
     notes?: string;
     quantite?: number;
+    createdAt: string;
 }
 
 export interface FuelVoucher {
@@ -153,6 +160,7 @@ export interface FuelVoucher {
     vehiculeId?: number;
     notes?: string;
     quantite?: number;
+    createdAt: string;
 }
 
 export interface Alert {

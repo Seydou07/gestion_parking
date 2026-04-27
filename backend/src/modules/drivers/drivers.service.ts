@@ -32,6 +32,7 @@ export class DriversService {
                     select: { missions: true },
                 },
             },
+            orderBy: { createdAt: 'desc' },
         });
     }
 

@@ -50,8 +50,15 @@ export default function Vehicules() {
         return matchesSearch && matchesStatus;
     });
 
+    const sortedVehicles = [...filteredVehicles].sort((a, b) => {
+        const dateA = new Date(a.createdAt || 0).getTime();
+        const dateB = new Date(b.createdAt || 0).getTime();
+        if (dateB !== dateA) return dateB - dateA;
+        return (b.id || 0) - (a.id || 0);
+    });
+
     const handleExport = () => {
-        const exportData = filteredVehicles.map(v => ({
+        const exportData = sortedVehicles.map(v => ({
             Immatriculation: v.immatriculation,
             Marque: v.marque,
             Modele: v.modele,
@@ -303,7 +310,7 @@ export default function Vehicules() {
 
                 <div className="p-0">
                     <DataTable
-                        data={filteredVehicles}
+                        data={sortedVehicles}
                         columns={columns}
                         keyExtractor={(v) => v.id}
                         onView={handleView}

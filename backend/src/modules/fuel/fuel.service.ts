@@ -101,7 +101,9 @@ export class FuelService {
     }
 
     async findAllCards() {
-        return this.prisma.fuelCard.findMany();
+        return this.prisma.fuelCard.findMany({
+            orderBy: { createdAt: 'desc' }
+        });
     }
 
     async updateCard(id: number, dto: any) {
@@ -214,7 +216,10 @@ export class FuelService {
 
 
     async findAllVouchers() {
-        return this.prisma.fuelVoucher.findMany({ include: { vehicule: true } });
+        return this.prisma.fuelVoucher.findMany({ 
+            include: { vehicule: true },
+            orderBy: { createdAt: 'desc' }
+        });
     }
 
     async rechargeCard(id: number, amount: number) {

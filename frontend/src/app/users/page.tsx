@@ -100,6 +100,13 @@ export default function UsersPage() {
         user.email.toLowerCase().includes(searchTerm.toLowerCase())
     );
 
+    const sortedUsers = [...filteredUsers].sort((a, b) => {
+        const dateA = new Date(a.createdAt || 0).getTime();
+        const dateB = new Date(b.createdAt || 0).getTime();
+        if (dateB !== dateA) return dateB - dateA;
+        return (b.id || 0) - (a.id || 0);
+    });
+
     if (loading) {
         return (
             <div className="flex h-[400px] items-center justify-center">
@@ -132,7 +139,7 @@ export default function UsersPage() {
                 </div>
 
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                    {filteredUsers.map((user) => (
+                    {sortedUsers.map((user) => (
                         <div key={user.id} className={cn(
                             "p-6 rounded-[30px] border border-slate-100 dark:border-slate-800 bg-white dark:bg-slate-950 shadow-sm hover:shadow-xl transition-all group relative overflow-hidden",
                             !user.actif && "opacity-75 grayscale-[0.5]"

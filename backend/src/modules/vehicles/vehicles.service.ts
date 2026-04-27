@@ -67,6 +67,7 @@ export class VehiclesService {
                     },
                 },
             },
+            orderBy: { createdAt: 'desc' },
         });
     }
 

@@ -23,19 +23,21 @@ async function bootstrap() {
         });
     }
 
-    // Logger de requêtes pour le débug
+    // CORS simplifié au maximum pour test
+    app.enableCors({
+        origin: true,
+        methods: '*',
+        credentials: true,
+        allowedHeaders: '*',
+    });
+
+    // Route de santé simple
+    app.use('/health', (req, res) => res.send('OK'));
+
+    // Logger de requêtes pour le débug (placé APRÈS cors pour voir si ça passe)
     app.use((req, res, next) => {
         console.log(`[${new Date().toISOString()}] ${req.method} ${req.url}`);
         next();
-    });
-
-    app.enableCors({
-        origin: true,
-        methods: 'GET,HEAD,PUT,PATCH,POST,DELETE',
-        preflightContinue: false,
-        optionsSuccessStatus: 204,
-        credentials: true,
-        allowedHeaders: 'Content-Type, Accept, Authorization',
     });
 
 

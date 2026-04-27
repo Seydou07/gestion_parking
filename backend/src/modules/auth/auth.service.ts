@@ -13,6 +13,7 @@ export class AuthService {
     ) { }
 
     async login(loginDto: LoginDto) {
+        console.log(`[AUTH] Attempting login for identifier: ${loginDto.identifier}`);
         const user = await this.prisma.user.findFirst({
             where: {
                 OR: [
@@ -22,7 +23,13 @@ export class AuthService {
             },
         });
 
-        if (!user || !user.actif) {
+        if (!user) {
+            console.warn(`[AUTH] User not found for identifier: ${loginDto.identifier}`);
+            throw new UnauthorizedException('Identifiants invalides');
+        }
+
+        if (!user.actif) {
+            console.warn(`[AUTH] User ${user.email} is inactive`);
             throw new UnauthorizedException('Identifiants invalides');
         }
 

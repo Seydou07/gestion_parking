@@ -11,29 +11,30 @@ async function bootstrap() {
     const frontendUrl = process.env.FRONTEND_URL;
     const extraOrigins = process.env.ALLOWED_ORIGINS ? process.env.ALLOWED_ORIGINS.split(',') : [];
     
+    // Base origins (localhost always allowed)
     const allowedOrigins: (string | RegExp)[] = [
         /http:\/\/localhost:\d+/,
+        /https:\/\/.*\.vercel\.app$/, // Autorise tous les sous-domaines Vercel
     ];
 
     // Add origins from FRONTEND_URL and ALLOWED_ORIGINS
-    const allOrigins = [
+    [
         ...(frontendUrl ? frontendUrl.split(',') : []),
         ...extraOrigins
-    ].map(url => url.trim()).filter(url => url !== '');
-
-    allOrigins.forEach(url => {
-        const cleanUrl = url.replace(/\/$/, '');
-        allowedOrigins.push(cleanUrl);
-        // Conserver aussi le regex pour gérer le slash final optionnel
-        allowedOrigins.push(new RegExp(`^${cleanUrl.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}/?$`));
+    ].forEach(url => {
+        const cleanUrl = url.trim().replace(/\/$/, '');
+        if (cleanUrl) {
+            allowedOrigins.push(cleanUrl);
+            // Regex pour gérer les variations
+            allowedOrigins.push(new RegExp(`^${cleanUrl.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}/?$`));
+        }
     });
 
-    // CORS simplifié au maximum pour test
     app.enableCors({
-        origin: true,
-        methods: '*',
+        origin: allowedOrigins,
+        methods: 'GET,HEAD,PUT,PATCH,POST,DELETE,OPTIONS',
         credentials: true,
-        allowedHeaders: '*',
+        allowedHeaders: 'Content-Type, Accept, Authorization',
     });
 
     // Route de santé simple

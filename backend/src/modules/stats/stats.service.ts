@@ -6,41 +6,43 @@ export class StatsService {
     constructor(private prisma: PrismaService) { }
 
     async getDashboardStats() {
-        const [
-            totalVehicles,
-            availableVehicles,
-            inMissionVehicles,
-            inMaintenanceVehicles,
-            totalDrivers,
-            availableDrivers,
-            inMissionDrivers,
-            inactiveDrivers,
-            activeMissions,
-        ] = await Promise.all([
-            this.prisma.vehicle.count(),
-            this.prisma.vehicle.count({ where: { statut: 'DISPONIBLE' } }),
-            this.prisma.vehicle.count({ where: { statut: 'EN_MISSION' } }),
-            this.prisma.vehicle.count({ where: { statut: 'EN_MAINTENANCE' } }),
-            this.prisma.driver.count(),
-            this.prisma.driver.count({ where: { statut: 'DISPONIBLE' } }),
-            this.prisma.driver.count({ where: { statut: 'EN_MISSION' } }),
-            this.prisma.driver.count({ where: { statut: 'INACTIF' } }),
+        const [vehicleStats, driverStats, activeMissions, totalMissions] = await Promise.all([
+            this.prisma.vehicle.groupBy({
+                by: ['statut'],
+                _count: { id: true },
+            }),
+            this.prisma.driver.groupBy({
+                by: ['statut'],
+                _count: { id: true },
+            }),
             this.prisma.mission.count({ where: { statut: 'EN_COURS' } }),
+            this.prisma.mission.count(),
         ]);
 
-        // Fuel expenses last 30 days
+        const totalVehicles = vehicleStats.reduce((sum, s) => sum + s._count.id, 0);
+        const availableVehicles = vehicleStats.find(s => s.statut === 'DISPONIBLE')?._count.id || 0;
+        const inMissionVehicles = vehicleStats.find(s => s.statut === 'EN_MISSION')?._count.id || 0;
+        const inMaintenanceVehicles = vehicleStats.find(s => s.statut === 'EN_MAINTENANCE')?._count.id || 0;
+
+        const totalDrivers = driverStats.reduce((sum, s) => sum + s._count.id, 0);
+        const availableDrivers = driverStats.find(s => s.statut === 'DISPONIBLE')?._count.id || 0;
+        const inMissionDrivers = driverStats.find(s => s.statut === 'EN_MISSION')?._count.id || 0;
+        const inactiveDrivers = driverStats.find(s => s.statut === 'INACTIF')?._count.id || 0;
+
+        // Fuel and Maintenance expenses last 30 days
         const thirtyDaysAgo = new Date();
         thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
 
-        const fuelExpense = await this.prisma.fuelRecord.aggregate({
-            where: { date: { gte: thirtyDaysAgo } },
-            _sum: { montant: true },
-        });
-
-        const maintenanceExpense = await this.prisma.maintenance.aggregate({
-            where: { dateDebut: { gte: thirtyDaysAgo } },
-            _sum: { montant: true },
-        });
+        const [fuelExpense, maintenanceExpense] = await Promise.all([
+            this.prisma.fuelRecord.aggregate({
+                where: { date: { gte: thirtyDaysAgo } },
+                _sum: { montant: true },
+            }),
+            this.prisma.maintenance.aggregate({
+                where: { dateDebut: { gte: thirtyDaysAgo } },
+                _sum: { montant: true },
+            })
+        ]);
 
         return {
             vehicles: {
@@ -57,6 +59,7 @@ export class StatsService {
             },
             missions: {
                 active: activeMissions,
+                total: totalMissions,
             },
             expenses: {
                 fuel30d: fuelExpense._sum.montant || 0,
@@ -67,34 +70,38 @@ export class StatsService {
     }
 
     async getMonthlyExpenses(year: number) {
-        const months = [
+        // Optimized single raw query for fuel
+        const fuelQuery = await this.prisma.$queryRaw<any[]>`
+            SELECT MONTH(date) as month, SUM(montant) as total
+            FROM fuel_records
+            WHERE YEAR(date) = ${year}
+            GROUP BY MONTH(date)
+        `;
+
+        // Optimized single raw query for maintenance
+        const maintenanceQuery = await this.prisma.$queryRaw<any[]>`
+            SELECT MONTH(dateDebut) as month, SUM(montant) as total
+            FROM maintenances
+            WHERE YEAR(dateDebut) = ${year}
+            GROUP BY MONTH(dateDebut)
+        `;
+
+        const monthsNames = [
             'Jan', 'Féb', 'Mar', 'Avr', 'Mai', 'Juin',
             'Juil', 'Août', 'Sep', 'Oct', 'Nov', 'Déc'
         ];
 
-        const results = await Promise.all(months.map(async (_, index) => {
-            const startDate = new Date(year, index, 1);
-            const endDate = new Date(year, index + 1, 0, 23, 59, 59);
-
-            const fuel = await this.prisma.fuelRecord.aggregate({
-                where: { date: { gte: startDate, lte: endDate } },
-                _sum: { montant: true },
-            });
-
-            const maintenance = await this.prisma.maintenance.aggregate({
-                where: { dateDebut: { gte: startDate, lte: endDate } },
-                _sum: { montant: true },
-            });
-
+        return monthsNames.map((name, index) => {
+            const m = index + 1;
+            const fuel = fuelQuery.find(r => r.month === m)?.total || 0;
+            const maintenance = maintenanceQuery.find(r => r.month === m)?.total || 0;
             return {
-                month: months[index],
-                fuel: fuel._sum.montant || 0,
-                maintenance: maintenance._sum.montant || 0,
-                total: (fuel._sum.montant || 0) + (maintenance._sum.montant || 0)
+                month: name,
+                fuel,
+                maintenance,
+                total: fuel + maintenance
             };
-        }));
-
-        return results;
+        });
     }
 
     async getVehicleAnalytics(vehicleId: number, year: number = new Date().getFullYear()) {

@@ -57,6 +57,7 @@ model Vehicle {
   fuelRecords                FuelRecord[]
   missions                   Mission[]
 
+  @@index([statut])
   @@map("vehicles")
 }
 
@@ -89,6 +90,7 @@ model Driver {
   updatedAt        DateTime     @updatedAt
   missions         Mission[]
 
+  @@index([statut])
   @@map("drivers")
 }
 
@@ -119,6 +121,8 @@ model Mission {
 
   @@index([chauffeurId], map: "missions_chauffeurId_fkey")
   @@index([vehiculeId], map: "missions_vehiculeId_fkey")
+  @@index([statut])
+  @@index([dateDepart])
   @@map("missions")
 }
 
@@ -189,6 +193,7 @@ model FuelRecord {
   @@index([bonEssenceId], map: "fuel_records_bonEssenceId_fkey")
   @@index([carteCarburantId], map: "fuel_records_carteCarburantId_fkey")
   @@index([vehiculeId], map: "fuel_records_vehiculeId_fkey")
+  @@index([date])
   @@map("fuel_records")
 }
 
@@ -218,6 +223,8 @@ model Maintenance {
   @@index([bonEssenceId], map: "maintenances_bonEssenceId_fkey")
   @@index([carteCarburantId], map: "maintenances_carteCarburantId_fkey")
   @@index([vehiculeId], map: "maintenances_vehiculeId_fkey")
+  @@index([dateDebut])
+  @@index([statut])
   @@map("maintenances")
 }
 

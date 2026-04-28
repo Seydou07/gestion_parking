@@ -1,0 +1,19 @@
+services:
+  - type: web
+    name: fleet-guardian-backend
+    runtime: node
+    buildCommand: npm install && npm run build
+    startCommand: npm run start:prod
+    envVars:
+      - key: DATABASE_URL
+        sync: false # Set manually in Render Dashboard to your Aiven URI
+      - key: PORT
+        value: 3001
+      - key: NODE_ENV
+        value: production
+      - key: JWT_SECRET
+        generateValue: true
+      - key: FRONTEND_URL
+        value: "" # User to provide
+      - key: ALLOWED_ORIGINS
+        value: "http://localhost:3000,https://*.vercel.app"

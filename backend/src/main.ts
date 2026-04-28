@@ -9,20 +9,24 @@ async function bootstrap() {
 
     // CORS
     const frontendUrl = process.env.FRONTEND_URL;
+    const extraOrigins = process.env.ALLOWED_ORIGINS ? process.env.ALLOWED_ORIGINS.split(',') : [];
+    
     const allowedOrigins: (string | RegExp)[] = [
         /http:\/\/localhost:\d+/,
-        /https:\/\/.*\.vercel\.app/, // Autorise tous les domaines Vercel par précaution
     ];
 
-    if (frontendUrl) {
-        const origins = frontendUrl.split(',').map(url => url.trim());
-        origins.forEach(url => {
-            const cleanUrl = url.replace(/\/$/, '');
-            allowedOrigins.push(cleanUrl); // Ajout direct de la chaîne pour plus de fiabilité
-            // Conserver aussi le regex pour gérer le slash final optionnel
-            allowedOrigins.push(new RegExp(`^${cleanUrl.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}/?$`));
-        });
-    }
+    // Add origins from FRONTEND_URL and ALLOWED_ORIGINS
+    const allOrigins = [
+        ...(frontendUrl ? frontendUrl.split(',') : []),
+        ...extraOrigins
+    ].map(url => url.trim()).filter(url => url !== '');
+
+    allOrigins.forEach(url => {
+        const cleanUrl = url.replace(/\/$/, '');
+        allowedOrigins.push(cleanUrl);
+        // Conserver aussi le regex pour gérer le slash final optionnel
+        allowedOrigins.push(new RegExp(`^${cleanUrl.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}/?$`));
+    });
 
     // CORS simplifié au maximum pour test
     app.enableCors({

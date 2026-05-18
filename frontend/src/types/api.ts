@@ -116,6 +116,8 @@ export interface Mission {
     kmRetour?: number;
     observationDepart?: string;
     observationRetour?: string;
+    objectif?: string;
+    observations?: string;
 
     // Nouveaux champs pour dotation carburant et fichiers
     lettreMission?: string;

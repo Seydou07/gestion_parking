@@ -14,7 +14,7 @@ import { BudgetAllocationModal } from '@/components/vehicles/BudgetAllocationMod
 import { ConfirmModal } from '@/components/ui/confirm-modal';
 import { toast, Toaster } from 'sonner';
 import StatCard from '@/components/dashboard/StatCard';
-import { useVehicles } from '@/hooks/useFleetStore';
+import { useVehicles, useSettings } from '@/hooks/useFleetStore';
 import { Loader2 } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
 import { exportToCSV } from '@/lib/table-utils';
@@ -28,6 +28,7 @@ const statusConfig = {
 
 export default function Vehicules() {
     const { vehicles, loading, updateVehicle, refresh } = useVehicles();
+    const { settings } = useSettings();
     const { isUser, canEdit, canViewBudget } = useAuth();
     const [searchTerm, setSearchTerm] = useState('');
     const [formModalOpen, setFormModalOpen] = useState(false);
@@ -82,12 +83,24 @@ export default function Vehicules() {
         {
             key: 'marque',
             header: 'Véhicule',
-            render: (v: Vehicle) => (
-                <div>
-                    <p className="font-bold text-slate-800">{v.marque} {v.modele}</p>
-                    <p className="hidden sm:block text-xs text-slate-400 font-medium">Année {v.annee}</p>
-                </div>
-            ),
+            render: (v: Vehicle) => {
+                const seuilVidangeGlobal = settings?.seuilVidangeKm ?? 5000;
+                const threshold = (v.frequenceVidange !== 5000) ? v.frequenceVidange : seuilVidangeGlobal;
+                const isVidangeSoon = (v.kilometrage - (v.derniereVidangeKilometrage || 0)) >= threshold;
+                return (
+                    <div>
+                        <div className="flex items-center gap-2">
+                            <p className="font-bold text-slate-800">{v.marque} {v.modele}</p>
+                            {isVidangeSoon && (
+                                <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[8px] font-black uppercase bg-amber-100 text-amber-600 animate-pulse" title="Vidange requise">
+                                    <AlertTriangle className="w-2.5 h-2.5" /> Vidange
+                                </span>
+                            )}
+                        </div>
+                        <p className="hidden sm:block text-xs text-slate-400 font-medium">Année {v.annee}</p>
+                    </div>
+                );
+            },
         },
         {
             key: 'kilometrage',
@@ -132,10 +145,12 @@ export default function Vehicules() {
         const controleDate = new Date(v.prochainControle);
         
         const isExpired = assuranceDate < today || controleDate < today;
-        const isVidangeSoon = (v.kilometrage - (v.derniereVidangeKilometrage || 0)) >= (v.frequenceVidange || 5000);
+        const seuilVidangeGlobal = settings?.seuilVidangeKm ?? 5000;
+        const threshold = (v.frequenceVidange !== 5000) ? v.frequenceVidange : seuilVidangeGlobal;
+        const isVidangeSoon = (v.kilometrage - (v.derniereVidangeKilometrage || 0)) >= threshold;
 
         if (isExpired) return "bg-red-50/80 hover:bg-red-100/80 dark:bg-red-900/20 dark:hover:bg-red-900/30 border-l-4 border-red-500";
-        // removed amber coloring for upcoming oil changes as requested
+        if (isVidangeSoon) return "bg-amber-50/80 hover:bg-amber-100/80 dark:bg-amber-900/20 dark:hover:bg-amber-900/30 border-l-4 border-amber-500";
         return "border-l-4 border-transparent hover:bg-slate-50/50 dark:hover:bg-slate-800/50 transition-colors";
     };
 

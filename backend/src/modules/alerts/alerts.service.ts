@@ -102,7 +102,8 @@ export class AlertsService {
             const currentKm = v.kilometrage || 0;
             const lastVidangeKm = v.derniereVidangeKilometrage || 0;
             const kmSinceLastVidange = currentKm - lastVidangeKm;
-            const threshold = v.frequenceVidange || seuilVidangeGlobal;
+            const defaultFrequency = 5000;
+            const threshold = (v.frequenceVidange !== defaultFrequency) ? v.frequenceVidange : seuilVidangeGlobal;
 
             if (kmSinceLastVidange >= threshold) {
                 await this.createAlert({

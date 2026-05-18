@@ -30,6 +30,7 @@ import {
 } from 'recharts';
 
 import { useAuth } from '@/hooks/useAuth';
+import { useSettings } from '@/hooks/useFleetStore';
 
 interface VehicleDetailModalProps {
     open: boolean;
@@ -49,6 +50,7 @@ const statusConfig = {
 
 export function VehicleDetailModal({ open, onOpenChange, vehicle, onEdit, onRenewInsurance, onRenewControl }: VehicleDetailModalProps) {
     const { isUser, canViewBudget } = useAuth();
+    const { settings } = useSettings();
     const [budgetData, setBudgetData] = useState<VehicleBudget | null>(null);
     const [analyticsData, setAnalyticsData] = useState<any>(null);
     const [loadingBudget, setLoadingBudget] = useState(false);
@@ -268,18 +270,27 @@ export function VehicleDetailModal({ open, onOpenChange, vehicle, onEdit, onRene
                                             </div>
                                         </div>
                                         <div className="flex justify-between items-center">
-                                            <div>
-                                                <p className="text-[8px] font-black text-slate-400 uppercase">Prochaine Échéance</p>
-                                                <p className={cn(
-                                                    "text-xs font-black",
-                                                    (vehicle.kilometrage - (vehicle.derniereVidangeKilometrage || 0)) >= (vehicle.frequenceVidange || 5000) ? "text-rose-500" : "text-slate-700 dark:text-slate-200"
-                                                )}>
-                                                    {((vehicle.derniereVidangeKilometrage || 0) + (vehicle.frequenceVidange || 5000)).toLocaleString()} KM
-                                                </p>
-                                            </div>
-                                            {(vehicle.kilometrage - (vehicle.derniereVidangeKilometrage || 0)) >= (vehicle.frequenceVidange || 5000) && (
-                                                <Badge className="bg-rose-500 text-white text-[8px] font-black px-1.5 py-0.5 animate-pulse">À FAIRE</Badge>
-                                            )}
+                                            {(() => {
+                                                const seuilVidangeGlobal = settings?.seuilVidangeKm ?? 5000;
+                                                const threshold = (vehicle.frequenceVidange !== 5000) ? vehicle.frequenceVidange : seuilVidangeGlobal;
+                                                const isVidangeSoon = (vehicle.kilometrage - (vehicle.derniereVidangeKilometrage || 0)) >= threshold;
+                                                return (
+                                                    <>
+                                                        <div>
+                                                            <p className="text-[8px] font-black text-slate-400 uppercase">Prochaine Échéance</p>
+                                                            <p className={cn(
+                                                                "text-xs font-black",
+                                                                isVidangeSoon ? "text-rose-500" : "text-slate-700 dark:text-slate-200"
+                                                            )}>
+                                                                {((vehicle.derniereVidangeKilometrage || 0) + threshold).toLocaleString()} KM
+                                                            </p>
+                                                        </div>
+                                                        {isVidangeSoon && (
+                                                            <Badge className="bg-rose-500 text-white text-[8px] font-black px-1.5 py-0.5 animate-pulse">À FAIRE</Badge>
+                                                        )}
+                                                    </>
+                                                );
+                                            })()}
                                         </div>
                                     </div>
                                 </div>

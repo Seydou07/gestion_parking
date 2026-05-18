@@ -13,6 +13,7 @@ import { Map, Calendar, Car, Fuel, FileUp, Search, AlertTriangle, Check, Chevron
 import { ConfirmModal } from '@/components/ui/confirm-modal';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Command, CommandInput, CommandList, CommandEmpty, CommandGroup, CommandItem } from '@/components/ui/command';
+import { useSettings } from '@/hooks/useFleetStore';
 
 interface MissionCreateModalProps {
     open: boolean;
@@ -25,6 +26,7 @@ interface MissionCreateModalProps {
 }
 
 export function MissionCreateModal({ open, onOpenChange, vehicles, drivers, fuelCards, fuelVouchers, onSubmit }: MissionCreateModalProps) {
+    const { settings } = useSettings();
     const [formData, setFormData] = useState<Partial<Mission>>({
         destination: '',
         dateDepart: '',
@@ -35,7 +37,9 @@ export function MissionCreateModal({ open, onOpenChange, vehicles, drivers, fuel
         bonCarburantIds: [],
         carteCarburantId: undefined,
         lettreMission: '',
-        statut: 'PLANIFIEE'
+        statut: 'PLANIFIEE',
+        objectif: '',
+        observations: ''
     });
 
     const [vehicleSearch, setVehicleSearch] = useState('');
@@ -128,7 +132,9 @@ export function MissionCreateModal({ open, onOpenChange, vehicles, drivers, fuel
         
         const isExpired = assuranceDate < today || controleDate < today;
         const vidangeKilometres = vehicle.kilometrage - vehicle.derniereVidangeKilometrage;
-        const isVidangeSoon = vidangeKilometres >= vehicle.frequenceVidange;
+        const seuilVidangeGlobal = settings?.seuilVidangeKm ?? 5000;
+        const threshold = (vehicle.frequenceVidange !== 5000) ? vehicle.frequenceVidange : seuilVidangeGlobal;
+        const isVidangeSoon = vidangeKilometres >= threshold;
 
         if (isExpired || isVidangeSoon) {
             let message = "Ce véhicule présente des alertes de maintenance ou administratives : ";
@@ -202,12 +208,31 @@ export function MissionCreateModal({ open, onOpenChange, vehicles, drivers, fuel
                             </h3>
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                 <div className="space-y-1.5 md:col-span-2">
-                                    <Label className="text-[10px] font-black uppercase text-slate-400 ml-1">Destination & Objet *</Label>
+                                    <Label className="text-[10px] font-black uppercase text-slate-400 ml-1">Destination & Lieu *</Label>
                                     <Input
                                         required
                                         placeholder="Ex: Mission de supervision Bobo-Dioulasso..."
                                         value={formData.destination}
                                         onChange={(e) => updateField('destination', e.target.value)}
+                                        className="h-9 px-4 rounded-xl border-slate-200 focus:border-fleet-blue font-bold text-xs"
+                                    />
+                                </div>
+                                <div className="space-y-1.5 md:col-span-2">
+                                    <Label className="text-[10px] font-black uppercase text-slate-400 ml-1">Objectif de la Mission *</Label>
+                                    <Input
+                                        required
+                                        placeholder="Ex: Auditer le bureau régional et rencontrer les partenaires..."
+                                        value={formData.objectif}
+                                        onChange={(e) => updateField('objectif', e.target.value)}
+                                        className="h-9 px-4 rounded-xl border-slate-200 focus:border-fleet-blue font-bold text-xs"
+                                    />
+                                </div>
+                                <div className="space-y-1.5 md:col-span-2">
+                                    <Label className="text-[10px] font-black uppercase text-slate-400 ml-1">Observations / Remarques (Optionnel)</Label>
+                                    <Input
+                                        placeholder="Ex: RAS, précautions particulières..."
+                                        value={formData.observations}
+                                        onChange={(e) => updateField('observations', e.target.value)}
                                         className="h-9 px-4 rounded-xl border-slate-200 focus:border-fleet-blue font-bold text-xs"
                                     />
                                 </div>

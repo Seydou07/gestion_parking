@@ -18,12 +18,16 @@ import {
     Settings as SettingsIcon,
     LogOut,
     Sun,
-    Moon
+    Moon,
+    AlertTriangle,
+    Info,
+    Check
 } from "lucide-react";
 import { useState } from "react";
 import { usePathname } from "next/navigation";
 import { useAuth } from "@/hooks/useAuth";
 import { useTheme } from "@/context/ThemeContext";
+import { useAlerts } from "@/hooks/useFleetStore";
 import { useRef, useEffect } from "react";
 import { ConfirmModal } from "@/components/ui/confirm-modal";
 
@@ -39,24 +43,26 @@ const Header = ({ toggleSidebar }: HeaderProps) => {
     const { user, logout } = useAuth();
     const { theme, toggleTheme } = useTheme();
 
+    const [isNotificationsOpen, setIsNotificationsOpen] = useState(false);
+    const notificationsRef = useRef<HTMLDivElement>(null);
+    const { alerts, markRead } = useAlerts();
+
     // Close menu when clicking outside
     useEffect(() => {
         const handleClickOutside = (event: MouseEvent) => {
             if (userMenuRef.current && !userMenuRef.current.contains(event.target as Node)) {
                 setIsUserMenuOpen(false);
             }
+            if (notificationsRef.current && !notificationsRef.current.contains(event.target as Node)) {
+                setIsNotificationsOpen(false);
+            }
         };
 
-        if (isUserMenuOpen) {
-            document.addEventListener('mousedown', handleClickOutside);
-        } else {
-            document.removeEventListener('mousedown', handleClickOutside);
-        }
-
+        document.addEventListener('mousedown', handleClickOutside);
         return () => {
             document.removeEventListener('mousedown', handleClickOutside);
         };
-    }, [isUserMenuOpen]);
+    }, []);
 
     const getPageTitle = () => {
         if (pathname === "/dashboard") return { title: "Tableau de Bord", icon: LayoutDashboard };
@@ -103,10 +109,100 @@ const Header = ({ toggleSidebar }: HeaderProps) => {
                 {/* Actions & Theme - Grouped - No margin-right to stay close to profile */}
                 <div className="flex items-center bg-slate-100/50 dark:bg-slate-800/50 p-1 rounded-xl">
                     {/* Notifications */}
-                    <button className="p-2 rounded-lg text-slate-500 hover:bg-white dark:hover:bg-slate-700 transition-all relative">
-                        <Bell className="w-5 h-5" />
-                        <span className="absolute top-2 right-2 w-2 h-2 bg-red-500 border-2 border-white dark:border-slate-900 rounded-full"></span>
-                    </button>
+                    <div className="relative" ref={notificationsRef}>
+                        <button 
+                            onClick={() => setIsNotificationsOpen(!isNotificationsOpen)}
+                            className={cn(
+                                "p-2 rounded-lg text-slate-500 hover:bg-white dark:hover:bg-slate-700 transition-all relative",
+                                isNotificationsOpen && "bg-white dark:bg-slate-700 text-fleet-blue"
+                            )}
+                        >
+                            <Bell className="w-5 h-5" />
+                            {alerts.filter(a => !a.lue).length > 0 && (
+                                <span className="absolute -top-1 -right-1 bg-rose-500 text-white font-black text-[9px] px-1.5 py-0.5 rounded-full flex items-center justify-center min-w-4 h-4 border-2 border-white dark:border-slate-900 shadow-sm animate-pulse">
+                                    {alerts.filter(a => !a.lue).length}
+                                </span>
+                            )}
+                        </button>
+
+                        {isNotificationsOpen && (
+                            <div className="absolute top-full right-0 mt-2 w-80 sm:w-96 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl shadow-2xl overflow-hidden z-50 animate-in fade-in slide-in-from-top-2">
+                                <div className="px-4 py-3 bg-slate-50 dark:bg-slate-800/50 border-b border-slate-100 dark:border-slate-800 flex items-center justify-between">
+                                    <span className="text-xs font-black text-slate-800 dark:text-white uppercase tracking-wider">
+                                        Notifications ({alerts.filter(a => !a.lue).length})
+                                    </span>
+                                    {alerts.filter(a => !a.lue).length > 0 && (
+                                        <button 
+                                            onClick={async () => {
+                                                const unread = alerts.filter(a => !a.lue);
+                                                for (const a of unread) {
+                                                    await markRead(a.id);
+                                                }
+                                            }}
+                                            className="text-[10px] font-black text-fleet-blue dark:text-fleet-blue-light uppercase tracking-wider hover:underline"
+                                        >
+                                            Tout marquer lu
+                                        </button>
+                                    )}
+                                </div>
+                                <div className="max-h-72 overflow-y-auto no-scrollbar py-1">
+                                    {alerts.filter(a => !a.lue).length === 0 ? (
+                                        <div className="py-8 flex flex-col items-center justify-center text-center px-4">
+                                            <div className="w-10 h-10 rounded-full bg-emerald-50 dark:bg-emerald-950/20 text-emerald-500 flex items-center justify-center mb-2">
+                                                <Check className="w-5 h-5" />
+                                            </div>
+                                            <p className="text-xs font-bold text-slate-700 dark:text-slate-200">Aucune nouvelle alerte</p>
+                                            <p className="text-[10px] text-slate-400 font-medium mt-0.5">Votre flotte est sous contrôle !</p>
+                                        </div>
+                                    ) : (
+                                        alerts.filter(a => !a.lue).slice(0, 5).map((a) => {
+                                            const isCritical = a.severity === 'CRITICAL';
+                                            const isWarning = a.severity === 'WARNING';
+                                            return (
+                                                <div 
+                                                    key={a.id} 
+                                                    onClick={() => markRead(a.id)}
+                                                    className="px-4 py-3 hover:bg-slate-50 dark:hover:bg-slate-800/50 border-b border-slate-100 dark:border-slate-800/30 last:border-b-0 cursor-pointer transition-colors flex items-start gap-3 group text-left"
+                                                >
+                                                    <div className={cn(
+                                                        "p-2 rounded-lg shrink-0 mt-0.5",
+                                                        isCritical ? "bg-red-50 text-red-500 dark:bg-red-900/10" :
+                                                        isWarning ? "bg-amber-50 text-amber-500 dark:bg-amber-900/10" :
+                                                        "bg-blue-50 text-blue-500 dark:bg-blue-900/10"
+                                                    )}>
+                                                        {isCritical ? <AlertTriangle className="w-4 h-4" /> : <Info className="w-4 h-4" />}
+                                                    </div>
+                                                    <div className="flex-1 min-w-0">
+                                                        <p className="text-xs font-bold text-slate-700 dark:text-slate-200 line-clamp-2 leading-snug group-hover:text-fleet-blue transition-colors">
+                                                            {a.message}
+                                                        </p>
+                                                        <span className="text-[9px] text-slate-400 font-bold uppercase tracking-wider block mt-1">
+                                                            {new Date(a.dateCreation).toLocaleDateString('fr-FR', {
+                                                                day: '2-digit',
+                                                                month: 'short',
+                                                                hour: '2-digit',
+                                                                minute: '2-digit'
+                                                            })}
+                                                        </span>
+                                                    </div>
+                                                    <button 
+                                                        onClick={(e) => {
+                                                            e.stopPropagation();
+                                                            markRead(a.id);
+                                                        }}
+                                                        className="opacity-0 group-hover:opacity-100 p-1 hover:bg-slate-100 dark:hover:bg-slate-700 rounded transition-all text-slate-400 hover:text-slate-600 self-center"
+                                                        title="Marquer comme lu"
+                                                    >
+                                                        <Check className="w-3.5 h-3.5" />
+                                                    </button>
+                                                </div>
+                                            );
+                                        })
+                                    )}
+                                </div>
+                            </div>
+                        )}
+                    </div>
 
                     {/* Theme Toggle */}
                     <button 

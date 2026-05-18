@@ -84,16 +84,55 @@ export default function Vehicules() {
             key: 'marque',
             header: 'Véhicule',
             render: (v: Vehicle) => {
+                const today = new Date();
+                const assuranceDate = new Date(v.assuranceExpiration);
+                const controleDate = new Date(v.prochainControle);
+
+                const relanceAssurance = settings?.relanceAssuranceJours ?? 15;
+                const relanceVisite = settings?.relanceVisiteJours ?? 15;
+
+                const warningAssuranceDate = new Date();
+                warningAssuranceDate.setDate(warningAssuranceDate.getDate() + relanceAssurance);
+
+                const warningVisiteDate = new Date();
+                warningVisiteDate.setDate(warningVisiteDate.getDate() + relanceVisite);
+
+                const isAssuranceExpired = assuranceDate < today;
+                const isAssuranceSoon = assuranceDate >= today && assuranceDate <= warningAssuranceDate;
+
+                const isVisiteExpired = controleDate < today;
+                const isVisiteSoon = controleDate >= today && controleDate <= warningVisiteDate;
+
                 const seuilVidangeGlobal = settings?.seuilVidangeKm ?? 5000;
                 const threshold = (v.frequenceVidange !== 5000) ? v.frequenceVidange : seuilVidangeGlobal;
                 const isVidangeSoon = (v.kilometrage - (v.derniereVidangeKilometrage || 0)) >= threshold;
                 return (
                     <div>
-                        <div className="flex items-center gap-2">
+                        <div className="flex items-center gap-2 flex-wrap max-w-lg">
                             <p className="font-bold text-slate-800">{v.marque} {v.modele}</p>
                             {isVidangeSoon && (
                                 <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[8px] font-black uppercase bg-amber-100 text-amber-600 animate-pulse" title="Vidange requise">
                                     <AlertTriangle className="w-2.5 h-2.5" /> Vidange
+                                </span>
+                            )}
+                            {isAssuranceExpired && (
+                                <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[8px] font-black uppercase bg-red-100 text-red-600 animate-pulse" title="Assurance expirée">
+                                    <AlertTriangle className="w-2.5 h-2.5" /> Assurance exp.
+                                </span>
+                            )}
+                            {isAssuranceSoon && (
+                                <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[8px] font-black uppercase bg-amber-100 text-amber-600 animate-pulse" title={`Assurance expire dans moins de ${relanceAssurance} jours`}>
+                                    <AlertTriangle className="w-2.5 h-2.5" /> Assurance proche
+                                </span>
+                            )}
+                            {isVisiteExpired && (
+                                <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[8px] font-black uppercase bg-red-100 text-red-600 animate-pulse" title="Visite technique expirée">
+                                    <AlertTriangle className="w-2.5 h-2.5" /> Visite exp.
+                                </span>
+                            )}
+                            {isVisiteSoon && (
+                                <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[8px] font-black uppercase bg-amber-100 text-amber-600 animate-pulse" title={`Visite technique expire dans moins de ${relanceVisite} jours`}>
+                                    <AlertTriangle className="w-2.5 h-2.5" /> Visite proche
                                 </span>
                             )}
                         </div>
@@ -143,14 +182,27 @@ export default function Vehicules() {
         const today = new Date();
         const assuranceDate = new Date(v.assuranceExpiration);
         const controleDate = new Date(v.prochainControle);
+
+        const relanceAssurance = settings?.relanceAssuranceJours ?? 15;
+        const relanceVisite = settings?.relanceVisiteJours ?? 15;
+
+        const warningAssuranceDate = new Date();
+        warningAssuranceDate.setDate(warningAssuranceDate.getDate() + relanceAssurance);
+
+        const warningVisiteDate = new Date();
+        warningVisiteDate.setDate(warningVisiteDate.getDate() + relanceVisite);
         
         const isExpired = assuranceDate < today || controleDate < today;
+        
+        const isAssuranceSoon = assuranceDate >= today && assuranceDate <= warningAssuranceDate;
+        const isVisiteSoon = controleDate >= today && controleDate <= warningVisiteDate;
+
         const seuilVidangeGlobal = settings?.seuilVidangeKm ?? 5000;
         const threshold = (v.frequenceVidange !== 5000) ? v.frequenceVidange : seuilVidangeGlobal;
         const isVidangeSoon = (v.kilometrage - (v.derniereVidangeKilometrage || 0)) >= threshold;
 
         if (isExpired) return "bg-red-50/80 hover:bg-red-100/80 dark:bg-red-900/20 dark:hover:bg-red-900/30 border-l-4 border-red-500";
-        if (isVidangeSoon) return "bg-amber-50/80 hover:bg-amber-100/80 dark:bg-amber-900/20 dark:hover:bg-amber-900/30 border-l-4 border-amber-500";
+        if (isVidangeSoon || isAssuranceSoon || isVisiteSoon) return "bg-amber-50/80 hover:bg-amber-100/80 dark:bg-amber-900/20 dark:hover:bg-amber-900/30 border-l-4 border-amber-500";
         return "border-l-4 border-transparent hover:bg-slate-50/50 dark:hover:bg-slate-800/50 transition-colors";
     };
 

@@ -97,11 +97,14 @@ export default function Vehicules() {
                 const warningVisiteDate = new Date();
                 warningVisiteDate.setDate(warningVisiteDate.getDate() + relanceVisite);
 
-                const isAssuranceExpired = assuranceDate < today;
-                const isAssuranceSoon = assuranceDate >= today && assuranceDate <= warningAssuranceDate;
+                const hasAssurance = !!v.assuranceExpiration;
+                const hasControle = !!v.prochainControle;
 
-                const isVisiteExpired = controleDate < today;
-                const isVisiteSoon = controleDate >= today && controleDate <= warningVisiteDate;
+                const isAssuranceExpired = hasAssurance && assuranceDate < today;
+                const isAssuranceSoon = hasAssurance && assuranceDate >= today && assuranceDate <= warningAssuranceDate;
+
+                const isVisiteExpired = hasControle && controleDate < today;
+                const isVisiteSoon = hasControle && controleDate >= today && controleDate <= warningVisiteDate;
 
                 const seuilVidangeGlobal = settings?.seuilVidangeKm ?? 5000;
                 const threshold = (v.frequenceVidange !== 5000) ? v.frequenceVidange : seuilVidangeGlobal;
@@ -192,10 +195,13 @@ export default function Vehicules() {
         const warningVisiteDate = new Date();
         warningVisiteDate.setDate(warningVisiteDate.getDate() + relanceVisite);
         
-        const isExpired = assuranceDate < today || controleDate < today;
+        const hasAssurance = !!v.assuranceExpiration;
+        const hasControle = !!v.prochainControle;
+
+        const isExpired = (hasAssurance && assuranceDate < today) || (hasControle && controleDate < today);
         
-        const isAssuranceSoon = assuranceDate >= today && assuranceDate <= warningAssuranceDate;
-        const isVisiteSoon = controleDate >= today && controleDate <= warningVisiteDate;
+        const isAssuranceSoon = hasAssurance && assuranceDate >= today && assuranceDate <= warningAssuranceDate;
+        const isVisiteSoon = hasControle && controleDate >= today && controleDate <= warningVisiteDate;
 
         const seuilVidangeGlobal = settings?.seuilVidangeKm ?? 5000;
         const threshold = (v.frequenceVidange !== 5000) ? v.frequenceVidange : seuilVidangeGlobal;

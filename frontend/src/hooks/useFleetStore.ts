@@ -129,11 +129,16 @@ export function useAlerts() {
     }, [refresh]);
 
     const markRead = async (id: number) => {
+        // Optimistic UI update: immediately mark the alert as read locally!
+        setAlerts(prev => prev.map(a => a.id === id ? { ...a, lue: true } : a));
         try {
             await api.alerts.markRead(id);
-            refresh();
+            // Silent refresh in background
+            const data = await api.alerts.getAll() as Alert[];
+            setAlerts(data);
         } catch (error) {
             console.error('Failed to mark alert as read:', error);
+            refresh(); // Rollback on error
         }
     };
 

@@ -29,17 +29,21 @@ const AlertsTable = ({ alerts }: { alerts: Alert[] }) => {
                     <Bell className="w-5 h-5 text-fleet-blue" />
                     Alertes récentes
                 </h3>
-                <span className="text-xs font-bold px-2 py-1 rounded bg-slate-100 text-slate-500 uppercase">Aujourd'hui</span>
+                {alerts.length > 0 && (
+                    <span className="text-[10px] font-black px-2 py-1 rounded bg-rose-50 text-rose-500 uppercase tracking-wider animate-pulse">
+                        {alerts.length} au total
+                    </span>
+                )}
             </div>
 
-            <div className="flex-1 space-y-3 overflow-y-auto pr-2 max-h-[400px]">
+            <div className="flex-1 space-y-3 overflow-y-auto pr-2 max-h-[320px]">
                 {alerts.length === 0 ? (
                     <div className="flex flex-col items-center justify-center h-full text-slate-400 py-10 italic">
                         <CheckCircle2 className="w-12 h-12 mb-2 opacity-20" />
                         <p>Aucune alerte en cours</p>
                     </div>
                 ) : (
-                    alerts.map((alert) => {
+                    alerts.slice(0, 3).map((alert) => {
                         const { icon: Icon, color, bg } = getSeverityStyles(alert.severity);
                         return (
                             <div key={alert.id} className={cn("p-4 rounded-xl border border-transparent transition-all hover:border-slate-100 dark:hover:border-slate-800 flex items-start gap-4", bg)}>
@@ -51,7 +55,7 @@ const AlertsTable = ({ alerts }: { alerts: Alert[] }) => {
                                     <div className="flex items-center gap-2 mt-2">
                                         <span className="text-[10px] font-bold uppercase text-slate-400">{alert.module}</span>
                                         <span className="w-1 h-1 rounded-full bg-slate-300"></span>
-                                        <span className="text-[10px] text-slate-400 italic">Il y a 2 heures</span>
+                                        <span className="text-[10px] text-slate-400 italic">Il y a quelques instants</span>
                                     </div>
                                 </div>
                             </div>
@@ -60,7 +64,13 @@ const AlertsTable = ({ alerts }: { alerts: Alert[] }) => {
                 )}
             </div>
 
-            <button className="mt-4 text-center text-sm font-bold text-fleet-blue hover:text-fleet-blue-dark transition-colors py-2 border-t border-slate-50 dark:border-slate-800">
+            {alerts.length > 3 && (
+                <div className="py-2 text-center border-t border-dashed border-slate-100 dark:border-slate-800 mt-2">
+                    <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">+ {alerts.length - 3} autres alertes actives</p>
+                </div>
+            )}
+
+            <button className="mt-2 text-center text-sm font-bold text-fleet-blue hover:text-fleet-blue-dark transition-colors py-2 border-t border-slate-50 dark:border-slate-800">
                 Voir tout l'historique
             </button>
         </div>

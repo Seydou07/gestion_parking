@@ -135,9 +135,8 @@ const Header = ({ toggleSidebar }: HeaderProps) => {
                                         <button 
                                             onClick={async () => {
                                                 const unread = alerts.filter(a => !a.lue);
-                                                for (const a of unread) {
-                                                    await markRead(a.id);
-                                                }
+                                                // Trigger optimistic updates and API requests in parallel
+                                                Promise.all(unread.map(a => markRead(a.id)));
                                             }}
                                             className="text-[10px] font-black text-fleet-blue dark:text-fleet-blue-light uppercase tracking-wider hover:underline"
                                         >

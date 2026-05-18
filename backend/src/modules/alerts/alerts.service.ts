@@ -4,6 +4,8 @@ import { AlertSeverity, AlertModule } from '@prisma/client';
 
 @Injectable()
 export class AlertsService {
+    private lastCheckTime = 0;
+
     constructor(private prisma: PrismaService) { }
 
     async findAll() {
@@ -32,6 +34,13 @@ export class AlertsService {
 
     // Engine: Run this dynamically or periodically to generate alerts based on system settings
     async checkAlerts() {
+        const now = Date.now();
+        // Only run alert checks at most once every 60 seconds to avoid database congestion and server lag
+        if (now - this.lastCheckTime < 60000) {
+            return;
+        }
+        this.lastCheckTime = now;
+
         // Fetch global settings
         const settings = await this.prisma.systemSettings.findUnique({ where: { id: 1 } });
         const relanceAssurance = settings?.relanceAssuranceJours ?? 30;

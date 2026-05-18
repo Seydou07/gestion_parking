@@ -84,7 +84,7 @@ npm run prisma:seed
 
 | Rôle | Identifiant (Username) | Mot de passe |
 | :--- | :--- | :--- |
-| **Super Admin** | `admin_fleet` | `Admin_123` |
+| **Super Admin** | `admin_fleet` | `admin_123` |
 | **Gestionnaire** | `gestionnaire` | `gest123` |
 
 ---

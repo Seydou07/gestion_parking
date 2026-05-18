@@ -57,7 +57,11 @@ export function MissionCreateModal({ open, onOpenChange, vehicles, drivers, fuel
     const unavailableVehicles = vehicles.filter(v => v.statut !== 'DISPONIBLE');
 
     const filteredVehicles = vehicles
-        .filter(v => v.immatriculation.toLowerCase().includes(vehicleSearch.toLowerCase()) || v.marque.toLowerCase().includes(vehicleSearch.toLowerCase()));
+        .filter(v => 
+            v.immatriculation.toLowerCase().includes(vehicleSearch.toLowerCase()) || 
+            v.marque.toLowerCase().includes(vehicleSearch.toLowerCase()) ||
+            (v.modele || '').toLowerCase().includes(vehicleSearch.toLowerCase())
+        );
     
     // Limit to 5 if no search
     const displayedVehicles = vehicleSearch === '' ? availableVehicles.slice(0, 5) : filteredVehicles.filter(v => v.statut === 'DISPONIBLE');
@@ -254,7 +258,10 @@ export function MissionCreateModal({ open, onOpenChange, vehicles, drivers, fuel
                                                 className="w-full h-9 justify-between rounded-xl border-slate-200 font-bold text-xs"
                                             >
                                                 {formData.vehiculeId
-                                                    ? vehicles.find((v) => v.id === formData.vehiculeId)?.immatriculation
+                                                    ? (() => {
+                                                        const v = vehicles.find((v) => v.id === formData.vehiculeId);
+                                                        return v ? `${v.marque} ${v.modele} (${v.immatriculation})` : "Choisir un véhicule";
+                                                      })()
                                                     : "Choisir un véhicule"}
                                                 <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
                                             </Button>
@@ -262,11 +269,11 @@ export function MissionCreateModal({ open, onOpenChange, vehicles, drivers, fuel
                                         <PopoverContent className="w-full p-0 max-w-[400px]" align="start">
                                             <Command shouldFilter={false}>
                                                 <CommandInput 
-                                                    placeholder="Rechercher un véhicule..." 
+                                                    placeholder="Rechercher un véhicule (marque, modèle, plaque)..." 
                                                     value={vehicleSearch}
                                                     onValueChange={setVehicleSearch}
                                                 />
-                                                            <CommandList>
+                                                <CommandList>
                                                     <CommandEmpty>Aucun véhicule trouvé.</CommandEmpty>
                                                     <CommandGroup heading="Véhicules Disponibles">
                                                         {displayedVehicles.map((v) => {
@@ -287,7 +294,7 @@ export function MissionCreateModal({ open, onOpenChange, vehicles, drivers, fuel
                                                                             <Car className="w-4 h-4 text-slate-600" />
                                                                         </div>
                                                                         <div className="flex flex-col">
-                                                                            <span className="font-black text-xs uppercase">{v.immatriculation} - {v.marque}</span>
+                                                                            <span className="font-black text-xs uppercase">{v.marque} {v.modele} ({v.immatriculation})</span>
                                                                             {warnings.length > 0 && (
                                                                                 <span className="text-[8px] text-amber-600 font-black">⚠ {warnings.join(', ')}</span>
                                                                             )}
@@ -312,7 +319,7 @@ export function MissionCreateModal({ open, onOpenChange, vehicles, drivers, fuel
                                                                             <Car className="w-4 h-4 text-slate-400" />
                                                                         </div>
                                                                         <div className="flex flex-col">
-                                                                            <span className="font-black text-xs uppercase">{v.immatriculation} - {v.marque}</span>
+                                                                            <span className="font-black text-xs uppercase">{v.marque} {v.modele} ({v.immatriculation})</span>
                                                                             <span className="text-[9px] text-slate-400 font-bold uppercase">{statusLabels[v.statut] || v.statut}</span>
                                                                         </div>
                                                                     </div>
@@ -336,7 +343,10 @@ export function MissionCreateModal({ open, onOpenChange, vehicles, drivers, fuel
                                                 className="w-full h-9 justify-between rounded-xl border-slate-200 font-bold text-xs"
                                             >
                                                 {formData.chauffeurId
-                                                    ? drivers.find((d) => d.id === formData.chauffeurId)?.nom
+                                                    ? (() => {
+                                                        const d = drivers.find((d) => d.id === formData.chauffeurId);
+                                                        return d ? `${d.prenom} ${d.nom}` : "Choisir un chauffeur";
+                                                      })()
                                                     : "Choisir un chauffeur"}
                                                 <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
                                             </Button>
@@ -348,7 +358,7 @@ export function MissionCreateModal({ open, onOpenChange, vehicles, drivers, fuel
                                                     value={driverSearch}
                                                     onValueChange={setDriverSearch}
                                                 />
-                                                            <CommandList>
+                                                <CommandList>
                                                     <CommandEmpty>Aucun chauffeur trouvé.</CommandEmpty>
                                                     <CommandGroup heading="Chauffeurs Disponibles">
                                                         {displayedDrivers.map((d) => (
